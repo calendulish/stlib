@@ -23,6 +23,7 @@ import os
 import subprocess
 from collections import namedtuple
 from typing import List, Union
+from concurrent.futures import ALL_COMPLETED
 
 __STEAM_ALPHABET = ['2', '3', '4', '5', '6', '7', '8', '9',
                     'B', 'C', 'D', 'F', 'G', 'H', 'J', 'K',
@@ -51,12 +52,16 @@ class AndroidDebugBridge(object):
 
     async def _do_checks(self):
         global CHECKS_RESULT
-        CHECKS_RESULT = Checks(
-                await self.__do_check(['shell', 'true']),
-                await self.__do_check(['shell', 'su', '-c', 'true']),
-                await self.__do_check(['shell', 'su', '-c', 'cat', f'{self.app_path}/app_cache_i/login.json']),
-                await self.__do_check(['shell', 'su', '-c', 'cat', f'{self.app_path}/files/Steamguard-*']),
-        )
+
+        tasks = [
+            self.__do_check(['shell', 'true']),
+            self.__do_check(['shell', 'su', '-c', 'true']),
+            self.__do_check(['shell', 'su', '-c', 'cat', f'{self.app_path}/app_cache_i/login.json']),
+            self.__do_check(['shell', 'su', '-c', 'cat', f'{self.app_path}/files/Steamguard-*']),
+        ]
+
+        done, _ = await asyncio.wait(tasks, return_when=ALL_COMPLETED)
+        CHECKS_RESULT = Checks(*[task.result() for task in done])
 
         for field in CHECKS_RESULT._fields:
             atribute = getattr(CHECKS_RESULT, field)
