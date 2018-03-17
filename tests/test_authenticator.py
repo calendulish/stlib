@@ -60,18 +60,13 @@ class TestAuthenticator:
     @pytest.mark.asyncio
     async def test_get_secret(self):
         tasks = [
-            asyncio.create_task(self.adb.get_secret('shared')),
-            asyncio.create_task(self.adb.get_secret('identity')),
-            asyncio.create_task(self.adb.get_secret('dummy')),
+            self.adb.get_secret('shared'),
+            self.adb.get_secret('identity'),
+            self.adb.get_secret('dummy'),
         ]
 
-        tasks_done, _ = await asyncio.wait(tasks)
-        assert isinstance(list(tasks_done)[0].result(), (str, bytes))
-        assert isinstance(list(tasks_done)[1].result(), (str, bytes))
+        results = await asyncio.gather(*tasks, return_exceptions=True)
 
-        try:
-            result = list(tasks_done)[2].result()
-        except KeyError:
-            assert True
-        else:
-            assert False
+        assert isinstance(results[0], (str, bytes))
+        assert isinstance(results[1], (str, bytes))
+        assert isinstance(results[2], KeyError)
