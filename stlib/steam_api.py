@@ -24,7 +24,7 @@ import sys
 import time
 
 
-class CaptureSTD(object):
+class _CaptureSTD(object):
     def __init__(self):
         self.old_descriptor = os.dup(1)
 
@@ -56,7 +56,7 @@ class SteamAPI(object):
             raise OSError(exception, f'[{steam_api_path}]')
 
     def _init(self) -> bool:
-        with CaptureSTD():
+        with _CaptureSTD():
             return bool(self.steam_api.SteamAPI_Init())
 
     def is_steam_running(self) -> bool:
