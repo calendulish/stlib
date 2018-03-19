@@ -17,7 +17,7 @@
 #
 
 import asyncio
-import json
+import ujson
 import logging
 import os
 import subprocess
@@ -106,6 +106,6 @@ class AndroidDebugBridge(object):
 
     async def get_secret(self, type_: str) -> Union[str, bytes]:
         data = await self._get_data('files/Steamguard-*')
-        secret = json.loads(data)[f'{type_}_secret']
+        secret = ujson.loads(data)[f'{type_}_secret']
 
         return secret
