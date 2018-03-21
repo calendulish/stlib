@@ -15,32 +15,58 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
-# FIXME: STUB
 
 import os
 import sys
-from distutils.core import setup
+from distutils.core import Extension, setup
+from distutils.sysconfig import get_python_lib
 
 if sys.maxsize > 2 ** 32:
-    libdir = 'lib64'
+    arch = 64
 else:
-    libdir = 'lib32'
+    arch = 32
+
+SDK_PATH = os.path.join('steam_api', 'steamworks_sdk')
+HEADERS_PATH = os.path.join(SDK_PATH, 'public', 'steam')
 
 if os.name == 'nt':
-    data_files = [('', [os.path.join('redist', libdir, 'libsteam_api.dll')])]
+    if arch == 64:
+        REDIST_PATH = os.path.join(SDK_PATH, 'redistributable_bin', 'win64')
+        API_NAME = 'steam_api64'
+    else:
+        REDIST_PATH = os.path.join(SDK_PATH, 'redistributable_bin')
+        API_NAME = 'steam_api'
+elif os.name == 'posix':
+    API_NAME = 'libsteam_api'
+
+    if arch == 64:
+        REDIST_PATH = os.path.join(SDK_PATH, 'redistributable_bin', 'linux64')
+    else:
+        REDIST_PATH = os.path.join(SDK_PATH, 'redistributable_bin', 'linux32')
 else:
-    data_files = [('', [os.path.join('redist', libdir, 'libsteam_api.so')])]
+    print('Your system is currently not supported.')
+    sys.exit(1)
+
+steam_api = Extension(
+        'steam_api',
+        sources=[os.path.join('steam_api', 'steam_api.cpp')],
+        include_dirs=[HEADERS_PATH],
+        library_dirs=[REDIST_PATH],
+        libraries=[API_NAME],
+        extra_compile_args=['-D_CRT_SECURE_NO_WARNINGS'],
+)
 
 setup(
-        name='Steam Tools',
+        name='stlib',
         version='0.0.0-DEV',
-        description="Async library that provides features related to steam client and compatible stuffs",
+        description="Async library that provides features related to Steam client and compatible stuffs",
         author='Lara Maia',
         author_email='dev@lara.click',
         url='http://github.com/ShyPixie/stlib',
         license='GPL',
-        data_files=data_files,
         packages=['stlib'],
+        data_files=[(get_python_lib(), [os.path.join(REDIST_PATH, f'{API_NAME}.dll')])],
+        ext_modules=[steam_api],
         requires=['aiodns',
                   'aiohttp',
                   'asyncio',
