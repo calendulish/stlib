@@ -5,3 +5,4 @@ release
 venv
 __pycache__
 *.pyc
+steam_api/steamworks_sdk
