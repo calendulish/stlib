@@ -1,25 +1,25 @@
 import signal
 
-from stlib import steam_api
+import steam_api
+from stlib import client
 
 
 # noinspection PyProtectedMember
 
 class TestSteamAPI():
-    steam_api = steam_api.SteamAPI()
-
     def test__init(self):
-        assert isinstance(self.steam_api._init(), bool)
+        assert isinstance(steam_api.init(), bool)
 
     def test_is_steam_running(self):
-        assert isinstance(self.steam_api.is_steam_running(), bool)
+        assert isinstance(steam_api.is_steam_running(), bool)
 
     def test_shutdown(self):
-        assert isinstance(self.steam_api.shutdown(), int)
+        steam_api.shutdown()
+        assert True # if shutdown doesn't throw an exception, it's ok
 
 
 class TestOverlay():
-    overlay = steam_api.Overlay()
+    overlay = client.Overlay()
 
     def test_hook(self):
         assert self.overlay.process is None
