@@ -1,0 +1,22 @@
+clone_folder: "C:\\stlib_build"
+
+environment:
+    matrix:
+        - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+          PLATFORM: "x86"
+          PYTHON: "C:\\Python36"
+          PYTHON_VERSION: "3.6.4"
+          PYTHON_ARCH: "32"
+
+        - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+          PLATFORM: "x64"
+          PYTHON: "C:\\Python36-x64"
+          PYTHON_VERSION: "3.6.4"
+          PYTHON_ARCH: "64"
+
+install:
+    - "%PYTHON%\\python.exe -m pip install aiodns cchardet ujson aiohttp asyncio beautifulsoup4"
+
+build_script:
+    - "%PYTHON%\\python.exe setup.py build_py"
+    - "%PYTHON%\\python.exe setup.py install_lib --skip-build -dtest_release"
