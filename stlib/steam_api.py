@@ -16,12 +16,12 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 
-import ctypes
 import multiprocessing
 import os
 import signal
-import sys
 import time
+
+import steam_api
 
 
 class _CaptureSTD(object):
@@ -36,36 +36,6 @@ class _CaptureSTD(object):
         os.dup2(self.old_descriptor, 1)
 
 
-class SteamAPI(object):
-    def __init__(self) -> None:
-        if sys.maxsize > 2 ** 32:
-            library_dir = 'lib64'
-        else:
-            library_dir = 'lib32'
-
-        if os.name == 'nt':
-            library_name = 'steam_api.dll'
-        else:
-            library_name = 'libsteam_api.so'
-
-        steam_api_path = os.path.join('redist', library_dir, library_name)
-
-        try:
-            self.steam_api = ctypes.CDLL(steam_api_path)
-        except OSError as exception:
-            raise OSError(exception, f'[{steam_api_path}]')
-
-    def _init(self) -> bool:
-        with _CaptureSTD():
-            return bool(self.steam_api.SteamAPI_Init())
-
-    def is_steam_running(self) -> bool:
-        return bool(self.steam_api.SteamAPI_IsSteamRunning())
-
-    def shutdown(self) -> int:
-        return self.steam_api.SteamAPI_Shutdown()
-
-
 class _Wrapper(multiprocessing.Process):
     def __init__(self, game_id, queue):
         super().__init__()
@@ -73,16 +43,14 @@ class _Wrapper(multiprocessing.Process):
         self.queue = queue
 
     def run(self) -> None:
-        steamworks = SteamAPI()
         stop = False
 
-        # noinspection PyProtectedMember
-        self.queue.put(steamworks._init())
+        self.queue.put(steam_api.init())
 
         def raised(signum, frame):
             nonlocal stop
             stop = True
-            steamworks.shutdown()
+            steam_api.shutdown()
 
         signal.signal(signal.SIGINT, raised)
         signal.signal(signal.SIGTERM, raised)
@@ -95,7 +63,6 @@ class Overlay():
     def __init__(self):
         self.process = None
         self.queue = multiprocessing.Queue()
-        self.steamworks = SteamAPI()
 
     def hook(self, game_id: int = None) -> bool:
         self.process = _Wrapper(game_id, self.queue)
@@ -104,6 +71,6 @@ class Overlay():
         return self.queue.get()
 
     def unhook(self) -> None:
-        self.steamworks.shutdown()
+        steam_api.shutdown()
         self.process.terminate()
         self.process.join()
