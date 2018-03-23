@@ -18,10 +18,9 @@
 
 import asyncio
 import os
-import sys
-
-# noinspection PyUnresolvedReferences
+# noinspection PyPackageRequirements
 import pytest
+import sys
 
 from stlib import authenticator
 

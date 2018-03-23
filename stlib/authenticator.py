@@ -17,13 +17,13 @@
 #
 
 import asyncio
-import ujson
 import logging
 import os
 import subprocess
+import ujson
 from collections import namedtuple
-from typing import List, Union
 from concurrent.futures import ALL_COMPLETED
+from typing import List, Union
 
 __STEAM_ALPHABET = ['2', '3', '4', '5', '6', '7', '8', '9',
                     'B', 'C', 'D', 'F', 'G', 'H', 'J', 'K',

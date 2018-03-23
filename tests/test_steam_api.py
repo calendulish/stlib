@@ -18,9 +18,6 @@
 
 import steam_api
 
-
-# noinspection PyProtectedMember
-
 class TestSteamAPI():
     def test__init(self):
         assert isinstance(steam_api.init(), bool)
