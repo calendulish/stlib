@@ -20,6 +20,7 @@ import os
 import sys
 from distutils.core import Extension, setup
 from distutils.sysconfig import get_python_lib
+from typing import Dict, List, Tuple
 
 if sys.maxsize > 2 ** 32:
     arch = 64
@@ -47,6 +48,23 @@ else:
     print('Your system is currently not supported.')
     sys.exit(1)
 
+
+def fix_runtime_path() -> Dict[str, str]:
+    if os.name == 'posix':
+        return {'runtime_library_dirs': get_python_lib()}
+    else:
+        return {}
+
+
+def include_extra_libraries() -> Dict[str, List[Tuple[str, List[str]]]]:
+    if os.name == 'nt':
+        library = [os.path.join(REDIST_PATH, f'{API_NAME}.dll')]
+    else:
+        library = [os.path.join(REDIST_PATH, f'{API_NAME}.so')]
+
+    return {'data_files': [(get_python_lib(), library)]}
+
+
 steam_api = Extension(
         'steam_api',
         sources=[os.path.join('steam_api', 'steam_api.cpp')],
@@ -54,6 +72,7 @@ steam_api = Extension(
         library_dirs=[REDIST_PATH],
         libraries=[API_NAME],
         extra_compile_args=['-D_CRT_SECURE_NO_WARNINGS'],
+        **fix_runtime_path()
 )
 
 setup(
@@ -65,7 +84,6 @@ setup(
         url='http://github.com/ShyPixie/stlib',
         license='GPL',
         packages=['stlib'],
-        data_files=[(get_python_lib(), [os.path.join(REDIST_PATH, f'{API_NAME}.dll')])],
         ext_modules=[steam_api],
         requires=['aiodns',
                   'aiohttp',
@@ -74,4 +92,5 @@ setup(
                   'cchardet',
                   'ujson',
                   ],
+        **include_extra_libraries()
 )
