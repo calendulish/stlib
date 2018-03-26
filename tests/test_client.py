@@ -16,4 +16,4 @@ class TestOverlay():
 
     def test_unhook(self):
         self.overlay.unhook()
-        assert self.overlay.process.exitcode == -signal.SIGTERM
+        assert self.overlay.process.exitcode == 0

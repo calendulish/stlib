@@ -18,9 +18,6 @@
 
 import multiprocessing
 import os
-import signal
-import time
-
 import steam_api
 
 
@@ -37,40 +34,41 @@ class _CaptureSTD(object):
 
 
 class _Wrapper(multiprocessing.Process):
-    def __init__(self, game_id, queue):
+    def __init__(self, game_id, queue, started, exit_now):
         super().__init__()
         os.environ["SteamAppId"] = str(game_id)
         self.queue = queue
+        self.started = started
+        self.exit_now = exit_now
 
     def run(self) -> None:
-        stop = False
+        result = steam_api.init()
+        self.queue.put(result)
+        self.started.set()
 
-        self.queue.put(steam_api.init())
+        if result:
+            self.exit_now.clear()
+        else:
+            self.exit_now.set()
 
-        def raised(signum, frame):
-            nonlocal stop
-            stop = True
-            steam_api.shutdown()
-
-        signal.signal(signal.SIGINT, raised)
-        signal.signal(signal.SIGTERM, raised)
-
-        while not stop:
-            time.sleep(1)
+        self.exit_now.wait()
+        steam_api.shutdown()
 
 
-class Overlay():
+class Overlay(object):
     def __init__(self):
         self.process = None
         self.queue = multiprocessing.Queue()
+        self.exit_now = multiprocessing.Event()
+        self.started = multiprocessing.Event()
 
     def hook(self, game_id: int = None) -> bool:
-        self.process = _Wrapper(game_id, self.queue)
+        self.process = _Wrapper(game_id, self.queue, self.started, self.exit_now)
         self.process.start()
-        time.sleep(0.2)
+        self.started.wait()
+
         return self.queue.get()
 
     def unhook(self) -> None:
-        steam_api.shutdown()
-        self.process.terminate()
+        self.exit_now.set()
         self.process.join()
