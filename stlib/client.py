@@ -42,7 +42,9 @@ class _Wrapper(multiprocessing.Process):
         self.exit_now = exit_now
 
     def run(self) -> None:
-        result = steam_api.init()
+        with _CaptureSTD():
+            result = steam_api.init()
+
         self.queue.put(result)
         self.started.set()
 
