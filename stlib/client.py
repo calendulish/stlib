@@ -16,6 +16,7 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 
+import atexit
 import multiprocessing
 import os
 import steam_api
@@ -64,6 +65,8 @@ class Overlay(object):
         self.exit_now = multiprocessing.Event()
         self.started = multiprocessing.Event()
 
+        atexit.register(self.unhook)
+
     def hook(self, game_id: int = None) -> bool:
         self.process = _Wrapper(game_id, self.queue, self.started, self.exit_now)
         self.process.start()
@@ -73,4 +76,6 @@ class Overlay(object):
 
     def unhook(self) -> None:
         self.exit_now.set()
-        self.process.join()
+
+        if self.process:
+            self.process.join()
