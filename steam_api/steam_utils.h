@@ -30,6 +30,11 @@ static PyObject *SteamUtils_get_server_real_time(SteamUtils_Object *self) {
 }
 
 static int SteamUtils_init(SteamUtils_Object *self, PyObject *args, PyObject *kwds) {
+    if (!SteamAPI_IsSteamRunning()) {
+        PyErr_SetString(PyExc_ProcessLookupError, "Steam is not running");
+        return -1;
+    }
+
     setenv("SteamAppId", "480", 1);
     bool result = SteamAPI_Init();
 
