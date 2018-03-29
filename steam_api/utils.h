@@ -17,6 +17,6 @@
 
 #ifdef __unix__
 #include <stdlib.h>
-#elif _WIN32 || _WIN64
+#elif _WIN32
 #define setenv(name, value, overwrite) _putenv_s(name, value)
 #endif
