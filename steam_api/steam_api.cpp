@@ -17,7 +17,7 @@
 
 #include <Python.h>
 #include <steam_api.h>
-
+#include <steam_utils.h>
 
 static PyObject *shutdown(PyObject *self, PyObject *args){
     SteamAPI_Shutdown();
@@ -45,7 +45,7 @@ static PyMethodDef steam_api_methods[] = {
     { NULL, NULL, 0, NULL },
 };
 
- static struct PyModuleDef moduledef = {
+static struct PyModuleDef moduledef = {
         PyModuleDef_HEAD_INIT,
         "steam_api",
         "Steam API.",
@@ -54,5 +54,22 @@ static PyMethodDef steam_api_methods[] = {
 };
 
 PyMODINIT_FUNC PyInit_steam_api(void) {
-    return PyModule_Create(&moduledef);
+    PyObject *module;
+
+    if (PyType_Ready(&SteamUtilsType) < 0){
+        PyErr_SetString(PyExc_AttributeError, "Unable to initialize SteamUtils");
+        return NULL;
+    }
+
+    module = PyModule_Create(&moduledef);
+
+    if (module == NULL){
+        PyErr_SetString(PyExc_AttributeError, "Unable to initialize steam_api");
+        return NULL;
+    }
+
+    Py_INCREF(&SteamUtilsType);
+    PyModule_AddObject(module, "SteamUtils", (PyObject *)&SteamUtilsType);
+
+    return module;
 }

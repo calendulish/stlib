@@ -68,7 +68,7 @@ def include_extra_libraries() -> Dict[str, List[Tuple[str, List[str]]]]:
 steam_api = Extension(
         'steam_api',
         sources=[os.path.join('steam_api', 'steam_api.cpp')],
-        include_dirs=[HEADERS_PATH],
+        include_dirs=['steam_api', HEADERS_PATH],
         library_dirs=[REDIST_PATH],
         libraries=[API_NAME],
         extra_compile_args=['-D_CRT_SECURE_NO_WARNINGS'],
