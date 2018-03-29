@@ -39,6 +39,7 @@ static int SteamUtils_init(SteamUtils_Object *self, PyObject *args, PyObject *kw
     bool result = SteamAPI_Init();
 
     if (!result) {
+        PyErr_SetString(PyExc_ValueError, "Unable to initialize SteamAPI (Invalid game id?)");
         return -1;
     }
 
