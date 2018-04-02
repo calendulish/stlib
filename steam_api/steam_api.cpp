@@ -33,6 +33,11 @@ static PyObject *is_steam_running(PyObject *self, PyObject *args) {
 }
 
 static PyObject *init(PyObject *self, PyObject *args){
+    if (!SteamAPI_IsSteamRunning()) {
+        PyErr_SetString(PyExc_ProcessLookupError, "Steam is not running");
+        return NULL;
+    }
+
     bool result = SteamAPI_Init();
 
     return PyBool_FromLong(result);
@@ -40,7 +45,7 @@ static PyObject *init(PyObject *self, PyObject *args){
 
 static PyMethodDef steam_api_methods[] = {
     { "init", init, METH_NOARGS, NULL},
-    { "is_steam_running", is_steam_running, METH_NOARGS, NULL},
+    { "_is_steam_running", is_steam_running, METH_NOARGS, NULL},
     { "shutdown", shutdown, METH_NOARGS, NULL },
     { NULL, NULL, 0, NULL },
 };
