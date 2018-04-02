@@ -16,7 +16,6 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 
-import atexit
 import multiprocessing
 import os
 import steam_api
@@ -34,48 +33,42 @@ class _CaptureSTD(object):
         os.dup2(self.old_descriptor, 1)
 
 
-class _Wrapper(multiprocessing.Process):
-    def __init__(self, game_id, queue, started, exit_now):
+class SteamApiExecutor(multiprocessing.Process):
+    def __init__(self, game_id: int = 480):
         super().__init__()
-        os.environ["SteamAppId"] = str(game_id)
-        self.queue = queue
-        self.started = started
-        self.exit_now = exit_now
+        self.game_id = game_id
+
+        self.exit_now = multiprocessing.Event()
+
+        self.process_return, self.__return = multiprocessing.Pipe(False)
+        self.process_exception, self.__exception = multiprocessing.Pipe(False)
+
+    def __enter__(self):
+        self.exit_now.clear()
+        self.start()
+
+        if self.process_return.poll(timeout=5):
+            return self
+        else:
+            if self.process_exception.poll():
+                raise self.process_exception.recv()
+            else:
+                raise AssertionError("No return from `Process' in SteamAppExecutor")
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        steam_api.shutdown()
+        self.exit_now.set()
+        self.join(5)
+        self.close()
 
     def run(self) -> None:
-        with _CaptureSTD():
-            result = steam_api.init()
+        os.environ["SteamAppId"] = str(self.game_id)
 
-        self.queue.put(result)
-        self.started.set()
-
-        if result:
-            self.exit_now.clear()
+        try:
+            with _CaptureSTD():
+                result = steam_api.init()
+        except Exception as exception:
+            self.__exception.send(exception)
         else:
-            self.exit_now.set()
-
-        self.exit_now.wait()
-        steam_api.shutdown()
-
-
-class Overlay(object):
-    def __init__(self):
-        self.process = None
-        self.queue = multiprocessing.Queue()
-        self.exit_now = multiprocessing.Event()
-        self.started = multiprocessing.Event()
-
-        atexit.register(self.unhook)
-
-    def hook(self, game_id: int = None) -> bool:
-        self.process = _Wrapper(game_id, self.queue, self.started, self.exit_now)
-        self.process.start()
-        self.started.wait()
-
-        return self.queue.get()
-
-    def unhook(self) -> None:
-        self.exit_now.set()
-
-        if self.process:
-            self.process.join()
+            self.__return.send(result)
+            self.exit_now.wait()
