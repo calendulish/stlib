@@ -17,7 +17,6 @@
 
 #include <Python.h>
 #include <steam_api.h>
-#include <utils.h>
 
 typedef struct {
     PyObject_HEAD
@@ -35,11 +34,10 @@ static int SteamUtils_init(SteamUtils_Object *self, PyObject *args, PyObject *kw
         return -1;
     }
 
-    setenv("SteamAppId", "480", 1);
     bool result = SteamAPI_Init();
 
     if (!result) {
-        PyErr_SetString(PyExc_ValueError, "Unable to initialize SteamAPI (Invalid game id?)");
+        PyErr_SetString(PyExc_ValueError, "Unable to initialize SteamAPI");
         return -1;
     }
 
