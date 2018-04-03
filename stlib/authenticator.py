@@ -78,10 +78,10 @@ class AndroidDebugBridge(object):
 
     async def _run(self, params: list) -> str:
         process = await asyncio.create_subprocess_exec(
-                self.adb_path,
-                *params,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE
+            self.adb_path,
+            *params,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE
         )
 
         stdout, stderr = await process.communicate()
