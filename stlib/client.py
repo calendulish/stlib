@@ -40,13 +40,12 @@ class SteamApiExecutor(multiprocessing.Process):
 
         self.exit_now = multiprocessing.Event()
 
-        self.init_return, self.__init_return = multiprocessing.Pipe(False)
-        self.init_exception, self.__init_exception = multiprocessing.Pipe(False)
+        self._init_return, self.__child_init_return = multiprocessing.Pipe(False)
+        self._init_exception, self.__child_init_exception = multiprocessing.Pipe(False)
 
-        self.__method, self.process_method = multiprocessing.Pipe(False)
-
-        self.process_return, self.__return = multiprocessing.Pipe(False)
-        self.process_exception, self.__exception = multiprocessing.Pipe(False)
+        self.__child_interface, self._interface = multiprocessing.Pipe(False)
+        self._interface_return, self.__child_interface_return = multiprocessing.Pipe(False)
+        self._interface_exception, self.__child_interface_exception = multiprocessing.Pipe(False)
 
     def __enter__(self):
         self.init()
@@ -69,7 +68,7 @@ class SteamApiExecutor(multiprocessing.Process):
         self.exit_now.clear()
         self.start()
 
-        return self._wait_return(self.init_return, self.init_exception)
+        return self._wait_return(self._init_return, self._init_exception)
 
     def shutdown(self):
         steam_api.shutdown()
@@ -78,9 +77,9 @@ class SteamApiExecutor(multiprocessing.Process):
         self.close()
 
     def call(self, method):
-        self.process_method.send(method)
+        self._interface.send(method)
 
-        return self._wait_return(self.process_return, self.process_exception)
+        return self._wait_return(self._interface_return, self._interface_exception)
 
     def run(self) -> None:
         os.environ["SteamAppId"] = str(self.game_id)
@@ -89,12 +88,12 @@ class SteamApiExecutor(multiprocessing.Process):
             with _CaptureSTD():
                 result = steam_api.init()
         except Exception as exception:
-            self.__init_exception.send(exception)
+            self.__child_init_exception.send(exception)
             return None
         else:
-            self.__init_return.send(result)
+            self.__child_init_return.send(result)
 
         while not self.exit_now.is_set():
-            if self.__method.poll():
-                __method__ = self.__method.recv()
-                self.__return.send(__method__())
+            if self.__child_interface.poll():
+                interface_class = self.__child_interface.recv()
+                self.__child_interface_return.send(interface_class)
