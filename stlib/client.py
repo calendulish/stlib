@@ -49,7 +49,8 @@ class SteamApiExecutor(multiprocessing.Process):
         self.process_exception, self.__exception = multiprocessing.Pipe(False)
 
     def __enter__(self):
-        return self.init()
+        self.init()
+        return self
 
     def __exit__(self, exc_type, exc_value, traceback):
         self.shutdown()
