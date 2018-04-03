@@ -18,35 +18,12 @@
 
 import asyncio
 import os
-# noinspection PyPackageRequirements
+
 import pytest
-import sys
 
 from stlib import authenticator
-
-
-def get_event_loop() -> asyncio.AbstractEventLoop:
-    if sys.platform == 'win32':
-        return asyncio.ProactorEventLoop()  # on windows IO needs this
-    return asyncio.new_event_loop()  # default on UNIX is fine
-
-
-@pytest.yield_fixture()
-def event_loop():
-    """pytest-asyncio customization"""
-    if sys.platform != "win32":
-        asyncio.set_event_loop(None)  # see https://github.com/pytest-dev/pytest-asyncio/issues/73
-    loop = get_event_loop()
-    if sys.platform != "win32":
-        # on UNIX we also need to attach the loop to the child watcher for asyncio.subprocess
-        policy = asyncio.get_event_loop_policy()
-        watcher = asyncio.SafeChildWatcher()
-        watcher.attach_loop(loop)
-        policy.set_child_watcher(watcher)
-    try:
-        yield loop
-    finally:
-        loop.close()
+# noinspection PyUnresolvedReferences
+from tests import event_loop
 
 
 # noinspection PyProtectedMember

@@ -1,25 +1,7 @@
-import inspect
 import steam_api
-import time
-
-import pytest
 
 from stlib import client
-
-MANUAL_TESTING = False
-
-
-@pytest.fixture(autouse=True)
-def debug(msg: str = None, wait_for: int = 5):
-    if MANUAL_TESTING:
-        current_frame = inspect.currentframe()
-        outer_frame = inspect.getouterframes(current_frame, 2)
-
-        if msg:
-            print(f'   -> {outer_frame[1][3]}:{msg}')
-            time.sleep(wait_for)
-        else:
-            print('\n')
+from tests import debug
 
 
 def test_init():
