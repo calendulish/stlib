@@ -96,4 +96,10 @@ class SteamApiExecutor(multiprocessing.Process):
         while not self.exit_now.is_set():
             if self.__child_interface.poll():
                 interface_class = self.__child_interface.recv()
-                self.__child_interface_return.send(interface_class)
+                try:
+                    result = interface_class()
+                except Exception as exception:
+                    self.__child_interface_exception.send(exception)
+                    return None
+                else:
+                    self.__child_interface_return.send(result)
