@@ -64,9 +64,9 @@ class AndroidDebugBridge(object):
         CHECKS_RESULT = Checks(*[task.result() for task in done])
 
         for field in CHECKS_RESULT._fields:
-            atribute = getattr(CHECKS_RESULT, field)
-            if atribute is False:
-                logging.debug(f'{field} is {atribute}')
+            attribute = getattr(CHECKS_RESULT, field)
+            if attribute is False:
+                logging.debug(f'{field} is {attribute}')
                 if field is 'connected':
                     raise AttributeError('Phone is not connected')
                 elif field is 'root_available':
