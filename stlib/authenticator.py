@@ -67,13 +67,13 @@ class AndroidDebugBridge(object):
             attribute = getattr(CHECKS_RESULT, field)
             if attribute is False:
                 logging.debug(f'{field} is {attribute}')
-                if field is 'connected':
+                if field == 'connected':
                     raise AttributeError('Phone is not connected')
-                elif field is 'root_available':
+                elif field == 'root_available':
                     raise AttributeError('Root is not available')
-                elif field is 'logged':
+                elif field == 'logged':
                     raise AttributeError('user is not logged-in on Mobile Authenticator')
-                elif field is 'guard_enabled':
+                elif field == 'guard_enabled':
                     raise AttributeError('Steam Guard is not enabled')
 
     async def _run(self, params: list) -> str:
