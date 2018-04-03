@@ -23,7 +23,7 @@ import pytest
 
 from stlib import authenticator
 # noinspection PyUnresolvedReferences
-from tests import event_loop
+from tests import debug, event_loop
 
 
 # noinspection PyProtectedMember
@@ -41,14 +41,18 @@ class TestAuthenticator:
         for field in authenticator.Checks._fields:
             assert getattr(authenticator.CHECKS_RESULT, field) == True
 
+        debug(authenticator.CHECKS_RESULT)
+
     @pytest.mark.asyncio
     async def test__run(self):
         result = await self.adb._run(['shell', 'echo', 'hello'])
+        debug(f'process_return:{result}')
         assert result == 'hello'
 
     @pytest.mark.asyncio
     async def test__get_data(self):
         result = await self.adb._get_data('shared_prefs/steam.uuid.xml')
+        debug(f'data:{result}')
         assert isinstance(result, str)
 
     @pytest.mark.asyncio
@@ -60,7 +64,19 @@ class TestAuthenticator:
         ]
 
         results = await asyncio.gather(*tasks, return_exceptions=True)
+        debug(f'secrets: {results}')
 
         assert isinstance(results[0], (str, bytes))
         assert isinstance(results[1], (str, bytes))
         assert isinstance(results[2], KeyError)
+
+    @pytest.mark.asyncio
+    async def test_get_code(self):
+        secret = await self.adb.get_secret('shared')
+        code = authenticator.get_code(secret)
+        debug(f'result:{code}')
+        assert isinstance(code, tuple)
+        assert isinstance(code[0], list)
+        assert isinstance(code[1], int)
+        assert len(code[0]) == 5
+        assert len(str(code[1])) == 10
