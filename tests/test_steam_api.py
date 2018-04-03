@@ -22,8 +22,8 @@ class TestSteamAPI():
     def test__init(self):
         assert isinstance(steam_api.init(), bool)
 
-    def test_is_steam_running(self):
-        assert isinstance(steam_api.is_steam_running(), bool)
+    def test__is_steam_running(self):
+        assert isinstance(steam_api._is_steam_running(), bool)
 
     def test_shutdown(self):
         steam_api.shutdown()
