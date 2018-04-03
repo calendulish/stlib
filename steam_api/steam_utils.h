@@ -34,6 +34,11 @@ static int SteamUtils_init(SteamUtils_Object *self, PyObject *args, PyObject *kw
         return -1;
     }
 
+    if (!SteamUtils()) {
+        PyErr_SetString(PyExc_AttributeError, "Interface pointers for SteamUtils is not populated");
+        return -1;
+    }
+
     return 0;
 }
 
