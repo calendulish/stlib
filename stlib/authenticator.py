@@ -17,13 +17,20 @@
 #
 
 import asyncio
+import base64
+import codecs
+import hashlib
+import hmac
 import logging
 import os
+import steam_api
 import subprocess
 import ujson
 from collections import namedtuple
 from concurrent.futures import ALL_COMPLETED
-from typing import List, Union
+from typing import List, Tuple, Union
+
+from stlib import client
 
 __STEAM_ALPHABET = ['2', '3', '4', '5', '6', '7', '8', '9',
                     'B', 'C', 'D', 'F', 'G', 'H', 'J', 'K',
@@ -109,3 +116,24 @@ class AndroidDebugBridge(object):
         secret = ujson.loads(data)[f'{type_}_secret']
 
         return secret
+
+
+def get_code(shared_secret: Union[str, bytes]) -> Tuple[List[Union[str, int]], int]:
+    with client.SteamApiExecutor() as executor:
+        steam_utils = executor.call(steam_api.SteamUtils)
+        server_time = executor.call(steam_utils.get_server_time)
+
+    msg = int(server_time / 30).to_bytes(8, 'big')
+    key = base64.b64decode(shared_secret)
+    auth = hmac.new(key, msg, hashlib.sha1)
+    digest = auth.digest()
+    start = digest[19] & 0xF
+    code = digest[start:start + 4]
+    auth_code_raw = int(codecs.encode(code, 'hex'), 16) & 0x7FFFFFFF
+
+    auth_code = []
+    for i in range(5):
+        auth_code.append(__STEAM_ALPHABET[int(auth_code_raw % len(__STEAM_ALPHABET))])
+        auth_code_raw /= len(__STEAM_ALPHABET)
+
+    return auth_code, server_time
