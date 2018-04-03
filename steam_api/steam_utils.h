@@ -34,13 +34,6 @@ static int SteamUtils_init(SteamUtils_Object *self, PyObject *args, PyObject *kw
         return -1;
     }
 
-    bool result = SteamAPI_Init();
-
-    if (!result) {
-        PyErr_SetString(PyExc_ValueError, "Unable to initialize SteamAPI");
-        return -1;
-    }
-
     return 0;
 }
 
