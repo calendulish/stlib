@@ -48,7 +48,11 @@ class SteamApiExecutor(multiprocessing.Process):
         self._interface_exception, self.__child_interface_exception = multiprocessing.Pipe(False)
 
     def __enter__(self):
-        self.init()
+        result = self.init()
+
+        if result is False:
+            raise AttributeError("Unable to initialize SteamAPI (Invalid game id?)")
+
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
