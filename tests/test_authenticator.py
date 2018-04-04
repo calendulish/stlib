@@ -23,10 +23,11 @@ import pytest
 
 from stlib import authenticator
 # noinspection PyUnresolvedReferences
-from tests import debug, event_loop
+from tests import debug, event_loop, MANUAL_TESTING
 
 
-# noinspection PyProtectedMember
+@pytest.mark.skipif(MANUAL_TESTING != True,
+                    reason="Impossible to test without secrets")
 class TestAuthenticator:
     adb = authenticator.AndroidDebugBridge(os.path.join('C:\\', 'platform-tools', 'adb.exe'),
                                            '/data/data/com.valvesoftware.android.steam.community/')
