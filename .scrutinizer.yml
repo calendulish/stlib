@@ -1,0 +1,34 @@
+checks:
+    python:
+        code_rating: true
+        duplicate_code: true
+
+filter:
+    dependency_paths:
+        - lib/
+
+build:
+    environment:
+        python: '3.7'
+
+    dependencies:
+        override:
+            # Project depends
+            - pip install aiodns cchardet ujson aiohttp asyncio beautifulsoup4
+            # Coverage depends
+            - pip install pylint>=1.8.1 mypy lxml coverage pytest pytest-cov
+
+    project_setup:
+        override:
+            - python setup.py build_py
+            - command: python setup.py install_lib --skip-build
+
+    tests:
+        override:
+            - py-scrutinizer-run
+            - command: pylint-run stlib
+            - command: mypy tests
+            - command: py.test --cov=stlib tests
+              coverage:
+                  file: '.coverage'
+                  format: 'py-cc'
