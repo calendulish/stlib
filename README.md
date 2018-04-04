@@ -3,6 +3,7 @@ stlib
 
 [![Build Status](https://img.shields.io/appveyor/ci/ShyPixie/stlib/master.svg)](https://ci.appveyor.com/project/ShyPixie/stlib)
 [![Scrutinizer Code Quality](https://img.shields.io/scrutinizer/g/ShyPixie/stlib.svg)](https://scrutinizer-ci.com/g/ShyPixie/stlib/)
+[![Scrutinizer Coverage](https://img.shields.io/scrutinizer/coverage/g/filp/whoops.svg)](https://scrutinizer-ci.com/g/ShyPixie/stlib/code-structure/master/code-coverage)
 [![GitHub license](https://img.shields.io/badge/license-GPLv3-green.svg)](https://www.gnu.org/licenses/gpl-3.0.html)
 [![GitHub release](https://img.shields.io/github/release/ShyPixie/stlib.svg)](https://github.com/ShyPixie/stlib/releases)
 [![GitHub Test release](https://img.shields.io/badge/testing-0.0.0_DEV-orange.svg)](https://github.com/ShyPixie/stlib/releases)
@@ -23,3 +24,5 @@ The stlib is distributed in the hope that it will be useful, but WITHOUT ANY WAR
 You should have received a copy of the GNU General Public License along with this program. If not, see http://www.gnu.org/licenses/.
 
 Lara Maia <dev@lara.click>
+
+[![Made with](https://img.shields.io/badge/made%20with-girl%20power-f070D0.svg?longCache=true&style=for-the-badge)](http://lara.click)
