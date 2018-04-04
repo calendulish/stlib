@@ -16,9 +16,16 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 
+import os
 import steam_api
 
-class TestSteamAPI():
+import pytest
+
+from tests import steam_api_available
+
+@pytest.mark.skipif(steam_api_available() == False,
+                    reason="steam_api is not available in currently environment")
+class TestSteamAPI:
     def test__init(self):
         assert isinstance(steam_api.init(), bool)
 

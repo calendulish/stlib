@@ -1,9 +1,13 @@
 import steam_api
 
+import pytest
+
 from stlib import client
-from tests import debug
+from tests import debug, steam_api_available
 
 
+@pytest.mark.skipif(steam_api_available() == False,
+                    reason="steam_api is not available in currently environment")
 def test_init():
     debug('Instantiating Executor', wait_for=3)
     executor = client.SteamApiExecutor()
@@ -15,6 +19,8 @@ def test_init():
     assert isinstance(result, bool)
 
 
+@pytest.mark.skipif(steam_api_available() == False,
+                    reason="steam_api is not available in currently environment")
 def test_steam_utils():
     debug('Instantiating Executor', wait_for=3)
     with client.SteamApiExecutor() as executor:

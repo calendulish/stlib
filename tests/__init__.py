@@ -27,6 +27,20 @@ import pytest
 MANUAL_TESTING = bool(os.environ.get('MANUAL_TESTING'))
 
 
+def steam_api_available() -> bool:
+    try:
+        import steam_api
+    except ModuleNotFoundError:
+        return False
+
+    try:
+        # noinspection PyStatementEffect
+        steam_api.init
+    except AttributeError:
+        return False
+
+    return True
+
 @pytest.fixture(autouse=True)
 def debug(msg: str = None, wait_for: int = 5):
     # noinspection PySimplifyBooleanCheck

@@ -23,7 +23,7 @@ import pytest
 
 from stlib import authenticator
 # noinspection PyUnresolvedReferences
-from tests import debug, event_loop, MANUAL_TESTING
+from tests import MANUAL_TESTING, debug, event_loop, steam_api_available
 
 
 @pytest.mark.skipif(MANUAL_TESTING != True,
@@ -71,6 +71,8 @@ class TestAuthenticator:
         assert isinstance(results[1], (str, bytes))
         assert isinstance(results[2], KeyError)
 
+    @pytest.mark.skipif(steam_api_available() == False,
+                        reason="steam_api is not available in currently environment")
     @pytest.mark.asyncio
     async def test_get_code(self):
         secret = await self.adb.get_secret('shared')
