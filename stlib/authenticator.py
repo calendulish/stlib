@@ -51,7 +51,7 @@ class AndroidDebugBridge(object):
     async def __do_check(self, parameters: List[str]) -> bool:
         try:
             await self._run(parameters)
-        except subprocess.CalledProcessError as exception:
+        except subprocess.CalledProcessError:
             return False
         else:
             return True
@@ -131,7 +131,7 @@ def get_code(shared_secret: Union[str, bytes]) -> Tuple[List[str], int]:
     auth_code_raw = int.from_bytes(code, byteorder='big') & 0x7FFFFFFF
 
     auth_code = []
-    for i in range(5):
+    for _ in range(5):
         auth_code.append(__STEAM_ALPHABET[int(auth_code_raw % len(__STEAM_ALPHABET))])
         auth_code_raw //= len(__STEAM_ALPHABET)
 
