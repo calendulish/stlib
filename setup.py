@@ -20,7 +20,7 @@ import os
 import sys
 from distutils.core import Extension, setup
 from distutils.sysconfig import get_python_lib
-from typing import Dict, List, Tuple
+from typing import List, Mapping, Tuple
 
 if sys.maxsize > 2 ** 32:
     arch = 64
@@ -49,14 +49,14 @@ else:
     sys.exit(1)
 
 
-def fix_runtime_path() -> Dict[str, str]:
+def fix_runtime_path() -> Mapping[str, str]:
     if os.name == 'posix':
         return {'runtime_library_dirs': get_python_lib()}
     else:
         return {}
 
 
-def include_extra_libraries() -> Dict[str, List[Tuple[str, List[str]]]]:
+def include_extra_libraries() -> Mapping[str, List[Tuple[str, List[str]]]]:
     if os.name == 'nt':
         library = [os.path.join(REDIST_PATH, f'{API_NAME}.dll')]
     else:
@@ -66,31 +66,31 @@ def include_extra_libraries() -> Dict[str, List[Tuple[str, List[str]]]]:
 
 
 steam_api = Extension(
-        'steam_api',
-        sources=[os.path.join('steam_api', 'steam_api.cpp')],
-        include_dirs=['steam_api', HEADERS_PATH],
-        library_dirs=[REDIST_PATH],
-        libraries=[API_NAME],
-        extra_compile_args=['-D_CRT_SECURE_NO_WARNINGS'],
-        **fix_runtime_path()
+    'steam_api',
+    sources=[os.path.join('steam_api', 'steam_api.cpp')],
+    include_dirs=['steam_api', HEADERS_PATH],
+    library_dirs=[REDIST_PATH],
+    libraries=[API_NAME],
+    extra_compile_args=['-D_CRT_SECURE_NO_WARNINGS'],
+    **fix_runtime_path()
 )
 
 setup(
-        name='stlib',
-        version='0.0.0-DEV',
-        description="Async library that provides features related to Steam client and compatible stuffs",
-        author='Lara Maia',
-        author_email='dev@lara.click',
-        url='http://github.com/ShyPixie/stlib',
-        license='GPL',
-        packages=['stlib'],
-        ext_modules=[steam_api],
-        requires=['aiodns',
-                  'aiohttp',
-                  'asyncio',
-                  'beautifulsoup4',
-                  'cchardet',
-                  'ujson',
-                  ],
-        **include_extra_libraries()
+    name='stlib',
+    version='0.0.0-DEV',
+    description="Async library that provides features related to Steam client and compatible stuffs",
+    author='Lara Maia',
+    author_email='dev@lara.click',
+    url='http://github.com/ShyPixie/stlib',
+    license='GPL',
+    packages=['stlib'],
+    ext_modules=[steam_api],
+    requires=['aiodns',
+              'aiohttp',
+              'asyncio',
+              'beautifulsoup4',
+              'cchardet',
+              'ujson',
+              ],
+    **include_extra_libraries()
 )

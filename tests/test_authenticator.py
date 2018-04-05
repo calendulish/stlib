@@ -23,16 +23,18 @@ import pytest
 
 from stlib import authenticator
 # noinspection PyUnresolvedReferences
-from tests import debug, event_loop
+from tests import MANUAL_TESTING, debug, event_loop, requires_steam_api
 
 
-# noinspection PyProtectedMember
 class TestAuthenticator:
-    adb = authenticator.AndroidDebugBridge(os.path.join('C:\\', 'platform-tools', 'adb.exe'),
-                                           '/data/data/com.valvesoftware.android.steam.community/')
+    # noinspection PySimplifyBooleanCheck
+    if MANUAL_TESTING == True:
+        adb = authenticator.AndroidDebugBridge(os.path.join('C:\\', 'platform-tools', 'adb.exe'),
+                                               '/data/data/com.valvesoftware.android.steam.community/')
 
+    @requires_steam_api
     @pytest.mark.asyncio
-    async def test__do_checks(self):
+    async def test__do_checks(self) -> None:
         for field in authenticator.Checks._fields:
             assert getattr(authenticator.CHECKS_RESULT, field) == False
 
@@ -43,20 +45,23 @@ class TestAuthenticator:
 
         debug(authenticator.CHECKS_RESULT)
 
+    @requires_steam_api
     @pytest.mark.asyncio
-    async def test__run(self):
+    async def test__run(self) -> None:
         result = await self.adb._run(['shell', 'echo', 'hello'])
         debug(f'process_return:{result}')
         assert result == 'hello'
 
+    @requires_steam_api
     @pytest.mark.asyncio
-    async def test__get_data(self):
+    async def test__get_data(self) -> None:
         result = await self.adb._get_data('shared_prefs/steam.uuid.xml')
         debug(f'data:{result}')
         assert isinstance(result, str)
 
+    @requires_steam_api
     @pytest.mark.asyncio
-    async def test_get_secret(self):
+    async def test_get_secret(self) -> None:
         tasks = [
             self.adb.get_secret('shared'),
             self.adb.get_secret('identity'),
@@ -70,8 +75,9 @@ class TestAuthenticator:
         assert isinstance(results[1], (str, bytes))
         assert isinstance(results[2], KeyError)
 
+    @requires_steam_api
     @pytest.mark.asyncio
-    async def test_get_code(self):
+    async def test_get_code(self) -> None:
         secret = await self.adb.get_secret('shared')
         code = authenticator.get_code(secret)
         debug(f'result:{code}')

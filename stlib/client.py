@@ -19,22 +19,30 @@
 import multiprocessing
 import os
 import steam_api
+import multiprocessing.connection
+from types import TracebackType
+from typing import Any, Callable, Optional, Type, TypeVar
 
+SteamApiExecutorType = TypeVar('SteamApiExecutorType', bound='SteamApiExecutor')
+PipeType = multiprocessing.connection.Connection
 
 class _CaptureSTD(object):
-    def __init__(self):
+    def __init__(self) -> None:
         self.old_descriptor = os.dup(1)
 
-    def __enter__(self):
+    def __enter__(self) -> None:
         new_descriptor = os.open(os.devnull, os.O_WRONLY)
         os.dup2(new_descriptor, 2)
 
-    def __exit__(self, exc_type, exc_value, traceback):
+    def __exit__(self,
+                 exception_type: Optional[Type[BaseException]],
+                 exception_value: Optional[Exception],
+                 traceback: Optional[TracebackType]) -> None:
         os.dup2(self.old_descriptor, 1)
 
 
 class SteamApiExecutor(multiprocessing.Process):
-    def __init__(self, game_id: int = 480):
+    def __init__(self: SteamApiExecutorType, game_id: int = 480) -> None:
         super().__init__()
         self.game_id = game_id
 
@@ -47,7 +55,7 @@ class SteamApiExecutor(multiprocessing.Process):
         self._interface_return, self.__child_interface_return = multiprocessing.Pipe(False)
         self._interface_exception, self.__child_interface_exception = multiprocessing.Pipe(False)
 
-    def __enter__(self):
+    def __enter__(self: SteamApiExecutorType) -> SteamApiExecutorType:
         result = self.init()
 
         if result is False:
@@ -55,11 +63,14 @@ class SteamApiExecutor(multiprocessing.Process):
 
         return self
 
-    def __exit__(self, exc_type, exc_value, traceback):
+    def __exit__(self: SteamApiExecutorType,
+                 exception_type: Optional[Type[BaseException]],
+                 exception_value: Optional[Exception],
+                 traceback: Optional[TracebackType]) -> None:
         self.shutdown()
 
     @staticmethod
-    def _wait_return(return_pipe, exception_pipe):
+    def _wait_return(return_pipe: PipeType, exception_pipe: PipeType) -> Any:
         if return_pipe.poll(timeout=5):
             return return_pipe.recv()
         else:
@@ -68,24 +79,24 @@ class SteamApiExecutor(multiprocessing.Process):
             else:
                 raise TimeoutError("No return from `Process' in SteamAppExecutor")
 
-    def init(self):
+    def init(self: SteamApiExecutorType) -> Any:
         self.exit_now.clear()
         self.start()
 
         return self._wait_return(self._init_return, self._init_exception)
 
-    def shutdown(self):
+    def shutdown(self: SteamApiExecutorType) -> None:
         steam_api.shutdown()
         self.exit_now.set()
         self.join(5)
-        self.close()
+        self.close() # type: ignore # https://github.com/python/typeshed/issues/2022
 
-    def call(self, method):
+    def call(self: SteamApiExecutorType, method: Callable[..., Any]) -> Any:
         self._interface.send(method)
 
         return self._wait_return(self._interface_return, self._interface_exception)
 
-    def run(self) -> None:
+    def run(self: SteamApiExecutorType) -> None:
         os.environ["SteamAppId"] = str(self.game_id)
 
         try:

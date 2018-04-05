@@ -1,10 +1,13 @@
 import steam_api
 
+import pytest
+
 from stlib import client
-from tests import debug
+from tests import debug, requires_steam_api
 
 
-def test_init():
+@requires_steam_api
+def test_init() -> None:
     debug('Instantiating Executor', wait_for=3)
     executor = client.SteamApiExecutor()
     debug('Running Init', wait_for=3)
@@ -15,7 +18,8 @@ def test_init():
     assert isinstance(result, bool)
 
 
-def test_steam_utils():
+@requires_steam_api
+def test_steam_utils() -> None:
     debug('Instantiating Executor', wait_for=3)
     with client.SteamApiExecutor() as executor:
         debug('Calling SteamUtils', wait_for=3)

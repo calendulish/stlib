@@ -21,14 +21,30 @@ import inspect
 import os
 import sys
 import time
+from typing import Generator, Optional
 
 import pytest
 
 MANUAL_TESTING = bool(os.environ.get('MANUAL_TESTING'))
 
 
+def steam_api_available() -> bool:
+    try:
+        import steam_api
+    except ModuleNotFoundError:
+        return False
+
+    try:
+        # noinspection PyStatementEffect
+        steam_api.init
+    except AttributeError:
+        return False
+
+    return True
+
+
 @pytest.fixture(autouse=True)
-def debug(msg: str = None, wait_for: int = 5):
+def debug(msg: Optional[str] = None, wait_for: int = 5) -> None:
     # noinspection PySimplifyBooleanCheck
     if MANUAL_TESTING == True:
         current_frame = inspect.currentframe()
@@ -48,18 +64,21 @@ def get_event_loop() -> asyncio.AbstractEventLoop:
 
 
 @pytest.yield_fixture(autouse=True)
-def event_loop():
-    """pytest-asyncio customization"""
+def event_loop() -> Generator[asyncio.AbstractEventLoop, None, None]:
     if sys.platform != "win32":
-        asyncio.set_event_loop(None)  # see https://github.com/pytest-dev/pytest-asyncio/issues/73
+        asyncio.set_event_loop(None) # type: ignore # see https://github.com/pytest-dev/pytest-asyncio/issues/73
     loop = get_event_loop()
     if sys.platform != "win32":
         # on UNIX we also need to attach the loop to the child watcher for asyncio.subprocess
         policy = asyncio.get_event_loop_policy()
-        watcher = asyncio.SafeChildWatcher()
+        watcher = asyncio.SafeChildWatcher() # type: ignore # undocumented?
         watcher.attach_loop(loop)
         policy.set_child_watcher(watcher)
     try:
         yield loop
     finally:
         loop.close()
+
+
+requires_steam_api = pytest.mark.skipif(steam_api_available() == False,
+                                        reason="steam_api is not available in currently environment")
