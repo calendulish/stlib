@@ -77,7 +77,7 @@ class SteamApiExecutor(multiprocessing.Process):
             if exception_pipe.poll():
                 raise exception_pipe.recv()
             else:
-                raise TimeoutError("No return from `Process' in SteamAppExecutor")
+                raise multiprocessing.TimeoutError("No return from `Process' in SteamAppExecutor")
 
     def init(self: SteamApiExecutorType) -> Any:
         self.exit_now.clear()
