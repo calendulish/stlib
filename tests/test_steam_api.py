@@ -16,22 +16,21 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 
-import os
 import steam_api
 
-import pytest
+from tests import requires_steam_api
 
-from tests import steam_api_available
 
-@pytest.mark.skipif(steam_api_available() == False,
-                    reason="steam_api is not available in currently environment")
 class TestSteamAPI:
+    @requires_steam_api
     def test__init(self):
         assert isinstance(steam_api.init(), bool)
 
+    @requires_steam_api
     def test__is_steam_running(self):
         assert isinstance(steam_api._is_steam_running(), bool)
 
+    @requires_steam_api
     def test_shutdown(self):
         steam_api.shutdown()
         assert True  # if shutdown doesn't throw an exception, it's ok

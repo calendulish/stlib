@@ -23,15 +23,16 @@ import pytest
 
 from stlib import authenticator
 # noinspection PyUnresolvedReferences
-from tests import MANUAL_TESTING, debug, event_loop, steam_api_available
+from tests import MANUAL_TESTING, debug, event_loop, requires_steam_api
 
 
-@pytest.mark.skipif(MANUAL_TESTING != True,
-                    reason="Impossible to test without secrets")
 class TestAuthenticator:
-    adb = authenticator.AndroidDebugBridge(os.path.join('C:\\', 'platform-tools', 'adb.exe'),
-                                           '/data/data/com.valvesoftware.android.steam.community/')
+    # noinspection PySimplifyBooleanCheck
+    if MANUAL_TESTING == True:
+        adb = authenticator.AndroidDebugBridge(os.path.join('C:\\', 'platform-tools', 'adb.exe'),
+                                               '/data/data/com.valvesoftware.android.steam.community/')
 
+    @requires_steam_api
     @pytest.mark.asyncio
     async def test__do_checks(self):
         for field in authenticator.Checks._fields:
@@ -44,18 +45,21 @@ class TestAuthenticator:
 
         debug(authenticator.CHECKS_RESULT)
 
+    @requires_steam_api
     @pytest.mark.asyncio
     async def test__run(self):
         result = await self.adb._run(['shell', 'echo', 'hello'])
         debug(f'process_return:{result}')
         assert result == 'hello'
 
+    @requires_steam_api
     @pytest.mark.asyncio
     async def test__get_data(self):
         result = await self.adb._get_data('shared_prefs/steam.uuid.xml')
         debug(f'data:{result}')
         assert isinstance(result, str)
 
+    @requires_steam_api
     @pytest.mark.asyncio
     async def test_get_secret(self):
         tasks = [
@@ -71,8 +75,7 @@ class TestAuthenticator:
         assert isinstance(results[1], (str, bytes))
         assert isinstance(results[2], KeyError)
 
-    @pytest.mark.skipif(steam_api_available() == False,
-                        reason="steam_api is not available in currently environment")
+    @requires_steam_api
     @pytest.mark.asyncio
     async def test_get_code(self):
         secret = await self.adb.get_secret('shared')

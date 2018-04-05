@@ -41,6 +41,7 @@ def steam_api_available() -> bool:
 
     return True
 
+
 @pytest.fixture(autouse=True)
 def debug(msg: str = None, wait_for: int = 5):
     # noinspection PySimplifyBooleanCheck
@@ -77,3 +78,7 @@ def event_loop():
         yield loop
     finally:
         loop.close()
+
+
+requires_steam_api = pytest.mark.skipif(steam_api_available() == False,
+                                        reason="steam_api is not available in currently environment")
