@@ -18,7 +18,6 @@
 
 import asyncio
 import base64
-import codecs
 import hashlib
 import hmac
 import logging
@@ -28,7 +27,7 @@ import subprocess
 import ujson
 from collections import namedtuple
 from concurrent.futures import ALL_COMPLETED
-from typing import List, Tuple, Union
+from typing import Any, List, Tuple, Union
 
 from stlib import client
 
@@ -49,15 +48,15 @@ class AndroidDebugBridge(object):
         if not os.path.isfile(adb_path):
             raise FileNotFoundError('Unable to find adb.')
 
-    async def __do_check(self, parameters: List[str]):
+    async def __do_check(self, parameters: List[str]) -> bool:
         try:
-            result = await self._run(parameters)
+            await self._run(parameters)
         except subprocess.CalledProcessError as exception:
             return False
         else:
             return True
 
-    async def _do_checks(self):
+    async def _do_checks(self) -> None:
         global CHECKS_RESULT
 
         tasks = [
@@ -83,7 +82,7 @@ class AndroidDebugBridge(object):
                 elif field == 'guard_enabled':
                     raise AttributeError('Steam Guard is not enabled')
 
-    async def _run(self, params: list) -> str:
+    async def _run(self, params: List[Any]) -> str:
         process = await asyncio.create_subprocess_exec(
             self.adb_path,
             *params,
@@ -98,7 +97,7 @@ class AndroidDebugBridge(object):
 
         return stdout.decode().rstrip()
 
-    async def _get_data(self, path: str):
+    async def _get_data(self, path: str) -> str:
         await self._do_checks()
 
         data = await self._run([
@@ -111,14 +110,14 @@ class AndroidDebugBridge(object):
 
         return data
 
-    async def get_secret(self, type_: str) -> Union[str, bytes]:
+    async def get_secret(self, type_: str) -> Any:
         data = await self._get_data('files/Steamguard-*')
         secret = ujson.loads(data)[f'{type_}_secret']
 
         return secret
 
 
-def get_code(shared_secret: Union[str, bytes]) -> Tuple[List[Union[str, int]], int]:
+def get_code(shared_secret: Union[str, bytes]) -> Tuple[List[str], int]:
     with client.SteamApiExecutor() as executor:
         steam_utils = executor.call(steam_api.SteamUtils)
         server_time = executor.call(steam_utils.get_server_time)
@@ -129,11 +128,11 @@ def get_code(shared_secret: Union[str, bytes]) -> Tuple[List[Union[str, int]], i
     digest = auth.digest()
     start = digest[19] & 0xF
     code = digest[start:start + 4]
-    auth_code_raw = int(codecs.encode(code, 'hex'), 16) & 0x7FFFFFFF
+    auth_code_raw = int.from_bytes(code, byteorder='big') & 0x7FFFFFFF
 
     auth_code = []
     for i in range(5):
         auth_code.append(__STEAM_ALPHABET[int(auth_code_raw % len(__STEAM_ALPHABET))])
-        auth_code_raw /= len(__STEAM_ALPHABET)
+        auth_code_raw //= len(__STEAM_ALPHABET)
 
     return auth_code, server_time

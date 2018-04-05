@@ -7,7 +7,7 @@ from tests import debug, requires_steam_api
 
 
 @requires_steam_api
-def test_init():
+def test_init() -> None:
     debug('Instantiating Executor', wait_for=3)
     executor = client.SteamApiExecutor()
     debug('Running Init', wait_for=3)
@@ -19,7 +19,7 @@ def test_init():
 
 
 @requires_steam_api
-def test_steam_utils():
+def test_steam_utils() -> None:
     debug('Instantiating Executor', wait_for=3)
     with client.SteamApiExecutor() as executor:
         debug('Calling SteamUtils', wait_for=3)

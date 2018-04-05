@@ -34,7 +34,7 @@ class TestAuthenticator:
 
     @requires_steam_api
     @pytest.mark.asyncio
-    async def test__do_checks(self):
+    async def test__do_checks(self) -> None:
         for field in authenticator.Checks._fields:
             assert getattr(authenticator.CHECKS_RESULT, field) == False
 
@@ -47,21 +47,21 @@ class TestAuthenticator:
 
     @requires_steam_api
     @pytest.mark.asyncio
-    async def test__run(self):
+    async def test__run(self) -> None:
         result = await self.adb._run(['shell', 'echo', 'hello'])
         debug(f'process_return:{result}')
         assert result == 'hello'
 
     @requires_steam_api
     @pytest.mark.asyncio
-    async def test__get_data(self):
+    async def test__get_data(self) -> None:
         result = await self.adb._get_data('shared_prefs/steam.uuid.xml')
         debug(f'data:{result}')
         assert isinstance(result, str)
 
     @requires_steam_api
     @pytest.mark.asyncio
-    async def test_get_secret(self):
+    async def test_get_secret(self) -> None:
         tasks = [
             self.adb.get_secret('shared'),
             self.adb.get_secret('identity'),
@@ -77,7 +77,7 @@ class TestAuthenticator:
 
     @requires_steam_api
     @pytest.mark.asyncio
-    async def test_get_code(self):
+    async def test_get_code(self) -> None:
         secret = await self.adb.get_secret('shared')
         code = authenticator.get_code(secret)
         debug(f'result:{code}')

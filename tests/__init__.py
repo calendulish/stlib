@@ -21,6 +21,7 @@ import inspect
 import os
 import sys
 import time
+from typing import Generator, Optional
 
 import pytest
 
@@ -43,7 +44,7 @@ def steam_api_available() -> bool:
 
 
 @pytest.fixture(autouse=True)
-def debug(msg: str = None, wait_for: int = 5):
+def debug(msg: Optional[str] = None, wait_for: int = 5) -> None:
     # noinspection PySimplifyBooleanCheck
     if MANUAL_TESTING == True:
         current_frame = inspect.currentframe()
@@ -63,8 +64,7 @@ def get_event_loop() -> asyncio.AbstractEventLoop:
 
 
 @pytest.yield_fixture(autouse=True)
-def event_loop():
-    """pytest-asyncio customization"""
+def event_loop() -> Generator[asyncio.AbstractEventLoop, None, None]:
     if sys.platform != "win32":
         asyncio.set_event_loop(None)  # see https://github.com/pytest-dev/pytest-asyncio/issues/73
     loop = get_event_loop()
