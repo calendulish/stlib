@@ -66,12 +66,12 @@ def get_event_loop() -> asyncio.AbstractEventLoop:
 @pytest.yield_fixture(autouse=True)
 def event_loop() -> Generator[asyncio.AbstractEventLoop, None, None]:
     if sys.platform != "win32":
-        asyncio.set_event_loop(None)  # see https://github.com/pytest-dev/pytest-asyncio/issues/73
+        asyncio.set_event_loop(None) # type: ignore # see https://github.com/pytest-dev/pytest-asyncio/issues/73
     loop = get_event_loop()
     if sys.platform != "win32":
         # on UNIX we also need to attach the loop to the child watcher for asyncio.subprocess
         policy = asyncio.get_event_loop_policy()
-        watcher = asyncio.SafeChildWatcher()
+        watcher = asyncio.SafeChildWatcher() # type: ignore # undocumented?
         watcher.attach_loop(loop)
         policy.set_child_watcher(watcher)
     try:

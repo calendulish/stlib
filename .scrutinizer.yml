@@ -16,7 +16,7 @@ build:
             # Project depends
             - pip install aiodns cchardet ujson aiohttp asyncio beautifulsoup4
             # Coverage depends
-            - pip install pylint>=1.8.1 mypy lxml coverage pytest pytest-cov
+            - pip install pylint>=1.8.1 mypy>=0.580 lxml coverage pytest pytest-cov
 
     project_setup:
         override:
