@@ -26,7 +26,7 @@ build:
     tests:
         override:
             - py-scrutinizer-run
-            - command: pylint-run stlib
+            - command: pylint-run stlib --rcfile=pylintrc
             - command: mypy tests
             - command: py.test --cov=stlib tests
               coverage:
