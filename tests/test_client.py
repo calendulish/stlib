@@ -1,7 +1,5 @@
 import steam_api
 
-import pytest
-
 from stlib import client
 from tests import debug, requires_steam_api
 

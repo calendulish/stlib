@@ -22,7 +22,6 @@ import hashlib
 import hmac
 import logging
 import os
-import steam_api
 import subprocess
 import ujson
 from collections import namedtuple

@@ -19,19 +19,20 @@
 import multiprocessing
 import os
 import steam_api
-import multiprocessing.connection
+from multiprocessing import connection
 from types import TracebackType
 from typing import Any, Callable, Optional, Type, TypeVar
 
 SteamApiExecutorType = TypeVar('SteamApiExecutorType', bound='SteamApiExecutor')
-PipeType = multiprocessing.connection.Connection
+PipeType = connection.Connection
+
 
 class _CaptureSTD(object):
     def __init__(self) -> None:
         self.old_descriptor = os.dup(1)
 
     def __enter__(self) -> None:
-        new_descriptor = os.open(os.devnull, os.O_WRONLY)
+        new_descriptor = os.open(os.path.devnull, os.O_WRONLY)
         os.dup2(new_descriptor, 2)
 
     def __exit__(self,
@@ -48,7 +49,7 @@ class SteamGameServer(object):
         if result is False:
             raise AttributeError("Unable to initialize SteamGameServer")
 
-    def __enter__(self):
+    def __enter__(self) -> Any:
         return steam_api.SteamGameServer()
 
     def __exit__(self,
@@ -106,7 +107,7 @@ class SteamApiExecutor(multiprocessing.Process):
         steam_api.shutdown()
         self.exit_now.set()
         self.join(5)
-        self.close() # type: ignore # https://github.com/python/typeshed/issues/2022
+        self.close()  # type: ignore # https://github.com/python/typeshed/issues/2022
 
     def call(self: SteamApiExecutorType, method: Callable[..., Any]) -> Any:
         self._interface.send(method)
