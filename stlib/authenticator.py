@@ -118,9 +118,8 @@ class AndroidDebugBridge(object):
 
 
 def get_code(shared_secret: Union[str, bytes]) -> Tuple[List[str], int]:
-    with client.SteamApiExecutor() as executor:
-        steam_utils = executor.call(steam_api.SteamUtils)
-        server_time = executor.call(steam_utils.get_server_time)
+    with client.SteamGameServer() as server:
+        server_time = server.get_server_time()
 
     msg = int(server_time / 30).to_bytes(8, 'big')
     key = base64.b64decode(shared_secret)
