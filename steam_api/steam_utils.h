@@ -43,20 +43,20 @@ static int SteamUtils_init(SteamUtils_Object *self, PyObject *args, PyObject *kw
 }
 
 static PyMethodDef SteamUtils_methods[] = {
-        {"get_server_time", (PyCFunction) SteamUtils_get_server_real_time, METH_NOARGS, NULL},
-        {NULL},
+    {"get_server_time", (PyCFunction) SteamUtils_get_server_real_time, METH_NOARGS, NULL},
+    {NULL},
 };
 
 static PyTypeObject SteamUtilsType = {
-        PyObject_HEAD_INIT(NULL)
-        "steam_api.SteamUtils",
-        sizeof(SteamUtils_Object),
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
-        0, 0, 0, 0, 0, 0, 0,
-        SteamUtils_methods,
-        0, 0, 0, 0, 0, 0, 0,
-        (initproc)SteamUtils_init,
-        0,
-        PyType_GenericNew,
+    PyObject_HEAD_INIT(NULL)
+    "steam_api.SteamUtils",
+    sizeof(SteamUtils_Object),
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    0, 0, 0, 0, 0, 0, 0,
+    SteamUtils_methods,
+    0, 0, 0, 0, 0, 0, 0,
+    (initproc)SteamUtils_init,
+    0,
+    PyType_GenericNew,
 };
