@@ -41,6 +41,23 @@ class _CaptureSTD(object):
         os.dup2(self.old_descriptor, 1)
 
 
+class SteamGameServer(object):
+    def __init__(self, ip: int = 0, steam_port: int = 0, game_port: int = 0) -> None:
+        result = steam_api.server_init(ip, steam_port, game_port)
+
+        if result is False:
+            raise AttributeError("Unable to initialize SteamGameServer")
+
+    def __enter__(self):
+        return steam_api.SteamGameServer()
+
+    def __exit__(self,
+                 exception_type: Optional[Type[BaseException]],
+                 exception_value: Optional[Exception],
+                 traceback: Optional[TracebackType]) -> None:
+        steam_api.server_shutdown()
+
+
 class SteamApiExecutor(multiprocessing.Process):
     def __init__(self: SteamApiExecutorType, game_id: int = 480) -> None:
         super().__init__()
