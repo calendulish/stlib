@@ -17,46 +17,54 @@
 
 #include <Python.h>
 #include "steam/steam_api.h"
+#include "steam/steam_gameserver.h"
 
 typedef struct {
     PyObject_HEAD
-} SteamUtils_Object;
+} SteamGameServer_Object;
 
-static PyObject *SteamUtils_get_server_real_time(SteamUtils_Object *self) {
-    unsigned int result = SteamUtils()->GetServerRealTime();
+static PyObject *SteamGameServer_get_server_real_time(SteamGameServer_Object *self) {
+    unsigned int result = SteamGameServerUtils()->GetServerRealTime();
 
     return PyLong_FromUnsignedLong(result);
 }
 
-static int SteamUtils_init(SteamUtils_Object *self, PyObject *args, PyObject *kwds) {
+static PyObject *SteamGameServer_log_on_anonymous(SteamGameServer_Object *self) {
+    SteamGameServer()->LogOnAnonymous();
+
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
+static int SteamGameServer_init(SteamGameServer_Object *self, PyObject *args, PyObject *kwds) {
     if (!SteamAPI_IsSteamRunning()) {
         PyErr_SetString(PyExc_ProcessLookupError, "Steam is not running");
         return -1;
     }
 
-    if (!SteamUtils()) {
-        PyErr_SetString(PyExc_AttributeError, "Interface pointers for SteamUtils is not populated");
+    if (!SteamGameServer()) {
+        PyErr_SetString(PyExc_AttributeError, "Interface pointers for SteamGameServer is not populated");
         return -1;
     }
 
     return 0;
 }
 
-static PyMethodDef SteamUtils_methods[] = {
-    {"get_server_time", (PyCFunction) SteamUtils_get_server_real_time, METH_NOARGS, NULL},
+static PyMethodDef SteamGameServer_methods[] = {
+    {"get_server_time", (PyCFunction) SteamGameServer_get_server_real_time, METH_NOARGS, NULL},
     {NULL},
 };
 
-static PyTypeObject SteamUtilsType = {
+static PyTypeObject SteamGameServerType = {
     PyObject_HEAD_INIT(NULL)
-    "steam_api.SteamUtils",
-    sizeof(SteamUtils_Object),
+    "steam_api.SteamGameServer",
+    sizeof(SteamGameServer_Object),
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
     0, 0, 0, 0, 0, 0, 0,
-    SteamUtils_methods,
+    SteamGameServer_methods,
     0, 0, 0, 0, 0, 0, 0,
-    (initproc)SteamUtils_init,
+    (initproc)SteamGameServer_init,
     0,
     PyType_GenericNew,
 };

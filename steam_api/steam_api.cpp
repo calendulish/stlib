@@ -16,8 +16,45 @@
 */
 
 #include <Python.h>
-#include <steam_api.h>
-#include <steam_utils.h>
+
+// Steam Public API
+#include "steam/steam_api.h"
+#include "steam/steam_gameserver.h"
+
+// Python Extensions
+#include "steam_utils.h"
+#include "steam_gameserver.h"
+
+static PyObject *server_shutdown(PyObject *self, PyObject *args) {
+    SteamGameServer_Shutdown();
+
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
+static PyObject *server_init(PyObject *self, PyObject *args) {
+    if (!SteamAPI_IsSteamRunning()) {
+        PyErr_SetString(PyExc_ProcessLookupError, "Steam is not running");
+        return NULL;
+    }
+
+    uint32 ip;
+    uint16 steam_port;
+    uint16 game_port;
+    uint16 query_port = MASTERSERVERUPDATERPORT_USEGAMESOCKETSHARE;
+    EServerMode server_mode = eServerModeNoAuthentication;
+    const char *version_string = STEAMGAMESERVER_INTERFACE_VERSION;
+
+    if (!PyArg_ParseTuple(args, "lii|iss", &ip, &steam_port, &game_port, &query_port, &server_mode, &version_string)
+        ) {
+        PyErr_SetString(PyExc_TypeError, "server_init missing required positional arguments");
+        return NULL;
+    }
+
+    bool result = SteamGameServer_Init(ip, steam_port, game_port, query_port, server_mode, version_string);
+
+    return PyLong_FromLong(result);
+}
 
 static PyObject *shutdown(PyObject *self, PyObject *args) {
     SteamAPI_Shutdown();
@@ -44,10 +81,12 @@ static PyObject *init(PyObject *self, PyObject *args) {
 }
 
 static PyMethodDef steam_api_methods[] = {
-    {"init",              init,             METH_NOARGS, NULL},
-    {"_is_steam_running", is_steam_running, METH_NOARGS, NULL},
-    {"shutdown",          shutdown,         METH_NOARGS, NULL},
-    {NULL,                NULL,             0,           NULL},
+    {"init",              init,             METH_NOARGS,  NULL},
+    {"server_init",       server_init,      METH_VARARGS, NULL},
+    {"_is_steam_running", is_steam_running, METH_NOARGS,  NULL},
+    {"shutdown",          shutdown,         METH_NOARGS,  NULL},
+    {"server_shutdown",   server_shutdown,  METH_NOARGS,  NULL},
+    {NULL,                NULL,             0,            NULL},
 };
 
 static struct PyModuleDef moduledef = {
@@ -66,6 +105,11 @@ PyMODINIT_FUNC PyInit_steam_api(void) {
         return NULL;
     }
 
+    if (PyType_Ready(&SteamGameServerType) < 0) {
+        PyErr_SetString(PyExc_AttributeError, "Unable to initialize SteamGameServer");
+        return NULL;
+    }
+
     module = PyModule_Create(&moduledef);
 
     if (module == NULL) {
@@ -75,6 +119,7 @@ PyMODINIT_FUNC PyInit_steam_api(void) {
 
     Py_INCREF(&SteamUtilsType);
     PyModule_AddObject(module, "SteamUtils", (PyObject * ) & SteamUtilsType);
+    PyModule_AddObject(module, "SteamGameServer", (PyObject * ) & SteamGameServerType);
 
     return module;
 }

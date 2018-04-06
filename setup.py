@@ -28,7 +28,7 @@ else:
     arch = 32
 
 SDK_PATH = os.path.join('steam_api', 'steamworks_sdk')
-HEADERS_PATH = os.path.join(SDK_PATH, 'public', 'steam')
+HEADERS_PATH = os.path.join(SDK_PATH, 'public')
 
 if os.name == 'nt':
     if arch == 64:
