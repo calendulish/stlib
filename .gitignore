@@ -5,7 +5,7 @@ release
 venv
 __pycache__
 *.pyc
-steam_api/steamworks_sdk
-steam_api/cmake-build-debug
+steamworks_sdk
+cmake-build-debug
 .mypy_cache
 .coverage

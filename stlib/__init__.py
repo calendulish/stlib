@@ -18,4 +18,4 @@
 
 # Prevent bad practices
 # noinspection PyUnresolvedReferences
-__all__ = ["\rImportError: 'STOP!!! IT'S WEIRD, UGLY, AND WRONG!!!"]
+__all__ = ["steam_api", "\rImportError: 'STOP!!! IT'S WEIRD, UGLY, AND WRONG!!!"]

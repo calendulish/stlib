@@ -1,6 +1,4 @@
-import steam_api
-
-from stlib import client
+from stlib import steam_api, client
 from tests import debug, requires_steam_api
 
 

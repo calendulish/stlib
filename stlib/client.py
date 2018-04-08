@@ -18,10 +18,11 @@
 
 import multiprocessing
 import os
-import steam_api
 from multiprocessing import connection
 from types import TracebackType
 from typing import Any, Callable, Optional, Type, TypeVar
+
+from stlib import steam_api  # type: ignore
 
 SteamApiExecutorType = TypeVar('SteamApiExecutorType', bound='SteamApiExecutor')
 PipeType = connection.Connection

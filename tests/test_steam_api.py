@@ -16,8 +16,7 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 
-import steam_api
-
+from stlib import steam_api
 from tests import requires_steam_api
 
 

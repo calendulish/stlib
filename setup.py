@@ -27,7 +27,9 @@ if sys.maxsize > 2 ** 32:
 else:
     arch = 32
 
-SDK_PATH = os.path.join('steam_api', 'steamworks_sdk')
+PACKAGE_PATH = os.path.join(get_python_lib(), 'stlib')
+SOURCES_PATH = os.path.join('stlib', 'steam_api')
+SDK_PATH = os.path.join(SOURCES_PATH, 'steamworks_sdk')
 HEADERS_PATH = os.path.join(SDK_PATH, 'public')
 
 if os.name == 'nt':
@@ -51,7 +53,7 @@ else:
 
 def fix_runtime_path() -> Mapping[str, str]:
     if os.name == 'posix':
-        return {'runtime_library_dirs': get_python_lib()}
+        return {'runtime_library_dirs': PACKAGE_PATH}
     else:
         return {}
 
@@ -62,13 +64,13 @@ def include_extra_libraries() -> Mapping[str, List[Tuple[str, List[str]]]]:
     else:
         library = [os.path.join(REDIST_PATH, f'{API_NAME}.so')]
 
-    return {'data_files': [(get_python_lib(), library)]}
+    return {'data_files': [(PACKAGE_PATH, library)]}
 
 
 steam_api = Extension(
-    'steam_api',
-    sources=[os.path.join('steam_api', 'steam_api.cpp')],
-    include_dirs=['steam_api', HEADERS_PATH],
+    'stlib.steam_api',
+    sources=[os.path.join(SOURCES_PATH, 'steam_api.cpp')],
+    include_dirs=[SOURCES_PATH, HEADERS_PATH],
     library_dirs=[REDIST_PATH],
     libraries=[API_NAME],
     extra_compile_args=['-D_CRT_SECURE_NO_WARNINGS'],

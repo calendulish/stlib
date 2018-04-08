@@ -30,8 +30,8 @@ MANUAL_TESTING = bool(os.environ.get('MANUAL_TESTING'))
 
 def steam_api_available() -> bool:
     try:
-        import steam_api
-    except ModuleNotFoundError:
+        from stlib import steam_api  # type: ignore
+    except ImportError:
         return False
 
     try:
