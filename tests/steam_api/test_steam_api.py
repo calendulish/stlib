@@ -17,9 +17,11 @@
 #
 
 from stlib import steam_api
+from tests import requires_manual_testing
 
 
 class TestSteamAPI:
+    @requires_manual_testing
     def test__init(self) -> None:
         assert isinstance(steam_api.init(), bool)
 
