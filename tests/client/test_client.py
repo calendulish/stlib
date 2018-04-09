@@ -1,8 +1,9 @@
-from stlib import steam_api, client
-from tests import debug, requires_steam_api
+from stlib import client, steam_api
+
+from tests import debug, requires_manual_testing
 
 
-@requires_steam_api
+@requires_manual_testing
 def test_init() -> None:
     debug('Instantiating Executor', wait_for=3)
     executor = client.SteamApiExecutor()
@@ -14,7 +15,7 @@ def test_init() -> None:
     assert isinstance(result, bool)
 
 
-@requires_steam_api
+@requires_manual_testing
 def test_steam_utils() -> None:
     debug('Instantiating Executor', wait_for=3)
     with client.SteamApiExecutor() as executor:

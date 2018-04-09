@@ -10,6 +10,8 @@ filter:
 build:
     environment:
         python: '3.6'
+        postgresql: false
+        redis: false
 
     dependencies:
         override:
@@ -19,15 +21,26 @@ build:
             - pip install pylint>=1.8.1 mypy>=0.580 lxml coverage pytest pytest-cov
 
     project_setup:
+        before:
+            - command: cd src/steam_api
+            - command: image_id=$(docker create shypixie/steamworks_sdk)
+            - command: docker cp $image_id:steamworks_sdk - > steamworks.tar.gz
+            - command: tar xfv steamworks.tar.gz
+            - command: cd ../..
         override:
-            - python setup.py build_py
-            - command: python setup.py install_lib --skip-build
+            - python setup.py build
+            - command: python setup.py install
 
     tests:
         override:
             - py-scrutinizer-run
             - command: pylint-run stlib --rcfile=pylintrc
-            - command: mypy tests
+            - command: mypy tests --linecoverage-report mypy.report
+            - command: echo -n "!coverage.py: This is a private format, don't read it directly!">.mypy_coverage
+            - command: cat mypy.report/coverage.json>>.mypy_coverage
+              coverage:
+                  file: '.mypy_coverage'
+                  format: 'py-cc'
             - command: py.test --cov=stlib tests
               coverage:
                   file: '.coverage'

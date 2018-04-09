@@ -9,3 +9,4 @@ steamworks_sdk
 cmake-build-debug
 .mypy_cache
 .coverage
+install_test

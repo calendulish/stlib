@@ -25,22 +25,7 @@ from typing import Generator, Optional
 
 import pytest
 
-MANUAL_TESTING = bool(os.environ.get('MANUAL_TESTING'))
-
-
-def steam_api_available() -> bool:
-    try:
-        from stlib import steam_api  # type: ignore
-    except ImportError:
-        return False
-
-    try:
-        # noinspection PyStatementEffect
-        steam_api.init
-    except AttributeError:
-        return False
-
-    return True
+MANUAL_TESTING = int(os.environ.get('MANUAL_TESTING', 0))
 
 
 @pytest.fixture(autouse=True)
@@ -80,5 +65,5 @@ def event_loop() -> Generator[asyncio.AbstractEventLoop, None, None]:
         loop.close()
 
 
-requires_steam_api = pytest.mark.skipif(steam_api_available() == False,
-                                        reason="steam_api is not available in currently environment")
+requires_manual_testing = pytest.mark.skipif(MANUAL_TESTING == False,
+                                             reason="This test can't run without MANUAL_TESTING")

@@ -28,7 +28,7 @@ else:
     arch = 32
 
 PACKAGE_PATH = os.path.join(get_python_lib(), 'stlib')
-SOURCES_PATH = os.path.join('stlib', 'steam_api')
+SOURCES_PATH = os.path.join('src', 'steam_api')
 SDK_PATH = os.path.join(SOURCES_PATH, 'steamworks_sdk')
 HEADERS_PATH = os.path.join(SDK_PATH, 'public')
 
@@ -40,7 +40,7 @@ if os.name == 'nt':
         REDIST_PATH = os.path.join(SDK_PATH, 'redistributable_bin')
         API_NAME = 'steam_api'
 elif os.name == 'posix':
-    API_NAME = 'libsteam_api'
+    API_NAME = 'steam_api'
 
     if arch == 64:
         REDIST_PATH = os.path.join(SDK_PATH, 'redistributable_bin', 'linux64')
@@ -51,9 +51,9 @@ else:
     sys.exit(1)
 
 
-def fix_runtime_path() -> Mapping[str, str]:
+def fix_runtime_path() -> Mapping[str, List[str]]:
     if os.name == 'posix':
-        return {'runtime_library_dirs': PACKAGE_PATH}
+        return {'runtime_library_dirs': [PACKAGE_PATH]}
     else:
         return {}
 
@@ -62,7 +62,7 @@ def include_extra_libraries() -> Mapping[str, List[Tuple[str, List[str]]]]:
     if os.name == 'nt':
         library = [os.path.join(REDIST_PATH, f'{API_NAME}.dll')]
     else:
-        library = [os.path.join(REDIST_PATH, f'{API_NAME}.so')]
+        library = [os.path.join(REDIST_PATH, f'lib{API_NAME}.so')]
 
     return {'data_files': [(PACKAGE_PATH, library)]}
 
@@ -86,6 +86,7 @@ setup(
     url='http://github.com/ShyPixie/stlib',
     license='GPL',
     packages=['stlib'],
+    package_dir={'stlib': 'src'},
     ext_modules=[steam_api],
     requires=['aiodns',
               'aiohttp',
