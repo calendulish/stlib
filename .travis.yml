@@ -12,7 +12,7 @@ install:
     - pip install aiodns cchardet ujson aiohttp asyncio beautifulsoup4
 
 before_script:
-    - cd stlib/steam_api
+    - cd src/steam_api
     - docker login -u shypixie -p $DOCKER_SECRET
     - image_id=$(docker create shypixie/steamworks_sdk)
     - docker cp $image_id:steamworks_sdk - > steamworks.tar.gz
