@@ -25,7 +25,7 @@ from typing import Generator, Optional
 
 import pytest
 
-MANUAL_TESTING = int(os.environ.get('MANUAL_TESTING'))
+MANUAL_TESTING = int(os.environ.get('MANUAL_TESTING', 0))
 
 
 @pytest.fixture(autouse=True)
