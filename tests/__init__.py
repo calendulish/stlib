@@ -28,21 +28,6 @@ import pytest
 MANUAL_TESTING = bool(os.environ.get('MANUAL_TESTING'))
 
 
-def steam_api_available() -> bool:
-    try:
-        from stlib import steam_api  # type: ignore
-    except ImportError:
-        return False
-
-    try:
-        # noinspection PyStatementEffect
-        steam_api.init
-    except AttributeError:
-        return False
-
-    return True
-
-
 @pytest.fixture(autouse=True)
 def debug(msg: Optional[str] = None, wait_for: int = 5) -> None:
     # noinspection PySimplifyBooleanCheck
@@ -78,7 +63,3 @@ def event_loop() -> Generator[asyncio.AbstractEventLoop, None, None]:
         yield loop
     finally:
         loop.close()
-
-
-requires_steam_api = pytest.mark.skipif(steam_api_available() == False,
-                                        reason="steam_api is not available in currently environment")

@@ -17,19 +17,15 @@
 #
 
 from stlib import steam_api
-from tests import requires_steam_api
 
 
 class TestSteamAPI:
-    @requires_steam_api
     def test__init(self) -> None:
         assert isinstance(steam_api.init(), bool)
 
-    @requires_steam_api
     def test__is_steam_running(self) -> None:
         assert isinstance(steam_api._is_steam_running(), bool)
 
-    @requires_steam_api
     def test_shutdown(self) -> None:
         steam_api.shutdown()
         assert True  # if shutdown doesn't throw an exception, it's ok
