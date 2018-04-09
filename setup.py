@@ -28,7 +28,7 @@ else:
     arch = 32
 
 PACKAGE_PATH = os.path.join(get_python_lib(), 'stlib')
-SOURCES_PATH = os.path.join('stlib', 'steam_api')
+SOURCES_PATH = os.path.join('src', 'steam_api')
 SDK_PATH = os.path.join(SOURCES_PATH, 'steamworks_sdk')
 HEADERS_PATH = os.path.join(SDK_PATH, 'public')
 
@@ -93,6 +93,7 @@ setup(
     url='http://github.com/ShyPixie/stlib',
     license='GPL',
     packages=['stlib'],
+    package_dir={'stlib': 'src'},
     ext_modules=[steam_api],
     requires=['aiodns',
               'aiohttp',
