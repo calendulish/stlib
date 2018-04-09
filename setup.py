@@ -40,7 +40,7 @@ if os.name == 'nt':
         REDIST_PATH = os.path.join(SDK_PATH, 'redistributable_bin')
         API_NAME = 'steam_api'
 elif os.name == 'posix':
-    API_NAME = 'libsteam_api'
+    API_NAME = 'steam_api'
 
     if arch == 64:
         REDIST_PATH = os.path.join(SDK_PATH, 'redistributable_bin', 'linux64')
@@ -62,7 +62,7 @@ def include_extra_libraries() -> Mapping[str, List[Tuple[str, List[str]]]]:
     if os.name == 'nt':
         library = [os.path.join(REDIST_PATH, f'{API_NAME}.dll')]
     else:
-        library = [os.path.join(REDIST_PATH, f'{API_NAME}.so')]
+        library = [os.path.join(REDIST_PATH, f'lib{API_NAME}.so')]
 
     return {'data_files': [(PACKAGE_PATH, library)]}
 
