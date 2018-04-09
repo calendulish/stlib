@@ -58,13 +58,6 @@ def fix_runtime_path() -> Mapping[str, List[str]]:
         return {}
 
 
-def fix_linker() -> Mapping[str, List[str]]:
-    if os.name == 'nt':
-        return {'libraries': [API_NAME]}
-    else:
-        return {}
-
-
 def include_extra_libraries() -> Mapping[str, List[Tuple[str, List[str]]]]:
     if os.name == 'nt':
         library = [os.path.join(REDIST_PATH, f'{API_NAME}.dll')]
@@ -79,9 +72,9 @@ steam_api = Extension(
     sources=[os.path.join(SOURCES_PATH, 'steam_api.cpp')],
     include_dirs=[SOURCES_PATH, HEADERS_PATH],
     library_dirs=[REDIST_PATH],
+    libraries=[API_NAME],
     extra_compile_args=['-D_CRT_SECURE_NO_WARNINGS'],
-    **fix_runtime_path(),
-    **fix_linker()
+    **fix_runtime_path()
 )
 
 setup(
