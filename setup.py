@@ -51,9 +51,9 @@ else:
     sys.exit(1)
 
 
-def fix_runtime_path() -> Mapping[str, str]:
+def fix_runtime_path() -> Mapping[str, List[str]]:
     if os.name == 'posix':
-        return {'runtime_library_dirs': PACKAGE_PATH}
+        return {'runtime_library_dirs': [PACKAGE_PATH]}
     else:
         return {}
 
