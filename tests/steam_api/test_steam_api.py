@@ -17,6 +17,7 @@
 #
 
 from stlib import steam_api
+
 from tests import requires_manual_testing
 
 

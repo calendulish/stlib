@@ -27,6 +27,7 @@ import pytest
 
 MANUAL_TESTING = int(os.environ.get('MANUAL_TESTING'))
 
+
 @pytest.fixture(autouse=True)
 def debug(msg: Optional[str] = None, wait_for: int = 5) -> None:
     # noinspection PySimplifyBooleanCheck
@@ -65,4 +66,4 @@ def event_loop() -> Generator[asyncio.AbstractEventLoop, None, None]:
 
 
 requires_manual_testing = pytest.mark.skipif(MANUAL_TESTING == False,
-                                        reason="This test can't run without MANUAL_TESTING")
+                                             reason="This test can't run without MANUAL_TESTING")

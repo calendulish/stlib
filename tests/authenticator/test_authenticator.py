@@ -21,6 +21,7 @@ import os
 
 import pytest
 from stlib import authenticator
+
 from tests import MANUAL_TESTING, debug, requires_manual_testing
 
 

@@ -1,4 +1,5 @@
-from stlib import steam_api, client
+from stlib import client, steam_api
+
 from tests import debug, requires_manual_testing
 
 
