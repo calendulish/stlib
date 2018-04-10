@@ -40,7 +40,12 @@ CHECKS_RESULT = Checks(*[False for _ in Checks._fields])
 
 
 class AndroidDebugBridge(object):
-    def __init__(self, adb_path: str, app_path: str) -> None:
+    def __init__(
+            self,
+            adb_path: str,
+            app_path: str = '/data/data/com.valvesoftware.android.steam.community/'
+    ) -> None:
+
         self.adb_path = adb_path
         self.app_path = app_path
 
