@@ -71,8 +71,8 @@ class TestAuthenticator:
         results = await asyncio.gather(*tasks, return_exceptions=True)
         debug(f'secrets: {results}')
 
-        assert isinstance(results[0], (str, bytes))
-        assert isinstance(results[1], (str, bytes))
+        assert isinstance(results[0], bytes)
+        assert isinstance(results[1], bytes)
         assert isinstance(results[2], KeyError)
 
     @requires_manual_testing

@@ -109,11 +109,11 @@ class AndroidDebugBridge(object):
 
         return data
 
-    async def get_secret(self, type_: str) -> Any:
+    async def get_secret(self, type_: str) -> bytes:
         data = await self._get_data('files/Steamguard-*')
         secret = ujson.loads(data)[f'{type_}_secret']
 
-        return secret
+        return secret.encode()
 
 
 def get_code(shared_secret: Union[str, bytes]) -> Tuple[List[str], int]:
