@@ -45,7 +45,7 @@ class AndroidDebugBridge(object):
         self.app_path = app_path
 
         if not os.path.isfile(adb_path):
-            raise FileNotFoundError('Unable to find adb.')
+            raise FileNotFoundError(f'Unable to find adb. Please, check if path is correct:\n{self.adb_path}')
 
     async def __do_check(self, parameters: List[str]) -> bool:
         try:
