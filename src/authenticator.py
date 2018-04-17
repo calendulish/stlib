@@ -63,6 +63,8 @@ class AndroidDebugBridge(object):
     async def _do_checks(self) -> None:
         global CHECKS_RESULT
 
+        await self._run(['root'])
+
         tasks = [
             self.__do_check(['shell', 'true']),
             self.__do_check(['shell', 'su', '-c', 'true']),
