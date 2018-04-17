@@ -98,7 +98,7 @@ class AndroidDebugBridge(object):
 
         stdout, stderr = await process.communicate()
 
-        if stderr:
+        if process.returncode != 0:
             raise subprocess.CalledProcessError(process.returncode, params)
 
         return stdout.decode().rstrip()
