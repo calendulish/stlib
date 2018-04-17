@@ -24,9 +24,7 @@ import logging
 import os
 import subprocess
 import ujson
-from collections import namedtuple
-from concurrent.futures import ALL_COMPLETED
-from typing import Any, List, Tuple, Union
+from typing import Any, List, NamedTuple, Tuple, Union
 
 from stlib import client
 
@@ -35,8 +33,12 @@ __STEAM_ALPHABET = ['2', '3', '4', '5', '6', '7', '8', '9',
                     'M', 'N', 'P', 'Q', 'R', 'T', 'V', 'W',
                     'X', 'Y']
 
-Checks = namedtuple('Commands', ('connected', 'root_available', 'logged', 'guard_enabled'))
-CHECKS_RESULT = Checks(*[False for _ in Checks._fields])
+
+class CheckList(NamedTuple):
+    connected: Union[bool, Exception] = False
+    su_available: Union[bool, Exception] = False
+    logged: Union[bool, Exception] = False
+    guard_enabled: Union[bool, Exception] = False
 
 
 class AndroidDebugBridge(object):
@@ -52,41 +54,37 @@ class AndroidDebugBridge(object):
         if not os.path.isfile(adb_path):
             raise FileNotFoundError(f'Unable to find adb. Please, check if path is correct:\n{self.adb_path}')
 
-    async def __do_check(self, parameters: List[str]) -> bool:
-        try:
-            await self._run(parameters)
-        except subprocess.CalledProcessError:
-            return False
-        else:
-            return True
-
     async def _do_checks(self) -> None:
-        global CHECKS_RESULT
+        try:
+            logging.info('Switching to root mode (if needed, phone will be reconnected)')
+            await self._run(['root'])
+            await self._run(['wait-for-device'])
+        except subprocess.CalledProcessError:
+            raise AttributeError('Unable switch to root mode')
+        else:
+            tasks = [
+                ['shell', 'true'],
+                ['shell', 'su', '-c', 'true'],
+                ['shell', 'su', '-c', f'"cat {self.app_path}/app_cache_i/login.json"'],
+                ['shell', 'su', '-c', f'"cat {self.app_path}/files/Steamguard-*"'],
+            ]
 
-        await self._run(['root'])
+            tasks_result = await asyncio.gather(*[self._run(task) for task in tasks], return_exceptions=True)
+            checklist = CheckList(*tasks_result)
 
-        tasks = [
-            self.__do_check(['shell', 'true']),
-            self.__do_check(['shell', 'su', '-c', 'true']),
-            self.__do_check(['shell', 'su', '-c', f'"cat {self.app_path}/app_cache_i/login.json"']),
-            self.__do_check(['shell', 'su', '-c', f'"cat {self.app_path}/files/Steamguard-*"']),
-        ]
+            for field in checklist._fields:
+                result = getattr(checklist, field)
 
-        done, _ = await asyncio.wait(tasks, return_when=ALL_COMPLETED)
-        CHECKS_RESULT = Checks(*[task.result() for task in done])
-
-        for field in CHECKS_RESULT._fields:
-            attribute = getattr(CHECKS_RESULT, field)
-            if attribute is False:
-                logging.debug(f'{field} is {attribute}')
-                if field == 'connected':
-                    raise AttributeError('Phone is not connected')
-                elif field == 'root_available':
-                    raise AttributeError('Root is not available')
-                elif field == 'logged':
-                    raise AttributeError('user is not logged-in on Mobile Authenticator')
-                elif field == 'guard_enabled':
-                    raise AttributeError('Steam Guard is not enabled')
+                if isinstance(result, Exception):
+                    logging.debug(f'{field} result is {result}')
+                    if field == 'connected':
+                        raise AttributeError('Phone is not connected')
+                    elif field == 'su_available':
+                        raise AttributeError('Root is not available')
+                    elif field == 'logged':
+                        raise AttributeError('user is not logged-in on Mobile Authenticator')
+                    elif field == 'guard_enabled':
+                        raise AttributeError('Steam Guard is not enabled')
 
     async def _run(self, params: List[Any]) -> str:
         process = await asyncio.create_subprocess_exec(
