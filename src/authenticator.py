@@ -109,7 +109,7 @@ class AndroidDebugBridge(object):
             'su -c "cat {}"'.format(os.path.join(self.app_path, path))
         ])
 
-        if 'No such file' in data:
+        if not data or 'No such file' in data:
             raise FileNotFoundError('Something wrong with the Steam Mobile App.')
 
         return data
