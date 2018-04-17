@@ -68,8 +68,8 @@ class AndroidDebugBridge(object):
         tasks = [
             self.__do_check(['shell', 'true']),
             self.__do_check(['shell', 'su', '-c', 'true']),
-            self.__do_check(['shell', 'su', '-c', 'cat', f'{self.app_path}/app_cache_i/login.json']),
-            self.__do_check(['shell', 'su', '-c', 'cat', f'{self.app_path}/files/Steamguard-*']),
+            self.__do_check(['shell', 'su', '-c', f'"cat {self.app_path}/app_cache_i/login.json"']),
+            self.__do_check(['shell', 'su', '-c', f'"cat {self.app_path}/files/Steamguard-*"']),
         ]
 
         done, _ = await asyncio.wait(tasks, return_when=ALL_COMPLETED)
@@ -106,10 +106,7 @@ class AndroidDebugBridge(object):
     async def _get_data(self, path: str) -> str:
         await self._do_checks()
 
-        data = await self._run([
-            'shell',
-            'su -c "cat {}"'.format(os.path.join(self.app_path, path))
-        ])
+        data = await self._run(['shell', 'su', '-c', f'"cat {os.path.join(self.app_path, path)}"'])
 
         if not data or 'No such file' in data:
             raise FileNotFoundError('Something wrong with the Steam Mobile App.')
