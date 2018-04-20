@@ -57,8 +57,9 @@ static int SteamGameServer_init(SteamGameServer_Object *self, PyObject *args, Py
 }
 
 static PyMethodDef SteamGameServer_methods[] = {
-    {"get_server_time", (PyCFunction) SteamGameServer_get_server_real_time, METH_NOARGS, NULL},
-    {"get_steam_id",    (PyCFunction) SteamGameServer_get_steam_id,         METH_NOARGS, NULL},
+    {"log_on_anonymous", (PyCFunction) SteamGameServer_log_on_anonymous,     METH_NOARGS, NULL},
+    {"get_server_time",  (PyCFunction) SteamGameServer_get_server_real_time, METH_NOARGS, NULL},
+    {"get_steam_id",     (PyCFunction) SteamGameServer_get_steam_id,         METH_NOARGS, NULL},
     {NULL},
 };
 
