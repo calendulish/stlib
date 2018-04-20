@@ -107,7 +107,6 @@ class SteamApiExecutor(multiprocessing.Process):
         return self._wait_return(self._init_return, self._init_exception)
 
     def shutdown(self: SteamApiExecutorType) -> None:
-        steam_api.shutdown()
         self.exit_now.set()
         self.join(5)
         self.close()  # type: ignore # https://github.com/python/typeshed/issues/2022
@@ -139,3 +138,6 @@ class SteamApiExecutor(multiprocessing.Process):
                     return None
                 else:
                     self.__child_interface_return.send(result)
+
+        steam_api.shutdown()
+        os.environ.pop("SteamAppId")
