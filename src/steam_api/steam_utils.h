@@ -49,7 +49,7 @@ static PyMethodDef SteamUtils_methods[] = {
 
 static PyTypeObject SteamUtilsType = {
     PyObject_HEAD_INIT(NULL)
-    "steam_api.SteamUtils",
+    "stlib.steam_api.SteamUtils",
     sizeof(SteamUtils_Object),
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,

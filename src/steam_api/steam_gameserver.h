@@ -57,7 +57,7 @@ static PyMethodDef SteamGameServer_methods[] = {
 
 static PyTypeObject SteamGameServerType = {
     PyObject_HEAD_INIT(NULL)
-    "steam_api.SteamGameServer",
+    "stlib.steam_api.SteamGameServer",
     sizeof(SteamGameServer_Object),
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,

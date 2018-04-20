@@ -91,7 +91,7 @@ static PyMethodDef steam_api_methods[] = {
 
 static struct PyModuleDef moduledef = {
     PyModuleDef_HEAD_INIT,
-    "steam_api",
+    "stlib.steam_api",
     "Steam API.",
     -1,
     steam_api_methods
