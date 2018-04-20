@@ -44,7 +44,8 @@ class _CaptureSTD(object):
 
 
 class SteamGameServer(object):
-    def __init__(self, ip: int = 0, steam_port: int = 0, game_port: int = 0) -> None:
+    def __init__(self, ip: int = 0, steam_port: int = 0, game_port: int = 0, game_id: int = 480) -> None:
+        os.environ["SteamAppId"] = str(game_id)
         result = steam_api.server_init(ip, steam_port, game_port)
 
         if result is False:
@@ -58,6 +59,7 @@ class SteamGameServer(object):
                  exception_value: Optional[Exception],
                  traceback: Optional[TracebackType]) -> None:
         steam_api.server_shutdown()
+        os.environ.pop('SteamAppId')
 
 
 class SteamApiExecutor(multiprocessing.Process):
