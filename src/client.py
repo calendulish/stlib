@@ -46,7 +46,9 @@ class _CaptureSTD(object):
 class SteamGameServer(object):
     def __init__(self, ip: int = 0, steam_port: int = 0, game_port: int = 0, game_id: int = 480) -> None:
         os.environ["SteamAppId"] = str(game_id)
-        result = steam_api.server_init(ip, steam_port, game_port)
+
+        with _CaptureSTD():
+            result = steam_api.server_init(ip, steam_port, game_port)
 
         if result is False:
             raise AttributeError("Unable to initialize SteamGameServer")
