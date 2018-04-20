@@ -54,7 +54,7 @@ static PyObject *server_init(PyObject *self, PyObject *args) {
 
     bool result = SteamGameServer_Init(ip, steam_port, game_port, query_port, server_mode, version_string);
 
-    return PyLong_FromLong(result);
+    return PyBool_FromLong(result);
 }
 
 static PyObject *shutdown(PyObject *self, PyObject *args) {
