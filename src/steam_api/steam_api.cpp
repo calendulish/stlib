@@ -22,6 +22,7 @@
 #include "steam/steam_gameserver.h"
 
 // Python Extensions
+#include "steam_user.h"
 #include "steam_utils.h"
 #include "steam_gameserver.h"
 
@@ -100,6 +101,11 @@ static struct PyModuleDef moduledef = {
 PyMODINIT_FUNC PyInit_steam_api(void) {
     PyObject *module;
 
+    if (PyType_Ready(&SteamUserType) < 0) {
+        PyErr_SetString(PyExc_AttributeError, "Unable to initialize SteamUser");
+        return NULL;
+    }
+
     if (PyType_Ready(&SteamUtilsType) < 0) {
         PyErr_SetString(PyExc_AttributeError, "Unable to initialize SteamUtils");
         return NULL;
@@ -117,7 +123,11 @@ PyMODINIT_FUNC PyInit_steam_api(void) {
         return NULL;
     }
 
+    Py_INCREF(&SteamUserType);
     Py_INCREF(&SteamUtilsType);
+    Py_INCREF(&SteamGameServerType);
+
+    PyModule_AddObject(module, "SteamUser", (PyObject * ) & SteamUserType);
     PyModule_AddObject(module, "SteamUtils", (PyObject * ) & SteamUtilsType);
     PyModule_AddObject(module, "SteamGameServer", (PyObject * ) & SteamGameServerType);
 
