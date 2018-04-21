@@ -35,7 +35,6 @@ __STEAM_ALPHABET = ['2', '3', '4', '5', '6', '7', '8', '9',
 
 
 class CheckList(NamedTuple):
-    connected: Union[bool, Exception] = False
     su_available: Union[bool, Exception] = False
     logged: Union[bool, Exception] = False
     guard_enabled: Union[bool, Exception] = False
@@ -55,36 +54,43 @@ class AndroidDebugBridge(object):
             raise FileNotFoundError(f'Unable to find adb. Please, check if path is correct:\n{self.adb_path}')
 
     async def _do_checks(self) -> None:
-        try:
-            logging.info('Switching to root mode (if needed, phone will be reconnected)')
-            await self._run(['root'])
-            await self._run(['wait-for-device'])
-        except subprocess.CalledProcessError:
+        pre_tasks = [
+            ['shell', 'true'],
+            ['root'],
+        ]
+
+        logging.info('Your phone can be reconnected to switch adb to root mode')
+        pre_tasks_result = await asyncio.gather(*[self._run(pre_task) for pre_task in pre_tasks],
+                                                return_exceptions=True)
+
+        if isinstance(pre_tasks_result[0], Exception):
+            raise AttributeError('Phone is not connected')
+
+        if isinstance(pre_tasks_result[0], Exception):
             raise AttributeError('Unable switch to root mode')
-        else:
-            tasks = [
-                ['shell', 'true'],
-                ['shell', 'su', '-c', 'true'],
-                ['shell', 'su', '-c', f'"cat {self.app_path}/app_cache_i/login.json"'],
-                ['shell', 'su', '-c', f'"cat {self.app_path}/files/Steamguard-*"'],
-            ]
 
-            tasks_result = await asyncio.gather(*[self._run(task) for task in tasks], return_exceptions=True)
-            checklist = CheckList(*tasks_result)
+        await self._run(['wait-for-device'])
 
-            for field in checklist._fields:
-                result = getattr(checklist, field)
+        tasks = [
+            ['shell', 'su', '-c', 'true'],
+            ['shell', 'su', '-c', f'"cat {self.app_path}/app_cache_i/login.json"'],
+            ['shell', 'su', '-c', f'"cat {self.app_path}/files/Steamguard-*"'],
+        ]
 
-                if isinstance(result, Exception):
-                    logging.debug(f'{field} result is {result}')
-                    if field == 'connected':
-                        raise AttributeError('Phone is not connected')
-                    elif field == 'su_available':
-                        raise AttributeError('Root is not available')
-                    elif field == 'logged':
-                        raise AttributeError('user is not logged-in on Mobile Authenticator')
-                    elif field == 'guard_enabled':
-                        raise AttributeError('Steam Guard is not enabled')
+        tasks_result = await asyncio.gather(*[self._run(task) for task in tasks], return_exceptions=True)
+        checklist = CheckList(*tasks_result)
+
+        for field in checklist._fields:
+            result = getattr(checklist, field)
+
+            if isinstance(result, Exception):
+                logging.debug(f'{field} result is {result}')
+                if field == 'su_available':
+                    raise AttributeError('Root is not available')
+                elif field == 'logged':
+                    raise AttributeError('user is not logged-in on Mobile Authenticator')
+                elif field == 'guard_enabled':
+                    raise AttributeError('Steam Guard is not enabled')
 
     async def _run(self, params: List[Any]) -> str:
         process = await asyncio.create_subprocess_exec(
