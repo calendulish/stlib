@@ -24,7 +24,7 @@ import logging
 import os
 import subprocess
 import ujson
-from typing import Any, List, NamedTuple, Tuple, Union
+from typing import Any, List, Tuple, Union
 
 from stlib import client
 
@@ -32,12 +32,6 @@ __STEAM_ALPHABET = ['2', '3', '4', '5', '6', '7', '8', '9',
                     'B', 'C', 'D', 'F', 'G', 'H', 'J', 'K',
                     'M', 'N', 'P', 'Q', 'R', 'T', 'V', 'W',
                     'X', 'Y']
-
-
-class CheckList(NamedTuple):
-    su_available: Union[bool, Exception] = False
-    logged: Union[bool, Exception] = False
-    guard_enabled: Union[bool, Exception] = False
 
 
 class AndroidDebugBridge(object):
@@ -78,18 +72,14 @@ class AndroidDebugBridge(object):
         ]
 
         tasks_result = await asyncio.gather(*[self._run(task) for task in tasks], return_exceptions=True)
-        checklist = CheckList(*tasks_result)
 
-        for field in checklist._fields:
-            result = getattr(checklist, field)
-
+        for index, result in enumerate(tasks_result):
             if isinstance(result, Exception):
-                logging.debug(f'{field} result is {result}')
-                if field == 'su_available':
+                if index == 0:
                     raise AttributeError('Root is not available')
-                elif field == 'logged':
+                elif index == 1:
                     raise AttributeError('user is not logged-in on Mobile Authenticator')
-                elif field == 'guard_enabled':
+                else:
                     raise AttributeError('Steam Guard is not enabled')
 
     async def _run(self, params: List[Any]) -> str:
