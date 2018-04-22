@@ -44,7 +44,7 @@ class _CaptureSTD(object):
 
 
 class SteamGameServer(object):
-    def __init__(self, ip: int = 0, steam_port: int = 0, game_port: int = 0, game_id: int = 480) -> None:
+    def __init__(self, ip: int = 0x0100007f, steam_port: int = 27015, game_port: int = 27016, game_id: int = 480) -> None:
         os.environ["SteamAppId"] = str(game_id)
 
         with _CaptureSTD():
