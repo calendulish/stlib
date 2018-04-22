@@ -5,7 +5,7 @@ ignore=
 persistent=yes
 load-plugins=
 jobs=1
-unsafe-load-any-extension=no
+unsafe-load-any-extension=yes
 extension-pkg-whitelist=
 
 
