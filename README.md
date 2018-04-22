@@ -3,8 +3,8 @@ stlib
 
 [![Linux Build Status](https://img.shields.io/travis/ShyPixie/stlib/master.svg?label=Linux%20build)](https://travis-ci.org/ShyPixie/stlib)
 [![Windows Build status](https://img.shields.io/appveyor/ci/ShyPixie/stlib/master.svg?label=Windows%20build)](https://ci.appveyor.com/project/ShyPixie/stlib)
-[![Scrutinizer Code Quality](https://img.shields.io/scrutinizer/g/ShyPixie/stlib.svg)](https://scrutinizer-ci.com/g/ShyPixie/stlib/)
-[![Scrutinizer Coverage](https://img.shields.io/scrutinizer/coverage/g/filp/whoops.svg)](https://scrutinizer-ci.com/g/ShyPixie/stlib/code-structure/master/code-coverage)
+[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/ShyPixie/stlib/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/ShyPixie/stlib/?branch=master)
+[![Code Coverage](https://scrutinizer-ci.com/g/ShyPixie/stlib/badges/coverage.png?b=master)](https://scrutinizer-ci.com/g/ShyPixie/stlib/?branch=master)
 [![GitHub license](https://img.shields.io/badge/license-GPLv3-green.svg)](https://www.gnu.org/licenses/gpl-3.0.html)
 [![GitHub release](https://img.shields.io/github/release/ShyPixie/stlib.svg)](https://github.com/ShyPixie/stlib/releases)
 [![GitHub Test release](https://img.shields.io/badge/testing-0.0.0_DEV-orange.svg)](https://github.com/ShyPixie/stlib/releases)
