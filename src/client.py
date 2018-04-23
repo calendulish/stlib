@@ -30,21 +30,26 @@ PipeType = connection.Connection
 
 class _CaptureSTD(object):
     def __init__(self) -> None:
-        self.old_descriptor = os.dup(1)
+        self.old_stdout = os.dup(1)
+        self.old_stderr = os.dup(2)
+        self.devnull = os.open(os.path.devnull, os.O_WRONLY)
 
     def __enter__(self) -> None:
-        new_descriptor = os.open(os.path.devnull, os.O_WRONLY)
-        os.dup2(new_descriptor, 2)
+        os.dup2(self.devnull, 1)
+        os.dup2(self.devnull, 2)
 
     def __exit__(self,
                  exception_type: Optional[Type[BaseException]],
                  exception_value: Optional[Exception],
                  traceback: Optional[TracebackType]) -> None:
-        os.dup2(self.old_descriptor, 1)
+        os.dup2(self.old_stdout, 1)
+        os.dup2(self.old_stderr, 2)
+        os.close(self.devnull)
 
 
 class SteamGameServer(object):
-    def __init__(self, ip: int = 0x0100007f, steam_port: int = 27015, game_port: int = 27016, game_id: int = 480) -> None:
+    def __init__(self, ip: int = 0x0100007f, steam_port: int = 27015, game_port: int = 27016,
+                 game_id: int = 480) -> None:
         os.environ["SteamAppId"] = str(game_id)
 
         with _CaptureSTD():
