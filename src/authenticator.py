@@ -24,7 +24,7 @@ import logging
 import os
 import subprocess
 import ujson
-from typing import Any, List, Tuple, Union
+from typing import Any, Dict, List, Tuple, Union
 
 from stlib import client
 
@@ -107,11 +107,15 @@ class AndroidDebugBridge(object):
 
         return data
 
-    async def get_secret(self, type_: str) -> bytes:
+    async def get_json(self, *names: str) -> Dict[str, str]:
         data = await self._get_data('files/Steamguard-*')
-        secret = ujson.loads(data)[f'{type_}_secret']
 
-        return secret.encode()
+        json_data = {}
+
+        for name in names:
+            json_data[name] = ujson.loads(data)[name]
+
+        return json_data
 
 
 def get_code(shared_secret: Union[str, bytes]) -> Tuple[List[str], int]:
