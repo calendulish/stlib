@@ -41,7 +41,3 @@ build:
               coverage:
                   file: '.mypy_coverage'
                   format: 'py-cc'
-            - command: py.test --cov=stlib tests
-              coverage:
-                  file: '.coverage'
-                  format: 'py-cc'
