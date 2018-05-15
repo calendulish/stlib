@@ -18,9 +18,10 @@
 
 import os
 import sys
-from distutils.core import Extension, setup
 from distutils.sysconfig import get_python_lib
 from typing import List, Mapping, Tuple
+
+from setuptools import Extension, setup
 
 if sys.maxsize > 2 ** 32:
     arch = 64
@@ -77,14 +78,24 @@ steam_api = Extension(
     **fix_runtime_path()
 )
 
+classifiers = [
+    'Development Status :: 3 - Alpha',
+    'Intended Audience :: Developers',
+    'Topic :: Games/Entertainment',
+    'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
+    'Programming Language :: Python :: 3.6',
+]
+
 setup(
     name='stlib',
-    version='0.0.0-DEV',
+    version='0.0.1.dev1',
     description="Async library that provides features related to Steam client and compatible stuffs",
     author='Lara Maia',
     author_email='dev@lara.click',
     url='http://github.com/ShyPixie/stlib',
     license='GPL',
+    classifiers=classifiers,
+    keywords='steam valve',
     packages=['stlib'],
     package_dir={'stlib': 'src'},
     ext_modules=[steam_api],
@@ -95,5 +106,6 @@ setup(
               'cchardet',
               'ujson',
               ],
+    python_requires='>=3.6',
     **include_extra_libraries()
 )
