@@ -1,6 +1,10 @@
 sudo: required
 language: python
 
+addons:
+    apt:
+        update: true
+
 python:
     - "3.7-dev"
 
@@ -9,7 +13,7 @@ services:
 
 
 install:
-    - pip install aiodns cchardet ujson aiohttp asyncio beautifulsoup4
+    - pip install --upgrade setuptools aiodns cchardet ujson aiohttp asyncio beautifulsoup4
 
 before_script:
     - cd src/steam_api
@@ -22,7 +26,6 @@ before_script:
 script:
     - python setup.py build
     - python setup.py install
-    - python -c "from stlib import steam_api; steam_api.init"
 
 env:
   global:

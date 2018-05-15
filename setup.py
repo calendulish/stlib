@@ -107,5 +107,6 @@ setup(
               'ujson',
               ],
     python_requires='>=3.6',
+    zip_safe=False,
     **include_extra_libraries()
 )
