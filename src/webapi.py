@@ -17,6 +17,7 @@
 #
 
 import base64
+import time
 from typing import Any, Dict, Optional, Tuple
 
 import aiohttp
@@ -61,16 +62,49 @@ class Http(object):
         return int(data['response']['steamid'])
 
     async def get_public_key(self, username: str) -> Tuple[rsa.PublicKey, int]:
-        data = await self.__get_data('login', 'getrsakey', 0, {'username': username})
+        async with self.session.get(f'{self.login_server}/getrsakey/', params={'username': username}) as response:
+            json_data = await response.json()
 
-        if data['success']:
-            public_mod = int(data['publickey_mod'], 16)
-            public_exp = int(data['publickey_exp'], 16)
-            timestamp = int(data['timestamp'])
+        if json_data['success']:
+            public_mod = int(json_data['publickey_mod'], 16)
+            public_exp = int(json_data['publickey_exp'], 16)
+            timestamp = int(json_data['timestamp'])
         else:
             raise ValueError('Failed to get public key.')
 
         return rsa.PublicKey(public_mod, public_exp), timestamp
+
+    async def get_captcha(self, gid):
+        async with self.session.get(f'{self.login_server}/rendercaptcha/', params={'gid': gid}) as response:
+            return await response.read()
+
+    async def do_login(
+            self,
+            username: str,
+            encrypted_password: bytes,
+            key_timestamp: int,
+            authenticator_code: str = '',
+            emailauth: str = '',
+            captcha_gid: int = -1,
+            captcha_text: str = '',
+    ):
+        data = {
+            'username': username,
+            "password": encrypted_password.decode(),
+            "emailauth": emailauth,
+            "twofactorcode": authenticator_code,
+            "captchagid": captcha_gid,
+            "captcha_text": captcha_text,
+            "loginfriendlyname": "stlib",
+            "rsatimestamp": key_timestamp,
+            "remember_login": 'false',
+            "donotcache": ''.join([str(int(time.time())), '000']),
+        }
+
+        async with self.session.post(f'{self.login_server}/dologin', data=data) as response:
+            json_data = await response.json()
+
+            return json_data
 
 
 def encrypt_password(public_key: rsa.PublicKey, password: bytes) -> bytes:
