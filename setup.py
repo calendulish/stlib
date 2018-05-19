@@ -105,6 +105,7 @@ setup(
               'beautifulsoup4',
               'cchardet',
               'ujson',
+              'rsa',
               ],
     python_requires='>=3.6',
     zip_safe=False,
