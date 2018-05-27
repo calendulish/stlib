@@ -22,6 +22,7 @@ from typing import Any, Dict, Optional, Tuple
 
 import aiohttp
 import rsa
+from bs4 import BeautifulSoup
 
 
 class Http(object):
@@ -29,11 +30,19 @@ class Http(object):
             self,
             session: aiohttp.ClientSession,
             api_server: str = 'https://api.steampowered.com',
-            login_server: str = 'https://store.steampowered.com/login',
+            login_server: str = 'https://steamcommunity.com/login',
+            openid_server: str = 'https://steamcommunity.com/openid',
+            headers: Optional[Dict[str, str]] = None,
     ):
         self.session = session
         self.api_server = api_server
         self.login_server = login_server
+        self.openid_server = openid_server
+
+        if not headers:
+            headers = {'User-Agent': 'Unknown/0.0.0'}
+
+        self.headers = headers
 
     async def __get_data(
             self,
@@ -103,6 +112,29 @@ class Http(object):
 
         async with self.session.post(f'{self.login_server}/dologin', data=data) as response:
             json_data = await response.json()
+
+            return json_data
+
+    async def do_openid_login(self, custom_login_page: str):
+        async with self.session.get(custom_login_page, headers=self.headers) as response:
+            form = BeautifulSoup(await response.text(), 'html.parser').find('form')
+            data = {}
+
+            for input_ in form.findAll('input'):
+                try:
+                    data[input_['name']] = input_['value']
+                except KeyError:
+                    pass
+
+        async with self.session.post(f'{self.openid_server}/login', headers=self.headers, data=data) as response:
+            avatar = BeautifulSoup(await response.text(), 'html.parser').find('a', class_='nav_avatar')
+
+            if avatar:
+                json_data = {'success': True, 'steamid': avatar['href'].split('/')[2]}
+            else:
+                json_data = {'success': False}
+
+            json_data.update(data)
 
             return json_data
 
