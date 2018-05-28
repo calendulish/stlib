@@ -10,3 +10,6 @@ cmake-build-debug
 .mypy_cache
 .coverage
 install_test
+dist
+stlib.egg-info
+tests/config.ini
