@@ -35,8 +35,8 @@ class SteamKey(NamedTuple):
 
 class Confirmation(NamedTuple):
     mode: str
-    confirmation_id: str
-    confirmation_key: str
+    id: str
+    key: str
     give: str
     to: str
     receive: str
@@ -195,6 +195,33 @@ class Http(object):
             )
 
         return confirmations
+
+    async def finalize_confirmation(
+            self,
+            identity_secret: str,
+            steamid: int,
+            deviceid: str,
+            trade_id: int,
+            trade_key: int,
+            action: str
+    ):
+        with client.SteamGameServer() as server:
+            server_time = server.get_server_time()
+
+        params = {
+            'p': deviceid,
+            'a': steamid,
+            'k': generate_time_hash(server_time, 'conf', identity_secret),
+            't': server_time,
+            'm': 'android',
+            'tag': 'conf',
+            'cid': trade_id,
+            'ck': trade_key,
+            'op': action
+        }
+
+        async with self.session.get(f'{self.mobileconf_server}/ajaxop', params=params) as response:
+            return await response.json()
 
 
 def encrypt_password(steam_key: SteamKey, password: bytes) -> bytes:
