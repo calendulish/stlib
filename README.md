@@ -50,7 +50,8 @@ steam_api.server_shutdown() # SteamGameServer_Shutdown
 ```
 from stlib import client
 
-# SteamGameServer can accept parameters (read the sources)
+# It's not required, but SteamGameServer can accept parameters
+# (ip, steam_port, game_port, game_id)
 with client.SteamGameServer() as server:
     server_time = server.get_server_time()
 ```
@@ -67,7 +68,8 @@ with client.SteamApiExecutor() as executor:
     result = executor.call(steam_api.init)
 
     # also will work for classes
-    steam_utils = executor.call(steam_api.SteamUtils)
+    steam_user = executor.call(steam_api.SteamUser)
+    steam_id = executor.call(steam_user.get_steam_id)
 ```
 
 ```
@@ -85,9 +87,9 @@ executor.shutdown()
 ```
 from stlib import authenticator
 
-# It'll return an tuple:
-# First argument is the steam guard code (E.g.: ['A', 'B', 'C', 'D', 'E'])
-# Second argument is the timestamp received from server in unix format (E.g.: 0123456789)
+# It'll return an AuthenticatorCode object with "code" and "server_time" attributes:
+# code is the Steam Guard code in str format (E.g.: ABCDE)
+# server_time is received from server in unix format (E.g.: 0123456789)
 steam_guard_code = authenticator.get_code(<your secret here>)
 
 # If you don't have the secret already, you can use the
@@ -102,9 +104,64 @@ from stlib import authenticator
 # Requirements:
 # - adb tool from google
 # - a "rooted" Android phone with adb debugging enabled
-adb = authenticator.AndroidDebugBridge(<path where adb tool is located>, <path to Steam Mobile App>)
+adb = authenticator.AndroidDebugBridge(
+    <path where adb tool is located>,
+    <path to Steam Mobile App> = '/data/data/com.valvesoftware.android.steam.community/'
+)
 
-secret = adb.get_secret(<secret type>)
+# Get any Steam Guard data in json format
+# (E.g.: adb.get_json('userid', 'identity_secret'))
+secret = await adb.get_json(*names)
+```
+
+- **WebAPI**
+
+```
+from stlib import webapi
+
+async with aiohttp.ClientSession() as session:
+    http = webapi.Http(session)
+
+    user_id = await http.get_user_id(<steam nickname>)
+
+    # It'll returns SteamKey object with "key" and "timestamp" attributes
+    # (E.g.: steam_key.timestamp)
+    steam_key = await http.get_public_key(<steam username>)
+
+    # log-in a client on steam. Returns json data.
+    json_data = await http.do_login(
+        # required
+        <steam username>,
+        <encrypted_password>,
+        <steamkey_timestamp>,
+        # optional
+        <code from steam guard/authenticator>,
+        <code from email>,
+        <captcha gid>,
+        <captcha text>,
+    )
+
+    # Log-in on web page that uses steam openid platform. Returns json data.
+    # (E.g.: await do_openid_login('https://steamgifts.com/?login')
+    json_data = await http.do_openid_login(<custom login page>)
+
+# receives a bytes like password and returns a SteamKey encrypted password
+encrypted_password = webapi.encrypt_password(<SteamKey>, <raw password>)
+```
+
+- **Steamtrades**
+
+```
+from stlib import steamtrades
+
+async with aiohttp.ClientSession() as session:
+    http = steamtrades.Http(session)
+
+    # returns a TradeInfo object with "id", "title", and "html" attributes:
+    await http.get_trade_info(<trade id>)
+
+    # returns json data with trade status
+    await http.bump(<TradeInfo object>)
 ```
 ___________________________________________________________________________________________
 
