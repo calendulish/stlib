@@ -144,7 +144,7 @@ class Http(object):
             return json_data
 
 
-def encrypt_password(public_key: rsa.PublicKey, password: bytes) -> bytes:
-    encrypted_password = rsa.encrypt(password, public_key)
+def encrypt_password(steam_key: SteamKey, password: bytes) -> bytes:
+    encrypted_password = rsa.encrypt(password, steam_key.key)
 
     return base64.b64encode(encrypted_password)
