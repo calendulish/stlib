@@ -17,17 +17,31 @@
 #
 
 import base64
+import hashlib
+import hmac
 import time
-from typing import Any, Dict, NamedTuple, Optional
+from typing import Any, Dict, List, NamedTuple, Optional
 
 import aiohttp
 import rsa
 from bs4 import BeautifulSoup
+from stlib import client
 
 
 class SteamKey(NamedTuple):
     key: rsa.PublicKey
     timestamp: int
+
+
+class Confirmation(NamedTuple):
+    accept_mode: str
+    cancel_mode: str
+    confirmation_id: str
+    confirmation_key: str
+    give: str
+    to: str
+    receive: str
+    created: str
 
 
 class Http(object):
@@ -37,12 +51,14 @@ class Http(object):
             api_server: str = 'https://api.steampowered.com',
             login_server: str = 'https://steamcommunity.com/login',
             openid_server: str = 'https://steamcommunity.com/openid',
+            mobileconf_server: str = 'https://steamcommunity.com/mobileconf',
             headers: Optional[Dict[str, str]] = None,
     ):
         self.session = session
         self.api_server = api_server
         self.login_server = login_server
         self.openid_server = openid_server
+        self.mobileconf_server = mobileconf_server
 
         if not headers:
             headers = {'User-Agent': 'Unknown/0.0.0'}
@@ -143,8 +159,56 @@ class Http(object):
 
             return json_data
 
+    async def get_confirmations(self, identity_secret: str, steamid: int, deviceid: str) -> List[Confirmation]:
+        with client.SteamGameServer() as server:
+            server_time = server.get_server_time()
+
+        params = {
+            'p': deviceid,
+            'a': steamid,
+            'k': generate_time_hash(server_time, 'conf', identity_secret),
+            't': server_time,
+            'm': 'android',
+            'tag': 'conf',
+        }
+
+        async with self.session.get(f'{self.mobileconf_server}/conf', params=params) as response:
+            html = BeautifulSoup(await response.text(), 'html.parser')
+
+        with open('test.html', 'w', encoding='utf-8') as file:
+            file.write(str(html))
+
+        confirmations = []
+        for confirmation in html.find_all('div', class_='mobileconf_list_entry'):
+            description = confirmation.find('div', class_='mobileconf_list_entry_description').find_all()
+            give_raw = description[0].get_text()[6:]
+
+            confirmations.append(
+                Confirmation(
+                    confirmation['data-accept'],
+                    confirmation['data-cancel'],
+                    confirmation['data-confid'],
+                    confirmation['data-key'],
+                    give_raw[:give_raw.index("to") - 1],
+                    give_raw[give_raw.index("to") + 3:],
+                    description[1].get_text()[11:],
+                    description[2].get_text(),
+                )
+            )
+
+        return confirmations
+
 
 def encrypt_password(steam_key: SteamKey, password: bytes) -> bytes:
     encrypted_password = rsa.encrypt(password, steam_key.key)
 
     return base64.b64encode(encrypted_password)
+
+
+def generate_time_hash(server_time, tag, secret):
+    key = base64.b64decode(secret)
+    msg = server_time.to_bytes(8, 'big') + tag.encode()
+    auth = hmac.new(key, msg, hashlib.sha1)
+    code = base64.b64encode(auth.digest())
+
+    return code.decode()
