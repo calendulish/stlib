@@ -34,8 +34,7 @@ class SteamKey(NamedTuple):
 
 
 class Confirmation(NamedTuple):
-    accept_mode: str
-    cancel_mode: str
+    mode: str
     confirmation_id: str
     confirmation_key: str
     give: str
@@ -186,7 +185,6 @@ class Http(object):
             confirmations.append(
                 Confirmation(
                     confirmation['data-accept'],
-                    confirmation['data-cancel'],
                     confirmation['data-confid'],
                     confirmation['data-key'],
                     give_raw[:give_raw.index("to") - 1],
