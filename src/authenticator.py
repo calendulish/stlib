@@ -23,15 +23,20 @@ import hmac
 import logging
 import os
 import subprocess
-import ujson
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Dict, List, NamedTuple, Union
 
+import ujson
 from stlib import client
 
 __STEAM_ALPHABET = ['2', '3', '4', '5', '6', '7', '8', '9',
                     'B', 'C', 'D', 'F', 'G', 'H', 'J', 'K',
                     'M', 'N', 'P', 'Q', 'R', 'T', 'V', 'W',
                     'X', 'Y']
+
+
+class AuthenticatorCode(NamedTuple):
+    code: str
+    server_time: int
 
 
 class AndroidDebugBridge(object):
@@ -118,7 +123,7 @@ class AndroidDebugBridge(object):
         return json_data
 
 
-def get_code(shared_secret: Union[str, bytes]) -> Tuple[List[str], int]:
+def get_code(shared_secret: Union[str, bytes]) -> AuthenticatorCode:
     with client.SteamGameServer() as server:
         server_time = server.get_server_time()
 
@@ -135,4 +140,4 @@ def get_code(shared_secret: Union[str, bytes]) -> Tuple[List[str], int]:
         auth_code.append(__STEAM_ALPHABET[int(auth_code_raw % len(__STEAM_ALPHABET))])
         auth_code_raw //= len(__STEAM_ALPHABET)
 
-    return auth_code, server_time
+    return AuthenticatorCode(''.join(auth_code), server_time)
