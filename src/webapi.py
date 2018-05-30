@@ -18,11 +18,16 @@
 
 import base64
 import time
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, NamedTuple, Optional
 
 import aiohttp
 import rsa
 from bs4 import BeautifulSoup
+
+
+class SteamKey(NamedTuple):
+    key: rsa.PublicKey
+    timestamp: int
 
 
 class Http(object):
@@ -70,7 +75,7 @@ class Http(object):
 
         return int(data['response']['steamid'])
 
-    async def get_public_key(self, username: str) -> Tuple[rsa.PublicKey, int]:
+    async def get_public_key(self, username: str) -> SteamKey:
         async with self.session.get(f'{self.login_server}/getrsakey/', params={'username': username}) as response:
             json_data = await response.json()
 
@@ -81,7 +86,7 @@ class Http(object):
         else:
             raise ValueError('Failed to get public key.')
 
-        return rsa.PublicKey(public_mod, public_exp), timestamp
+        return SteamKey(rsa.PublicKey(public_mod, public_exp), timestamp)
 
     async def get_captcha(self, gid):
         async with self.session.get(f'{self.login_server}/rendercaptcha/', params={'gid': gid}) as response:
