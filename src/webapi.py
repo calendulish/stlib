@@ -67,8 +67,8 @@ class Http(object):
         async with self.session.request(**kwargs) as response:
             return await response.json()
 
-    async def get_user_id(self, username: str) -> int:
-        data = await self.__get_data('ISteamUser', 'ResolveVanityURL', 1, {'vanityurl': username})
+    async def get_user_id(self, nickname: str) -> int:
+        data = await self.__get_data('ISteamUser', 'ResolveVanityURL', 1, {'vanityurl': nickname})
 
         if not data['response']['success'] is 1:
             raise ValueError('Failed to get user id.')
