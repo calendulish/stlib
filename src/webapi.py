@@ -180,17 +180,27 @@ class Http(object):
         confirmations = []
         for confirmation in html.find_all('div', class_='mobileconf_list_entry'):
             description = confirmation.find('div', class_='mobileconf_list_entry_description').find_all()
-            give_raw = description[0].get_text()[6:]
+
+            if confirmation['data-type'] == "1" or confirmation['data-type'] == "2":
+                give_raw = description[0].get_text()[6:]
+                give = give_raw[:give_raw.index(" to ")]
+                to = give_raw[give_raw.index(" to ") + 4:]
+                receive = description[1].get_text()[11:]
+                created = description[2].get_text()
+            elif confirmation['data-type'] == "3":
+                give = description[0].get_text()[7:]
+                to = 'Market'
+                receive = description[1].get_text()
+                created = description[2].get_text()
+            else:
+                raise NotImplementedError(f"Data Type: {confirmation['data-type']}")
 
             confirmations.append(
                 Confirmation(
                     confirmation['data-accept'],
                     confirmation['data-confid'],
                     confirmation['data-key'],
-                    give_raw[:give_raw.index("to") - 1],
-                    give_raw[give_raw.index("to") + 3:],
-                    description[1].get_text()[11:],
-                    description[2].get_text(),
+                    give, to, receive, created,
                 )
             )
 
