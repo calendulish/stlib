@@ -185,7 +185,12 @@ class Http(object):
                 give_raw = description[0].get_text()[6:]
                 give = give_raw[:give_raw.index(" to ")]
                 to = give_raw[give_raw.index(" to ") + 4:]
-                receive = description[1].get_text()[11:]
+
+                if description[1].get_text() == 'You will receive nothing':
+                    receive = "nothing"
+                else:
+                    receive = description[1].get_text()[11:]
+
                 created = description[2].get_text()
             elif confirmation['data-type'] == "3":
                 give = description[0].get_text()[7:]
