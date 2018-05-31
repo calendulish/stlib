@@ -24,6 +24,7 @@ import logging
 import os
 import subprocess
 from typing import Any, Dict, List, NamedTuple, Union
+from xml.etree import ElementTree
 
 import ujson
 from stlib import client
@@ -121,6 +122,12 @@ class AndroidDebugBridge(object):
             json_data[name] = ujson.loads(data)[name]
 
         return json_data
+
+    async def get_device_id(self) -> str:
+        data = await self._get_data('shared_prefs/steam.uuid.xml')
+        xml_data = ElementTree.fromstring(data)
+
+        return xml_data[0].text[8:]
 
 
 def get_code(shared_secret: Union[str, bytes]) -> AuthenticatorCode:
