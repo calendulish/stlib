@@ -90,7 +90,7 @@ class Http(object):
 
         return int(data['response']['steamid'])
 
-    async def get_public_key(self, username: str) -> SteamKey:
+    async def get_steam_key(self, username: str) -> SteamKey:
         async with self.session.get(f'{self.login_server}/getrsakey/', params={'username': username}) as response:
             json_data = await response.json()
 

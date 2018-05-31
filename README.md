@@ -126,7 +126,7 @@ async with aiohttp.ClientSession() as session:
 
     # It'll returns SteamKey object with "key" and "timestamp" attributes
     # (E.g.: steam_key.timestamp)
-    steam_key = await http.get_public_key(<steam username>)
+    steam_key = await http.get_steam_key(<steam username>)
 
     # log-in a client on steam. Returns json data.
     json_data = await http.do_login(
