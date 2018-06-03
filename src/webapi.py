@@ -37,9 +37,9 @@ class Confirmation(NamedTuple):
     mode: str
     id: str
     key: str
-    give: str
+    give: List[str]
     to: str
-    receive: str
+    receive: List[str]
     created: str
 
 
@@ -183,19 +183,19 @@ class Http(object):
 
             if confirmation['data-type'] == "1" or confirmation['data-type'] == "2":
                 give_raw = description[0].get_text()[6:]
-                give = give_raw[:give_raw.index(" to ")]
+                give = give_raw[:give_raw.index(" to ")].split(', ')
                 to = give_raw[give_raw.index(" to ") + 4:]
 
                 if description[1].get_text() == 'You will receive nothing':
-                    receive = "nothing"
+                    receive = ["nothing"]
                 else:
-                    receive = description[1].get_text()[11:]
+                    receive = description[1].get_text()[11:].split(', ')
 
                 created = description[2].get_text()
             elif confirmation['data-type'] == "3":
-                give = description[0].get_text()[7:]
+                give = [description[0].get_text()[7:]]
                 to = 'Market'
-                receive = description[1].get_text()
+                receive = [description[1].get_text()]
                 created = description[2].get_text()
             else:
                 raise NotImplementedError(f"Data Type: {confirmation['data-type']}")
