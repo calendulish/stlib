@@ -16,11 +16,11 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 
+import json
 import os
 from typing import Any, Dict, NamedTuple, Optional
 
 import aiohttp
-import ujson
 from bs4 import BeautifulSoup
 
 
@@ -81,7 +81,7 @@ class Http(object):
         ) as response:
             html = await response.text()
             if 'Please wait another' in html:
-                error = ujson.loads(html)['popup_heading_h2'][0]
+                error = json.loads(html)['popup_heading_h2'][0]
                 minutes_left = int(error.split(' ')[3])
                 return {'success': False, 'reason': 'Not Ready', 'minutes_left': minutes_left}
             else:

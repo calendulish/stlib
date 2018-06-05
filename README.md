@@ -15,8 +15,8 @@ Async library that provides features related to Steam client and compatible stuf
 WORK IN PROGRESS
 
 
-Dependencies to build
-----------------------
+Dependencies to build (Windows)
+-------------------------------
 
 - Steamworks SDK >= v1.42 (put contents on src/steam_api/steamworks_sdk folder)
 - Python and headers >= 3.6
@@ -25,8 +25,7 @@ Dependencies to build
 Dependencies to run
 -------------------
 
-- aiodns
-- ujson
+- Python >= 3.6
 - asyncio
 - beautifulsoup4
 

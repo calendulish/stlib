@@ -20,13 +20,13 @@ import asyncio
 import base64
 import hashlib
 import hmac
+import json
 import logging
 import os
 import subprocess
 from typing import Any, Dict, List, NamedTuple, Union
 from xml.etree import ElementTree
 
-import ujson
 from stlib import client
 
 __STEAM_ALPHABET = ['2', '3', '4', '5', '6', '7', '8', '9',
@@ -119,7 +119,7 @@ class AndroidDebugBridge(object):
         json_data = {}
 
         for name in names:
-            json_data[name] = ujson.loads(data)[name]
+            json_data[name] = json.loads(data)[name]
 
         return json_data
 
