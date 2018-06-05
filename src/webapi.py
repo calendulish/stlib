@@ -53,7 +53,7 @@ class Http(object):
             mobileconf_url: str = 'https://steamcommunity.com/mobileconf',
             economy_url: str = 'https://steamcommunity.com/economy',
             headers: Optional[Dict[str, str]] = None,
-    ):
+    ) -> None:
         self.session = session
         self.api_url = api_url
         self.login_url = login_url
@@ -82,7 +82,9 @@ class Http(object):
         }
 
         async with self.session.request(**kwargs) as response:
-            return await response.json()
+            json_data = await response.json()
+            assert isinstance(json_data, dict), "Json data from SteamWebAPI is not a dict"
+            return json_data
 
     async def get_user_id(self, nickname: str) -> int:
         data = await self.__get_data('ISteamUser', 'ResolveVanityURL', 1, {'vanityurl': nickname})
@@ -105,9 +107,11 @@ class Http(object):
 
         return SteamKey(rsa.PublicKey(public_mod, public_exp), timestamp)
 
-    async def get_captcha(self, gid):
+    async def get_captcha(self, gid: int) -> bytes:
         async with self.session.get(f'{self.login_url}/rendercaptcha/', params={'gid': gid}) as response:
-            return await response.read()
+            data = await response.read()
+            assert isinstance(data, bytes), "rendercaptcha response is not bytes"
+            return data
 
     async def do_login(
             self,
@@ -118,7 +122,7 @@ class Http(object):
             emailauth: str = '',
             captcha_gid: int = -1,
             captcha_text: str = '',
-    ):
+    ) -> Dict[str, Any]:
         data = {
             'username': username,
             "password": encrypted_password.decode(),
@@ -134,10 +138,11 @@ class Http(object):
 
         async with self.session.post(f'{self.login_url}/dologin', data=data) as response:
             json_data = await response.json()
+            assert isinstance(json_data, dict), "Json data from dologin is not a dict"
 
             return json_data
 
-    async def do_openid_login(self, custom_login_page: str):
+    async def do_openid_login(self, custom_login_page: str) -> Dict[str, Any]:
         async with self.session.get(custom_login_page, headers=self.headers) as response:
             form = BeautifulSoup(await response.text(), 'html.parser').find('form')
             data = {}
@@ -160,10 +165,10 @@ class Http(object):
 
             return json_data
 
-    async def get_names_from_item_list(
+    async def __get_names_from_item_list(
             self,
             item_list: BeautifulSoup,
-    ) -> List[Dict[str, Any]]:
+    ) -> List[str]:
         result = []
         for tradeoffer_item in item_list.find_all('div', class_="trade_item"):
             appid, classid = tradeoffer_item['data-economy-item'].split('/')[1:3]
@@ -212,8 +217,8 @@ class Http(object):
                 to = html.find('span', class_="trade_partner_headline_sub").get_text()
 
                 item_list = html.find_all('div', class_="tradeoffer_item_list")
-                give = await self.get_names_from_item_list(item_list[0])
-                receive = await self.get_names_from_item_list(item_list[1])
+                give = await self.__get_names_from_item_list(item_list[0])
+                receive = await self.__get_names_from_item_list(item_list[1])
             elif confirmation['data-type'] == "3":
                 to = "Market"
 
@@ -246,12 +251,14 @@ class Http(object):
             trade_id: int,
             trade_key: int,
             action: str
-    ):
+    ) -> Dict[str, Any]:
         extra_params = {'cid': trade_id, 'ck': trade_key, 'op': action}
         params = new_query(deviceid, steamid, identity_secret, 'conf')
 
         async with self.session.get(f'{self.mobileconf_url}/ajaxop', params={**params, **extra_params}) as response:
-            return await response.json()
+            json_data = await response.json()
+            assert isinstance(json_data, dict), "Json data from ajaxop is not a dict"
+            return json_data
 
 
 def new_query(deviceid: str, steamid: int, identity_secret: str, tag: str) -> Dict[str, Any]:
@@ -276,7 +283,7 @@ def encrypt_password(steam_key: SteamKey, password: bytes) -> bytes:
     return base64.b64encode(encrypted_password)
 
 
-def new_time_hash(server_time, tag, secret):
+def new_time_hash(server_time: int, tag: str, secret: str) -> str:
     key = base64.b64decode(secret)
     msg = server_time.to_bytes(8, 'big') + tag.encode()
     auth = hmac.new(key, msg, hashlib.sha1)

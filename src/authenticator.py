@@ -127,6 +127,7 @@ class AndroidDebugBridge(object):
         data = await self._get_data('shared_prefs/steam.uuid.xml')
         xml_data = ElementTree.fromstring(data)
 
+        assert isinstance(xml_data[0].text, str), "No device id on xml_data"
         return xml_data[0].text[8:]
 
 

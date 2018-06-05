@@ -17,7 +17,7 @@
 #
 
 import os
-from typing import Dict, NamedTuple, Optional
+from typing import Any, Dict, NamedTuple, Optional
 
 import aiohttp
 import ujson
@@ -37,7 +37,7 @@ class Http(object):
             server: str = 'https://www.steamtrades.com',
             bump_script: str = 'ajax.php',
             headers: Optional[Dict[str, str]] = None,
-    ):
+    ) -> None:
         self.session = session
         self.server = server
         self.bump_script = bump_script
@@ -54,7 +54,7 @@ class Http(object):
             html = await response.text()
             return TradeInfo(id, title, html)
 
-    async def bump(self, trade_info: TradeInfo):
+    async def bump(self, trade_info: TradeInfo) -> Dict[str, Any]:
         soup = BeautifulSoup(trade_info.html, 'html.parser')
         if soup.find('div', class_='js_trade_open'):
             return {'success': False, 'reason': 'trade is closed'}
