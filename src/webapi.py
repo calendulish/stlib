@@ -194,7 +194,7 @@ class Http(object):
         params = {
             'p': deviceid,
             'a': steamid,
-            'k': generate_time_hash(server_time, 'conf', identity_secret),
+            'k': new_time_hash(server_time, 'conf', identity_secret),
             't': server_time,
             'm': 'android',
             'tag': 'conf',
@@ -208,7 +208,7 @@ class Http(object):
             details_params = {
                 'p': deviceid,
                 'a': steamid,
-                'k': generate_time_hash(server_time, f"details{confirmation['data-confid']}", identity_secret),
+                'k': new_time_hash(server_time, f"details{confirmation['data-confid']}", identity_secret),
                 't': server_time,
                 'm': 'android',
                 'tag': f"details{confirmation['data-confid']}",
@@ -268,7 +268,7 @@ class Http(object):
         params = {
             'p': deviceid,
             'a': steamid,
-            'k': generate_time_hash(server_time, 'conf', identity_secret),
+            'k': new_time_hash(server_time, 'conf', identity_secret),
             't': server_time,
             'm': 'android',
             'tag': 'conf',
@@ -287,7 +287,7 @@ def encrypt_password(steam_key: SteamKey, password: bytes) -> bytes:
     return base64.b64encode(encrypted_password)
 
 
-def generate_time_hash(server_time, tag, secret):
+def new_time_hash(server_time, tag, secret):
     key = base64.b64decode(secret)
     msg = server_time.to_bytes(8, 'big') + tag.encode()
     auth = hmac.new(key, msg, hashlib.sha1)
