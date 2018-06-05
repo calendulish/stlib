@@ -188,34 +188,19 @@ class Http(object):
         return result
 
     async def get_confirmations(self, identity_secret: str, steamid: int, deviceid: str) -> List[Confirmation]:
-        with client.SteamGameServer() as server:
-            server_time = server.get_url_time()
-
-        params = {
-            'p': deviceid,
-            'a': steamid,
-            'k': new_time_hash(server_time, 'conf', identity_secret),
-            't': server_time,
-            'm': 'android',
-            'tag': 'conf',
-        }
+        params = new_query(deviceid, steamid, identity_secret, 'conf')
 
         async with self.session.get(f'{self.mobileconf_url}/conf', params=params) as response:
             html = BeautifulSoup(await response.text(), 'html.parser')
 
         confirmations = []
         for confirmation in html.find_all('div', class_='mobileconf_list_entry'):
-            details_params = {
-                'p': deviceid,
-                'a': steamid,
-                'k': new_time_hash(server_time, f"details{confirmation['data-confid']}", identity_secret),
-                't': server_time,
-                'm': 'android',
-                'tag': f"details{confirmation['data-confid']}",
-            }
+            details_params = new_query(deviceid, steamid, identity_secret, f"details{confirmation['data-confid']}")
 
-            async with self.session.get(f"{self.mobileconf_url}/details/{confirmation['data-confid']}",
-                                        params=details_params) as response:
+            async with self.session.get(
+                    f"{self.mobileconf_url}/details/{confirmation['data-confid']}",
+                    params=details_params,
+            ) as response:
                 json_data = await response.json()
 
                 if not json_data['success']:
@@ -262,23 +247,27 @@ class Http(object):
             trade_key: int,
             action: str
     ):
-        with client.SteamGameServer() as server:
-            server_time = server.get_server_time()
+        extra_params = {'cid': trade_id, 'ck': trade_key, 'op': action}
+        params = new_query(deviceid, steamid, identity_secret, 'conf')
 
-        params = {
-            'p': deviceid,
-            'a': steamid,
-            'k': new_time_hash(server_time, 'conf', identity_secret),
-            't': server_time,
-            'm': 'android',
-            'tag': 'conf',
-            'cid': trade_id,
-            'ck': trade_key,
-            'op': action
-        }
-
-        async with self.session.get(f'{self.mobileconf_url}/ajaxop', params=params) as response:
+        async with self.session.get(f'{self.mobileconf_url}/ajaxop', params={**params, **extra_params}) as response:
             return await response.json()
+
+
+def new_query(deviceid: str, steamid: int, identity_secret: str, tag: str) -> Dict[str, Any]:
+    with client.SteamGameServer() as server:
+        server_time = server.get_server_time()
+
+    params = {
+        'p': deviceid,
+        'a': steamid,
+        'k': new_time_hash(server_time, 'conf', identity_secret),
+        't': server_time,
+        'm': 'android',
+        'tag': tag,
+    }
+
+    return params
 
 
 def encrypt_password(steam_key: SteamKey, password: bytes) -> bytes:
