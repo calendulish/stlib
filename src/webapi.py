@@ -268,7 +268,7 @@ def new_query(deviceid: str, steamid: int, identity_secret: str, tag: str) -> Di
     params = {
         'p': deviceid,
         'a': steamid,
-        'k': new_time_hash(server_time, 'conf', identity_secret),
+        'k': new_time_hash(server_time, tag, identity_secret),
         't': server_time,
         'm': 'android',
         'tag': tag,
