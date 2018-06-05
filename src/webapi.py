@@ -17,6 +17,7 @@
 #
 
 import base64
+import contextlib
 import hashlib
 import hmac
 import time
@@ -40,7 +41,6 @@ class Confirmation(NamedTuple):
     give: List[str]
     to: str
     receive: List[str]
-    created: str
 
 
 class Http(object):
@@ -51,6 +51,7 @@ class Http(object):
             login_server: str = 'https://steamcommunity.com/login',
             openid_server: str = 'https://steamcommunity.com/openid',
             mobileconf_server: str = 'https://steamcommunity.com/mobileconf',
+            economy_server: str = 'https://steamcommunity.com/economy',
             headers: Optional[Dict[str, str]] = None,
     ):
         self.session = session
@@ -58,6 +59,7 @@ class Http(object):
         self.login_server = login_server
         self.openid_server = openid_server
         self.mobileconf_server = mobileconf_server
+        self.economy_server = economy_server
 
         if not headers:
             headers = {'User-Agent': 'Unknown/0.0.0'}
@@ -158,6 +160,33 @@ class Http(object):
 
             return json_data
 
+    async def get_names_from_item_list(
+            self,
+            item_list: BeautifulSoup,
+    ) -> List[Dict[str, Any]]:
+        result = []
+        for tradeoffer_item in item_list.find_all('div', class_="trade_item"):
+            appid, classid = tradeoffer_item['data-economy-item'].split('/')[1:3]
+
+            async with self.session.get(
+                    f"{self.economy_server}/itemclasshover/{appid}/{classid}",
+                    params={'content_only': 1},
+            ) as response:
+                html = BeautifulSoup(await response.text(), "html.parser")
+                javascript = html.find('script')
+
+            json_data = js_to_json(javascript)
+
+            if json_data:
+                if json_data['market_name']:
+                    result.append(json_data['market_name'])
+                else:
+                    result.append(json_data['name'])
+            else:
+                result.append(None)
+
+        return result
+
     async def get_confirmations(self, identity_secret: str, steamid: int, deviceid: str) -> List[Confirmation]:
         with client.SteamGameServer() as server:
             server_time = server.get_server_time()
@@ -174,29 +203,42 @@ class Http(object):
         async with self.session.get(f'{self.mobileconf_server}/conf', params=params) as response:
             html = BeautifulSoup(await response.text(), 'html.parser')
 
-        with open('test.html', 'w', encoding='utf-8') as file:
-            file.write(str(html))
-
         confirmations = []
         for confirmation in html.find_all('div', class_='mobileconf_list_entry'):
-            description = confirmation.find('div', class_='mobileconf_list_entry_description').find_all()
+            details_params = {
+                'p': deviceid,
+                'a': steamid,
+                'k': generate_time_hash(server_time, f"details{confirmation['data-confid']}", identity_secret),
+                't': server_time,
+                'm': 'android',
+                'tag': f"details{confirmation['data-confid']}",
+            }
+
+            async with self.session.get(f"{self.mobileconf_server}/details/{confirmation['data-confid']}",
+                                        params=details_params) as response:
+                json_data = await response.json()
+
+                if not json_data['success']:
+                    raise AttributeError(f"Unable to get details for confirmation {confirmation['data-confid']}")
+
+                html = BeautifulSoup(json_data["html"], 'html.parser')
 
             if confirmation['data-type'] == "1" or confirmation['data-type'] == "2":
-                give_raw = description[0].get_text()[6:]
-                give = give_raw[:give_raw.index(" to ")].split(', ')
-                to = give_raw[give_raw.index(" to ") + 4:]
+                to = html.find('span', class_="trade_partner_headline_sub").get_text()
 
-                if description[1].get_text() == 'You will receive nothing':
-                    receive = ["nothing"]
-                else:
-                    receive = description[1].get_text()[11:].split(', ')
-
-                created = description[2].get_text()
+                item_list = html.find_all('div', class_="tradeoffer_item_list")
+                give = await self.get_names_from_item_list(item_list[0])
+                receive = await self.get_names_from_item_list(item_list[1])
             elif confirmation['data-type'] == "3":
-                give = [description[0].get_text()[7:]]
-                to = 'Market'
-                receive = [description[1].get_text()]
-                created = description[2].get_text()
+                to = "Market"
+
+                listing_prices = html.find('div', class_="mobileconf_listing_prices")
+                prices = [item.next_sibling.strip() for item in listing_prices.find_all("br")]
+                receive = ["{} ({})".format(*prices)]
+
+                javascript = html.find_all("script")[2]
+                json_data = js_to_json(javascript)
+                give = [f"{json_data['market_name']} - {json_data['type']}"]
             else:
                 raise NotImplementedError(f"Data Type: {confirmation['data-type']}")
 
@@ -205,7 +247,7 @@ class Http(object):
                     confirmation['data-accept'],
                     confirmation['data-confid'],
                     confirmation['data-key'],
-                    give, to, receive, created,
+                    give, to, receive,
                 )
             )
 
@@ -252,3 +294,19 @@ def generate_time_hash(server_time, tag, secret):
     code = base64.b64encode(auth.digest())
 
     return code.decode()
+
+
+def js_to_json(javascript: BeautifulSoup) -> Dict[str, Any]:
+    json_data = {}
+
+    for line in str(javascript).split('\t+'):
+        if "BuildHover" in line:
+            for item in line.split(','):
+                with contextlib.suppress(ValueError):
+                    key_raw, value_raw = item.split(':"')
+                    key = key_raw.replace('"', '')
+                    value = bytes(value_raw.replace('"', ''), 'utf-8').decode('unicode_escape')
+                    json_data[key] = value
+        break
+
+    return json_data
