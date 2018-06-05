@@ -47,19 +47,19 @@ class Http(object):
     def __init__(
             self,
             session: aiohttp.ClientSession,
-            api_server: str = 'https://api.steampowered.com',
-            login_server: str = 'https://steamcommunity.com/login',
-            openid_server: str = 'https://steamcommunity.com/openid',
-            mobileconf_server: str = 'https://steamcommunity.com/mobileconf',
-            economy_server: str = 'https://steamcommunity.com/economy',
+            api_url: str = 'https://api.steampowered.com',
+            login_url: str = 'https://steamcommunity.com/login',
+            openid_url: str = 'https://steamcommunity.com/openid',
+            mobileconf_url: str = 'https://steamcommunity.com/mobileconf',
+            economy_url: str = 'https://steamcommunity.com/economy',
             headers: Optional[Dict[str, str]] = None,
     ):
         self.session = session
-        self.api_server = api_server
-        self.login_server = login_server
-        self.openid_server = openid_server
-        self.mobileconf_server = mobileconf_server
-        self.economy_server = economy_server
+        self.api_url = api_url
+        self.login_url = login_url
+        self.openid_url = openid_url
+        self.mobileconf_url = mobileconf_url
+        self.economy_url = economy_url
 
         if not headers:
             headers = {'User-Agent': 'Unknown/0.0.0'}
@@ -76,7 +76,7 @@ class Http(object):
     ) -> Dict[str, Any]:
         kwargs = {
             'method': 'POST' if data else 'GET',
-            'url': f'{self.api_server}/{interface}/{method}/v{version}/',
+            'url': f'{self.api_url}/{interface}/{method}/v{version}/',
             'params': payload,
             'json': data,
         }
@@ -93,7 +93,7 @@ class Http(object):
         return int(data['response']['steamid'])
 
     async def get_steam_key(self, username: str) -> SteamKey:
-        async with self.session.get(f'{self.login_server}/getrsakey/', params={'username': username}) as response:
+        async with self.session.get(f'{self.login_url}/getrsakey/', params={'username': username}) as response:
             json_data = await response.json()
 
         if json_data['success']:
@@ -106,7 +106,7 @@ class Http(object):
         return SteamKey(rsa.PublicKey(public_mod, public_exp), timestamp)
 
     async def get_captcha(self, gid):
-        async with self.session.get(f'{self.login_server}/rendercaptcha/', params={'gid': gid}) as response:
+        async with self.session.get(f'{self.login_url}/rendercaptcha/', params={'gid': gid}) as response:
             return await response.read()
 
     async def do_login(
@@ -132,7 +132,7 @@ class Http(object):
             "donotcache": ''.join([str(int(time.time())), '000']),
         }
 
-        async with self.session.post(f'{self.login_server}/dologin', data=data) as response:
+        async with self.session.post(f'{self.login_url}/dologin', data=data) as response:
             json_data = await response.json()
 
             return json_data
@@ -148,7 +148,7 @@ class Http(object):
                 except KeyError:
                     pass
 
-        async with self.session.post(f'{self.openid_server}/login', headers=self.headers, data=data) as response:
+        async with self.session.post(f'{self.openid_url}/login', headers=self.headers, data=data) as response:
             avatar = BeautifulSoup(await response.text(), 'html.parser').find('a', class_='nav_avatar')
 
             if avatar:
@@ -169,7 +169,7 @@ class Http(object):
             appid, classid = tradeoffer_item['data-economy-item'].split('/')[1:3]
 
             async with self.session.get(
-                    f"{self.economy_server}/itemclasshover/{appid}/{classid}",
+                    f"{self.economy_url}/itemclasshover/{appid}/{classid}",
                     params={'content_only': 1},
             ) as response:
                 html = BeautifulSoup(await response.text(), "html.parser")
@@ -189,7 +189,7 @@ class Http(object):
 
     async def get_confirmations(self, identity_secret: str, steamid: int, deviceid: str) -> List[Confirmation]:
         with client.SteamGameServer() as server:
-            server_time = server.get_server_time()
+            server_time = server.get_url_time()
 
         params = {
             'p': deviceid,
@@ -200,7 +200,7 @@ class Http(object):
             'tag': 'conf',
         }
 
-        async with self.session.get(f'{self.mobileconf_server}/conf', params=params) as response:
+        async with self.session.get(f'{self.mobileconf_url}/conf', params=params) as response:
             html = BeautifulSoup(await response.text(), 'html.parser')
 
         confirmations = []
@@ -214,7 +214,7 @@ class Http(object):
                 'tag': f"details{confirmation['data-confid']}",
             }
 
-            async with self.session.get(f"{self.mobileconf_server}/details/{confirmation['data-confid']}",
+            async with self.session.get(f"{self.mobileconf_url}/details/{confirmation['data-confid']}",
                                         params=details_params) as response:
                 json_data = await response.json()
 
@@ -277,7 +277,7 @@ class Http(object):
             'op': action
         }
 
-        async with self.session.get(f'{self.mobileconf_server}/ajaxop', params=params) as response:
+        async with self.session.get(f'{self.mobileconf_url}/ajaxop', params=params) as response:
             return await response.json()
 
 
