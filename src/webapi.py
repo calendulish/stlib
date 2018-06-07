@@ -184,7 +184,7 @@ class Http(object):
 
             if json_data:
                 if json_data['market_name']:
-                    result.append(json_data['market_name'])
+                    result.append(f"{json_data['market_name']} ({json_data['type']})")
                 else:
                     result.append(json_data['name'])
             else:
