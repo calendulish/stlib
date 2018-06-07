@@ -88,7 +88,7 @@ classifiers = [
 
 setup(
     name='stlib',
-    version='0.3.0.dev1',
+    version='0.3.1.dev1',
     description="Async library that provides features related to Steam client and compatible stuffs",
     author='Lara Maia',
     author_email='dev@lara.click',
