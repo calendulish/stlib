@@ -66,7 +66,7 @@ class AndroidDebugBridge(object):
         if isinstance(pre_tasks_result[0], Exception):
             raise AttributeError('Phone is not connected')
 
-        if isinstance(pre_tasks_result[0], Exception):
+        if isinstance(pre_tasks_result[1], Exception):
             raise AttributeError('Unable switch to root mode')
 
         await self._run(['wait-for-device'])
