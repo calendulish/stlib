@@ -56,6 +56,10 @@ class Http(object):
 
     async def bump(self, trade_info: TradeInfo) -> Dict[str, Any]:
         soup = BeautifulSoup(trade_info.html, 'html.parser')
+
+        if not soup.find('a', class_='nav_avatar'):
+            return {'success': False, 'reason': "You're not logged in"}
+
         if soup.find('div', class_='js_trade_open'):
             return {'success': False, 'reason': 'trade is closed'}
 
