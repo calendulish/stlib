@@ -29,20 +29,14 @@ Dependencies to run
 - asyncio
 - beautifulsoup4
 
+
+API Reference
+-------------
+
+https://lara.click/stlib
+
 Examples
 --------
-
-- **steam_api (low-level)**
-
-```
-from stlib import steam_api
-
-steam_api.init()            # SteamAPI_Init
-steam_api.shutdown()        # SteamAPI_Shutdown
-
-steam_api.server_init()     # SteamGameServer_Init
-steam_api.server_shutdown() # SteamGameServer_Shutdown
-```
 
 - **Client**
 
@@ -113,55 +107,6 @@ adb = authenticator.AndroidDebugBridge(
 secret = await adb.get_json(*names)
 ```
 
-- **WebAPI**
-
-```
-from stlib import webapi
-
-async with aiohttp.ClientSession() as session:
-    http = webapi.Http(session)
-
-    user_id = await http.get_user_id(<steam nickname>)
-
-    # It'll returns SteamKey object with "key" and "timestamp" attributes
-    # (E.g.: steam_key.timestamp)
-    steam_key = await http.get_steam_key(<steam username>)
-
-    # log-in a client on steam. Returns json data.
-    json_data = await http.do_login(
-        # required
-        <steam username>,
-        <encrypted_password>,
-        <steamkey_timestamp>,
-        # optional
-        <code from steam guard/authenticator>,
-        <code from email>,
-        <captcha gid>,
-        <captcha text>,
-    )
-
-    # Log-in on web page that uses steam openid platform. Returns json data.
-    # (E.g.: await do_openid_login('https://steamgifts.com/?login')
-    json_data = await http.do_openid_login(<custom login page>)
-
-# receives a bytes like password and returns a SteamKey encrypted password
-encrypted_password = webapi.encrypt_password(<SteamKey>, <raw password>)
-```
-
-- **Steamtrades**
-
-```
-from stlib import steamtrades
-
-async with aiohttp.ClientSession() as session:
-    http = steamtrades.Http(session)
-
-    # returns a TradeInfo object with "id", "title", and "html" attributes:
-    await http.get_trade_info(<trade id>)
-
-    # returns json data with trade status
-    await http.bump(<TradeInfo object>)
-```
 ___________________________________________________________________________________________
 
 This is an work in progress. You can request new features.
