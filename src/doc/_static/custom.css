@@ -1,0 +1,31 @@
+div.body {
+    min-width: 450px;
+    max-width: inherit;
+}
+
+div.documentwrapper, div.related {
+    background-color: #092c69;
+}
+
+th.field-name {
+    background-color: white;
+    font-weight: normal;
+}
+
+table.docutils td, table.docutils th {
+    padding: 2px;
+}
+
+div.body h3 {
+    background-color: white;
+    border-bottom: none;
+    margin-left: 2px;
+}
+
+dl.exception {
+    padding-left: 30px;
+}
+
+dl.method {
+    margin-top: 15px;
+}
