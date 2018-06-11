@@ -18,6 +18,7 @@
 
 import multiprocessing
 import os
+import sys
 from multiprocessing import connection
 from types import TracebackType
 from typing import Any, Callable, Optional, Type, TypeVar
@@ -122,7 +123,9 @@ class SteamApiExecutor(multiprocessing.Process):
     def shutdown(self: SteamApiExecutorType) -> None:
         self.exit_now.set()
         self.join(5)
-        self.close()  # type: ignore # https://github.com/python/typeshed/issues/2022
+
+        if sys.version_info >= (3, 7):
+            self.close()
 
     def call(self: SteamApiExecutorType, method: Callable[..., Any]) -> Any:
         self._interface.send(method)
