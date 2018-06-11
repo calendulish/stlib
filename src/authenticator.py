@@ -40,6 +40,21 @@ class AuthenticatorCode(NamedTuple):
     server_time: int
 
 
+class DeviceError(Exception): pass
+
+
+class RootError(Exception): pass
+
+
+class LoginError(Exception): pass
+
+
+class SteamGuardError(Exception): pass
+
+
+class MobileAppError(SteamGuardError): pass
+
+
 class AndroidDebugBridge(object):
     def __init__(
             self,
@@ -64,10 +79,10 @@ class AndroidDebugBridge(object):
                                                 return_exceptions=True)
 
         if isinstance(pre_tasks_result[0], Exception):
-            raise AttributeError('Phone is not connected')
+            raise DeviceError('Phone is not connected')
 
         if isinstance(pre_tasks_result[1], Exception):
-            raise AttributeError('Unable switch to root mode')
+            raise RootError('Unable switch to root mode')
 
         await self._run(['wait-for-device'])
 
@@ -82,11 +97,11 @@ class AndroidDebugBridge(object):
         for index, result in enumerate(tasks_result):
             if isinstance(result, Exception):
                 if index == 0:
-                    raise AttributeError('Root is not available')
+                    raise RootError('Root is not available')
                 elif index == 1:
-                    raise AttributeError('user is not logged-in on Mobile Authenticator')
+                    raise LoginError('User is not logged-in on Mobile Authenticator')
                 else:
-                    raise AttributeError('Steam Guard is not enabled')
+                    raise SteamGuardError('Steam Guard is not enabled')
 
     async def _run(self, params: List[Any]) -> str:
         process = await asyncio.create_subprocess_exec(
@@ -109,7 +124,7 @@ class AndroidDebugBridge(object):
         data = await self._run(['shell', 'su', '-c', f'"cat {os.path.join(self.app_path, path)}"'])
 
         if not data or 'No such file' in data:
-            raise FileNotFoundError('Something wrong with the Steam Mobile App.')
+            raise MobileAppError('Something wrong with the Steam Mobile App.')
 
         return data
 

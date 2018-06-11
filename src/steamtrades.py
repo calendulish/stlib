@@ -18,7 +18,7 @@
 
 import json
 import os
-from typing import Any, Dict, NamedTuple, Optional
+from typing import Dict, NamedTuple, Optional
 
 import aiohttp
 from bs4 import BeautifulSoup
@@ -28,6 +28,29 @@ class TradeInfo(NamedTuple):
     id: str
     title: str
     html: str
+
+
+class LoginError(Exception): pass
+
+
+class ClosedError(Exception):
+    def __init__(self, trade_info, message):
+        super().__init__(message)
+
+        self.id = trade_info.id
+        self.title = trade_info.title
+
+
+class NotReadyError(Exception):
+    def __init__(self, trade_info, time_left, message):
+        super().__init__(message)
+
+        self.time_left = time_left
+        self.id = trade_info.id
+        self.title = trade_info.title
+
+
+class NoTradesError(Exception): pass
 
 
 class Http(object):
@@ -54,14 +77,14 @@ class Http(object):
             html = await response.text()
             return TradeInfo(id, title, html)
 
-    async def bump(self, trade_info: TradeInfo) -> Dict[str, Any]:
+    async def bump(self, trade_info: TradeInfo) -> bool:
         soup = BeautifulSoup(trade_info.html, 'html.parser')
 
         if not soup.find('a', class_='nav_avatar'):
-            return {'success': False, 'reason': "You're not logged in"}
+            raise LoginError("User is not logged in")
 
         if soup.find('div', class_='js_trade_open'):
-            return {'success': False, 'reason': 'trade is closed'}
+            raise ClosedError(trade_info, f"Trade {trade_info.id} is closed")
 
         form = soup.find('form')
         data = {}
@@ -70,7 +93,7 @@ class Http(object):
             for input_ in form.findAll('input'):
                 data[input_['name']] = input_['value']
         except AttributeError:
-            raise AttributeError("No trades available to bump")
+            raise NoTradesError("No trades available to bump")
 
         payload = {
             'code': data['code'],
@@ -87,12 +110,12 @@ class Http(object):
             if 'Please wait another' in html:
                 error = json.loads(html)['popup_heading_h2'][0]
                 minutes_left = int(error.split(' ')[3])
-                return {'success': False, 'reason': 'Not Ready', 'minutes_left': minutes_left}
+                raise NotReadyError(trade_info, minutes_left, f"Trade {trade_info.id} is not ready")
             else:
                 async with self.session.post(f'{self.server}/trades', headers=self.headers) as response:
                     text = await response.text()
 
                 if trade_info.id in text:
-                    return {'success': True}
+                    return True
                 else:
-                    return {'success': False, 'reason': 'Unknown'}
+                    return False

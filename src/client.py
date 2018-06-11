@@ -28,6 +28,12 @@ SteamApiExecutorType = TypeVar('SteamApiExecutorType', bound='SteamApiExecutor')
 PipeType = connection.Connection
 
 
+class SteamGameServerError(Exception): pass
+
+
+class SteamAPIError(Exception): pass
+
+
 class _CaptureSTD(object):
     def __init__(self) -> None:
         self.old_stdout = os.dup(1)
@@ -56,7 +62,7 @@ class SteamGameServer(object):
             result = steam_api.server_init(ip, steam_port, game_port)
 
         if result is False:
-            raise AttributeError("Unable to initialize SteamGameServer")
+            raise SteamGameServerError("Unable to initialize SteamGameServer")
 
     def __enter__(self) -> Any:
         return steam_api.SteamGameServer()
@@ -87,7 +93,7 @@ class SteamApiExecutor(multiprocessing.Process):
         result = self.init()
 
         if result is False:
-            raise AttributeError("Unable to initialize SteamAPI (Invalid game id?)")
+            raise SteamAPIError("Unable to initialize SteamAPI (Invalid game id?)")
 
         return self
 
