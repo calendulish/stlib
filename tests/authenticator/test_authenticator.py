@@ -66,7 +66,7 @@ class TestAuthenticator:
         try:
             await self.adb.get_json('dummy_secret')
         except KeyError:
-            pass
+            return True
         else:
             return False
 

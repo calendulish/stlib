@@ -19,7 +19,7 @@ class TestWebApi:
 
     @requires_manual_testing
     @pytest.mark.asyncio
-    async def test_do_login(self):
+    async def test_do_login(self) -> None:
         async with aiohttp.ClientSession(raise_for_status=True) as session:
             http = webapi.Http(session, 'https://lara.click/api')
             steam_key = await http.get_steam_key(self.username)

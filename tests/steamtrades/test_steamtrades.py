@@ -20,7 +20,7 @@ class TestSteamTrades:
         adb = authenticator.AndroidDebugBridge(adb_path)
 
     @pytest.mark.asyncio
-    async def test_get_trade_info(self):
+    async def test_get_trade_info(self) -> None:
         async with aiohttp.ClientSession(raise_for_status=True) as session:
             http = steamtrades.Http(session)
             trade_info = await http.get_trade_info(self.trade_id)
@@ -33,7 +33,7 @@ class TestSteamTrades:
 
     @requires_manual_testing
     @pytest.mark.asyncio
-    async def test_bump(self):
+    async def test_bump(self) -> None:
         async with aiohttp.ClientSession(raise_for_status=True) as session:
             http = webapi.Http(session, 'https://lara.click/api')
             steam_key = await http.get_steam_key(self.username)
