@@ -13,4 +13,5 @@ install_test
 dist
 stlib.egg-info
 tests/config.ini
+tests/conftest.ini
 src/doc/_build

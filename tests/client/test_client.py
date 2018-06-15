@@ -8,7 +8,7 @@ from tests import debug, requires_manual_testing
 @requires_manual_testing
 def test_server() -> None:
     os.environ['SteamAppId'] = '480'
-    init_return = steam_api.server_init(0, 0, 0)
+    init_return = steam_api.server_init(0, 0, 1)
     assert isinstance(init_return, bool)
     assert init_return is True
 

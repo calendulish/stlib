@@ -16,7 +16,7 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 
-import asyncio
+import configparser
 import os
 
 import pytest
@@ -27,10 +27,11 @@ from tests import MANUAL_TESTING, debug, event_loop, requires_manual_testing
 
 
 class TestAuthenticator:
-    # noinspection PySimplifyBooleanCheck
-    if MANUAL_TESTING == True:
-        adb = authenticator.AndroidDebugBridge(os.path.join('C:\\', 'platform-tools', 'adb.exe'),
-                                               '/data/data/com.valvesoftware.android.steam.community/')
+    if MANUAL_TESTING:
+        config_parser = configparser.RawConfigParser()
+        config_parser.read(os.path.join(os.path.dirname(__file__), '..', 'conftest.ini'))
+        adb_path = config_parser.get("Test", "adb_path")
+        adb = authenticator.AndroidDebugBridge(adb_path)
 
     @requires_manual_testing
     @pytest.mark.asyncio
@@ -54,28 +55,33 @@ class TestAuthenticator:
 
     @requires_manual_testing
     @pytest.mark.asyncio
-    async def test_get_secret(self) -> None:
-        tasks = [
-            self.adb.get_secret('shared'),
-            self.adb.get_secret('identity'),
-            self.adb.get_secret('dummy'),
-        ]
+    async def test_get_secret(self) -> bool:
+        secrets = await self.adb.get_json('shared_secret', 'identity_secret')
 
-        results = await asyncio.gather(*tasks, return_exceptions=True)
-        debug(f'secrets: {results}')
+        debug(f'secrets: {secrets}')
 
-        assert isinstance(results[0], bytes)
-        assert isinstance(results[1], bytes)
-        assert isinstance(results[2], KeyError)
+        assert isinstance(secrets['shared_secret'], str)
+        assert isinstance(secrets['identity_secret'], str)
+
+        try:
+            await self.adb.get_json('dummy_secret')
+        except KeyError:
+            pass
+        else:
+            return False
 
     @requires_manual_testing
     @pytest.mark.asyncio
     async def test_get_code(self) -> None:
-        secret = await self.adb.get_secret('shared')
-        code = authenticator.get_code(secret)
+        secret = await self.adb.get_json('shared_secret')
+        code = authenticator.get_code(secret['shared_secret'])
+
         debug(f'result:{code}')
-        assert isinstance(code, tuple)
-        assert isinstance(code[0], list)
-        assert isinstance(code[1], int)
-        assert len(code[0]) == 5
-        assert len(str(code[1])) == 10
+
+        assert isinstance(code, authenticator.AuthenticatorCode)
+
+        assert isinstance(code.code, str)
+        assert len(code.code) == 5
+
+        assert isinstance(code.server_time, int)
+        assert len(str(code.server_time)) == 10
