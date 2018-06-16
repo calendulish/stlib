@@ -21,13 +21,13 @@ class TestWebApi:
     @pytest.mark.asyncio
     async def test_do_login(self) -> None:
         async with aiohttp.ClientSession(raise_for_status=True) as session:
-            http = webapi.Http(session, 'https://lara.click/api')
-            steam_key = await http.get_steam_key(self.username)
+            steam_webapi = webapi.SteamWebAPI(session, 'https://lara.click/api')
+            steam_key = await steam_webapi.get_steam_key(self.username)
             encrypted = webapi.encrypt_password(steam_key, self.password)
             json_data = await self.adb.get_json('shared_secret')
             code = authenticator.get_code(json_data['shared_secret'])
 
-            json_data = await http.do_login('laracraft93', encrypted, steam_key.timestamp, code.code)
+            json_data = await steam_webapi.do_login(self.username, encrypted, steam_key.timestamp, code.code)
             assert isinstance(json_data['success'], bool)
             assert json_data['success'] is True
 
@@ -35,16 +35,16 @@ class TestWebApi:
             deviceid = await self.adb.get_device_id()
             steamid = json_data["transfer_parameters"]["steamid"]
 
-            confirmations = await http.get_confirmations(secret['identity_secret'], steamid, deviceid)
+            confirmations = await steam_webapi.get_confirmations(secret['identity_secret'], steamid, deviceid)
 
             for confirmation in confirmations:
                 assert isinstance(confirmation, webapi.Confirmation)
 
-                await http.finalize_confirmation(
-                    secret['identity_secret'],
-                    steamid,
-                    deviceid,
-                    confirmation.id,
-                    confirmation.key,
-                    "cancel",
-                )
+                # await steam_webapi.finalize_confirmation(
+                #    secret['identity_secret'],
+                #    steamid,
+                #    deviceid,
+                #    confirmation.id,
+                #    confirmation.key,
+                #    "cancel",
+                # )

@@ -3,7 +3,7 @@ import os
 
 import aiohttp
 import pytest
-from stlib import authenticator, steamtrades, webapi
+from stlib import authenticator, webapi
 
 from tests import MANUAL_TESTING, debug, requires_manual_testing
 
@@ -22,8 +22,8 @@ class TestSteamTrades:
     @pytest.mark.asyncio
     async def test_get_trade_info(self) -> None:
         async with aiohttp.ClientSession(raise_for_status=True) as session:
-            http = steamtrades.Http(session)
-            trade_info = await http.get_trade_info(self.trade_id)
+            steam_trades = webapi.SteamTrades(session)
+            trade_info = await steam_trades.get_trade_info(self.trade_id)
 
         assert isinstance(trade_info.id, str)
         assert len(trade_info.id) == 5
@@ -35,25 +35,24 @@ class TestSteamTrades:
     @pytest.mark.asyncio
     async def test_bump(self) -> None:
         async with aiohttp.ClientSession(raise_for_status=True) as session:
-            http = webapi.Http(session, 'https://lara.click/api')
-            steam_key = await http.get_steam_key(self.username)
+            steam_trades = webapi.SteamTrades(session, api_url='https://lara.click/api')
+            steam_key = await steam_trades.get_steam_key(self.username)
             encrypted_password = webapi.encrypt_password(steam_key, self.password.encode())
             json_data = await self.adb.get_json('shared_secret')
             debug(str(json_data))
             code = authenticator.get_code(json_data['shared_secret'])
 
-            json_data = await http.do_login('laracraft93', encrypted_password, steam_key.timestamp, code.code)
+            json_data = await steam_trades.do_login(self.username, encrypted_password, steam_key.timestamp, code.code)
             debug(str(json_data))
             assert isinstance(json_data['success'], bool)
             assert json_data['success'] == True
 
-            json_data = await http.do_openid_login('https://steamtrades.com/?login')
+            json_data = await steam_trades.do_openid_login('https://steamtrades.com/?login')
             debug(str(json_data))
             assert isinstance(json_data['success'], bool)
             assert json_data['success'] == True
 
-            http = steamtrades.Http(session)
-            trade_info = await http.get_trade_info(self.trade_id)
-            #bump_result = await http.bump(trade_info)
+            trade_info = await steam_trades.get_trade_info(self.trade_id)
+            #bump_result = await steam_trades.bump(trade_info)
             #debug(str(bump_result))
             #assert isinstance(bump_result, bool)
