@@ -277,8 +277,8 @@ def new_query(deviceid: str, steamid: int, identity_secret: str, tag: str) -> Di
     return params
 
 
-def encrypt_password(steam_key: SteamKey, password: bytes) -> bytes:
-    encrypted_password = rsa.encrypt(password, steam_key.key)
+def encrypt_password(steam_key: SteamKey, password: str) -> bytes:
+    encrypted_password = rsa.encrypt(password.encode(), steam_key.key)
 
     return base64.b64encode(encrypted_password)
 
