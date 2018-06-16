@@ -70,34 +70,16 @@ Exceptions:
 
 .. autoexception:: SteamGameServerError
 
-SteamTrades Module
-------------------
-
-.. automodule:: steamtrades
-
-.. autoclass:: Http
-   :members:
-   :undoc-members:
-
-Data Structures:
-^^^^^^^^^^^^^^^^
-
-.. autoclass:: TradeInfo
-
-Exceptions:
-^^^^^^^^^^^
-
-.. autoexception:: LoginError
-.. autoexception:: ClosedError
-.. autoexception:: NotReadyError
-.. autoexception:: NoTradesError
-
 Webapi Module
 -------------
 
 .. automodule:: webapi
 
-.. autoclass:: Http
+.. autoclass:: SteamWebAPI
+   :members:
+   :undoc-members:
+
+.. autoclass:: SteamTrades
    :members:
    :undoc-members:
 
@@ -113,6 +95,20 @@ Data Structures:
 .. autoclass:: SteamKey
 
 .. autoclass:: Confirmation
+
+.. autoclass:: TradeInfo
+
+
+Exceptions:
+^^^^^^^^^^^
+
+.. autoexception:: LoginError
+
+.. autoexception:: ClosedError
+
+.. autoexception:: NotReadyError
+
+.. autoexception:: NoTradesError
 
 Indices and tables
 ------------------
