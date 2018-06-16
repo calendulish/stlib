@@ -38,8 +38,8 @@ class SteamKey(NamedTuple):
 
 class Confirmation(NamedTuple):
     mode: str
-    id: str
-    key: str
+    id: int
+    key: int
     give: List[str]
     to: str
     receive: List[str]
@@ -266,8 +266,8 @@ class SteamWebAPI(object):
             confirmations.append(
                 Confirmation(
                     confirmation['data-accept'],
-                    confirmation['data-confid'],
-                    confirmation['data-key'],
+                    int(confirmation['data-confid']),
+                    int(confirmation['data-key']),
                     give, to, receive,
                 )
             )
