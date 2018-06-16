@@ -10,9 +10,10 @@ stlib
 [![GitHub Test release](https://img.shields.io/badge/testing-0.0.0_DEV-orange.svg)](https://github.com/ShyPixie/stlib/releases)
 [![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=WVQ5XM935XNLN&item_name=stlib)
 
-Async library that provides features related to Steam client and compatible stuffs
+Async library that provides features related to Steam client and compatible stuff
 
-WORK IN PROGRESS
+WARNING: stlib is not intended to be used in game development, there is no support to callbacks and I'll not work on that.
+stlib is intended to develop console or GUI applications that need interaction with SteamAPI or SteamWebAPI.
 
 
 Dependencies to build (Windows)
