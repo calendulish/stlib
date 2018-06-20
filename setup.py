@@ -34,6 +34,8 @@ SDK_PATH = os.path.join(SOURCES_PATH, 'steamworks_sdk')
 HEADERS_PATH = os.path.join(SDK_PATH, 'public')
 
 if os.name == 'nt':
+    DATA_DIR = PACKAGE_PATH
+
     if arch == 64:
         REDIST_PATH = os.path.join(SDK_PATH, 'redistributable_bin', 'win64')
         API_NAME = 'steam_api64'
@@ -41,6 +43,7 @@ if os.name == 'nt':
         REDIST_PATH = os.path.join(SDK_PATH, 'redistributable_bin')
         API_NAME = 'steam_api'
 elif os.name == 'posix':
+    DATA_DIR = os.path.abspath(os.path.join(os.path.sep, 'opt', 'stlib'))
     API_NAME = 'steam_api'
 
     if arch == 64:
@@ -54,18 +57,18 @@ else:
 
 def fix_runtime_path() -> Mapping[str, List[str]]:
     if os.name == 'posix':
-        return {'runtime_library_dirs': [PACKAGE_PATH]}
+        return {'runtime_library_dirs': [os.path.join(DATA_DIR, 'lib')]}
     else:
         return {}
 
 
 def include_extra_libraries() -> Mapping[str, List[Tuple[str, List[str]]]]:
     if os.name == 'nt':
-        library = [os.path.join(REDIST_PATH, f'{API_NAME}.dll')]
+        library = (PACKAGE_PATH, [os.path.join(REDIST_PATH, f'{API_NAME}.dll')])
     else:
-        library = [os.path.join(REDIST_PATH, f'lib{API_NAME}.so')]
+        library = (os.path.join(DATA_DIR, 'lib'), [os.path.join(REDIST_PATH, f'lib{API_NAME}.so')])
 
-    return {'data_files': [(PACKAGE_PATH, library)]}
+    return {'data_files': [library]}
 
 
 steam_api = Extension(
