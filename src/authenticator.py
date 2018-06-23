@@ -164,3 +164,15 @@ def get_code(shared_secret: Union[str, bytes]) -> AuthenticatorCode:
         auth_code_raw //= len(__STEAM_ALPHABET)
 
     return AuthenticatorCode(''.join(auth_code), server_time)
+
+
+def generate_device_id(identity_secret: str) -> str:
+    digest = hashlib.sha1(identity_secret.encode()).hexdigest()
+    device_id = ['android:']
+
+    for start, end in ([0, 8], [8, 12], [12, 16], [16, 20], [20, 32]):
+        device_id.append(digest[start:end])
+        device_id.append('-')
+
+    device_id.pop(-1)
+    return ''.join(device_id)

@@ -32,6 +32,8 @@ Authenticator Module
 
 .. autofunction:: get_code
 
+.. autofunction:: generate_device_id
+
 Data Structures:
 ^^^^^^^^^^^^^^^^
 
