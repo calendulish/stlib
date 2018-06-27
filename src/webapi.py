@@ -163,7 +163,7 @@ class SteamWebAPI(object):
             "captcha_text": captcha_text,
             "loginfriendlyname": "stlib",
             "rsatimestamp": key_timestamp,
-            "remember_login": 'false',
+            "remember_login": 'true',
             "donotcache": ''.join([str(int(time.time())), '000']),
         }
 
@@ -179,10 +179,8 @@ class SteamWebAPI(object):
             data = {}
 
             for input_ in form.findAll('input'):
-                try:
+                with contextlib.suppress(KeyError):
                     data[input_['name']] = input_['value']
-                except KeyError:
-                    pass
 
         async with self.session.post(f'{self.openid_url}/login', headers=self.headers, data=data) as response:
             avatar = BeautifulSoup(await response.text(), 'html.parser').find('a', class_='nav_avatar')
@@ -190,7 +188,7 @@ class SteamWebAPI(object):
             if avatar:
                 json_data = {'success': True, 'steamid': avatar['href'].split('/')[2]}
             else:
-                json_data = {'success': False}
+                raise LoginError('Unable to log-in')
 
             json_data.update(data)
 
@@ -226,8 +224,11 @@ class SteamWebAPI(object):
     async def get_confirmations(self, identity_secret: str, steamid: int, deviceid: str) -> List[Confirmation]:
         params = new_query(deviceid, steamid, identity_secret, 'conf')
 
-        async with self.session.get(f'{self.mobileconf_url}/conf', params=params) as response:
+        async with self.session.get(f'{self.mobileconf_url}/conf', params=params, allow_redirects=False) as response:
             html = BeautifulSoup(await response.text(), 'html.parser')
+
+            if response.status == 302:
+                raise LoginError('User is not logged in')
 
         confirmations = []
         for confirmation in html.find_all('div', class_='mobileconf_list_entry'):
