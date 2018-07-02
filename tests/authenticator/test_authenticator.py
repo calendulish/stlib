@@ -17,10 +17,14 @@
 #
 
 import configparser
+import contextlib
 import os
 
 import pytest
 from stlib import authenticator
+
+with contextlib.suppress(ImportError):
+    from stlib import client
 
 # noinspection PyUnresolvedReferences
 from tests import MANUAL_TESTING, debug, event_loop, requires_manual_testing
@@ -73,8 +77,11 @@ class TestAuthenticator:
     @requires_manual_testing
     @pytest.mark.asyncio
     async def test_get_code(self) -> None:
+        with client.SteamGameServer() as server:
+            server_time = server.get_server_time()
+
         secret = await self.adb.get_json('shared_secret')
-        code = authenticator.get_code(secret['shared_secret'])
+        code = authenticator.get_code(server_time, secret['shared_secret'])
 
         debug(f'result:{code}')
 

@@ -16,12 +16,12 @@ WARNING: stlib is not intended to be used in game development, there is no suppo
 stlib is intended to develop console or GUI applications that need interaction with SteamAPI or SteamWebAPI.
 
 
-Dependencies to build (Windows)
+Dependencies to build
 -------------------------------
 
-- Steamworks SDK >= v1.42 (put contents on src/steam_api/steamworks_sdk folder)
 - Python and headers >= 3.6
 - Microsoft Visual C++ compiler (MSVC) or GNU Compiler (GCC)
+- (Optional) Steamworks SDK >= v1.42 (to build SteamAPI C Extension)
 
 Dependencies to run
 -------------------
@@ -29,6 +29,8 @@ Dependencies to run
 - Python >= 3.6
 - asyncio
 - beautifulsoup4
+- rsa
+- aiohttp
 
 
 API Reference

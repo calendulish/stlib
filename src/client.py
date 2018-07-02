@@ -23,7 +23,13 @@ from multiprocessing import connection
 from types import TracebackType
 from typing import Any, Callable, Optional, Type, TypeVar
 
-from stlib import steam_api  # type: ignore
+try:
+    from stlib import steam_api  # type: ignore
+except ImportError:
+    raise ImportError(
+        'stlib has been built without steam_api support. '
+        'Client interface is unavailable'
+    )
 
 SteamApiExecutorType = TypeVar('SteamApiExecutorType', bound='SteamApiExecutor')
 PipeType = connection.Connection

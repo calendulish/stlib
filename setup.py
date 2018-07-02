@@ -16,12 +16,16 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 
+import glob
 import os
 import sys
+from distutils.command.build import build
+from distutils.command.install_data import install_data
 from distutils.sysconfig import get_python_lib
-from typing import List, Mapping, Tuple
+from typing import List, Mapping
 
 from setuptools import Extension, setup
+from setuptools.command.install import install
 
 if sys.maxsize > 2 ** 32:
     arch = 64
@@ -33,6 +37,8 @@ SOURCES_PATH = os.path.join('src', 'steam_api')
 SDK_PATH = os.path.join(SOURCES_PATH, 'steamworks_sdk')
 HEADERS_PATH = os.path.join(SDK_PATH, 'public')
 
+DISABLE_STEAM_API = False
+
 if os.name == 'nt':
     DATA_DIR = PACKAGE_PATH
 
@@ -42,6 +48,8 @@ if os.name == 'nt':
     else:
         REDIST_PATH = os.path.join(SDK_PATH, 'redistributable_bin')
         API_NAME = 'steam_api'
+
+    EXTRA_PREBUILT = (PACKAGE_PATH, [os.path.join(REDIST_PATH, f'{API_NAME}.dll')])
 elif os.name == 'posix':
     DATA_DIR = os.path.abspath(os.path.join(os.path.sep, 'opt', 'stlib'))
     API_NAME = 'steam_api'
@@ -50,6 +58,8 @@ elif os.name == 'posix':
         REDIST_PATH = os.path.join(SDK_PATH, 'redistributable_bin', 'linux64')
     else:
         REDIST_PATH = os.path.join(SDK_PATH, 'redistributable_bin', 'linux32')
+
+    EXTRA_PREBUILT = (os.path.join(DATA_DIR, 'lib'), [os.path.join(REDIST_PATH, f'lib{API_NAME}.so')])
 else:
     print('Your system is currently not supported.')
     sys.exit(1)
@@ -60,15 +70,6 @@ def fix_runtime_path() -> Mapping[str, List[str]]:
         return {'runtime_library_dirs': [os.path.join(DATA_DIR, 'lib')]}
     else:
         return {}
-
-
-def include_extra_libraries() -> Mapping[str, List[Tuple[str, List[str]]]]:
-    if os.name == 'nt':
-        library = (PACKAGE_PATH, [os.path.join(REDIST_PATH, f'{API_NAME}.dll')])
-    else:
-        library = (os.path.join(DATA_DIR, 'lib'), [os.path.join(REDIST_PATH, f'lib{API_NAME}.so')])
-
-    return {'data_files': [library]}
 
 
 steam_api = Extension(
@@ -89,6 +90,49 @@ classifiers = [
     'Programming Language :: Python :: 3.6',
 ]
 
+
+class OptionalBuild(build):
+    build.user_options.append(('disable-steam-api', None, 'disable SteamAPI C Extension'))
+
+    # noinspection PyAttributeOutsideInit
+    def initialize_options(self):
+        build.initialize_options(self)
+        self.disable_steam_api = DISABLE_STEAM_API
+
+    def run(self):
+        global DISABLE_STEAM_API
+        DISABLE_STEAM_API = self.disable_steam_api
+
+        for cmd_name in self.get_sub_commands():
+            if cmd_name == 'build_ext':
+                if DISABLE_STEAM_API:
+                    self.warn('You disable build of SteamAPI C Extension by command line parameters')
+                    continue
+                elif not os.path.isfile(os.path.join(SDK_PATH, 'public', 'steam', 'steam_api.h')):
+                    raise FileNotFoundError(
+                        f'Unable to find a valid Steamworks SDK in {SDK_PATH}\n'
+                        '(Did you want to use --disable-steam-api?)'
+                    )
+
+            self.run_command(cmd_name)
+
+
+class OptionalData(install_data):
+    def run(self):
+        if glob.glob(os.path.join('build', '**', '*.o'), recursive=True):
+            install_data.run(self)
+
+
+class InstallWithoutBuild(install):
+    # noinspection PyAttributeOutsideInit
+    def initialize_options(self):
+        install.initialize_options(self)
+        self.skip_build = True
+
+    def run(self):
+        install.run(self)
+
+
 setup(
     name='stlib',
     version='0.4.1.rc1',
@@ -102,6 +146,7 @@ setup(
     packages=['stlib'],
     package_dir={'stlib': 'src'},
     ext_modules=[steam_api],
+    data_files=[EXTRA_PREBUILT],
     requires=['aiohttp',
               'asyncio',
               'beautifulsoup4',
@@ -109,5 +154,9 @@ setup(
               ],
     python_requires='>=3.6',
     zip_safe=False,
-    **include_extra_libraries()
+    cmdclass={
+        'build': OptionalBuild,
+        'install_data': OptionalData,
+        'install': InstallWithoutBuild,
+    },
 )

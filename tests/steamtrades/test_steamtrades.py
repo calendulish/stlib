@@ -36,11 +36,12 @@ class TestSteamTrades:
     async def test_bump(self) -> None:
         async with aiohttp.ClientSession(raise_for_status=True) as session:
             steam_trades = webapi.SteamTrades(session, api_url='https://lara.click/api')
+            server_time = await steam_trades.get_server_time()
             steam_key = await steam_trades.get_steam_key(self.username)
-            encrypted_password = webapi.encrypt_password(steam_key, self.password.encode())
+            encrypted_password = webapi.encrypt_password(steam_key, self.password)
             json_data = await self.adb.get_json('shared_secret')
             debug(str(json_data))
-            code = authenticator.get_code(json_data['shared_secret'])
+            code = authenticator.get_code(server_time, json_data['shared_secret'])
 
             json_data = await steam_trades.do_login(self.username, encrypted_password, steam_key.timestamp, code.code)
             debug(str(json_data))
@@ -53,6 +54,6 @@ class TestSteamTrades:
             assert json_data['success'] == True
 
             trade_info = await steam_trades.get_trade_info(self.trade_id)
-            #bump_result = await steam_trades.bump(trade_info)
-            #debug(str(bump_result))
-            #assert isinstance(bump_result, bool)
+            # bump_result = await steam_trades.bump(trade_info)
+            # debug(str(bump_result))
+            # assert isinstance(bump_result, bool)

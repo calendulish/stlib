@@ -25,7 +25,8 @@ class TestWebApi:
             steam_key = await steam_webapi.get_steam_key(self.username)
             encrypted = webapi.encrypt_password(steam_key, self.password)
             json_data = await self.adb.get_json('shared_secret')
-            code = authenticator.get_code(json_data['shared_secret'])
+            server_time = await steam_webapi.get_server_time()
+            code = authenticator.get_code(server_time, json_data['shared_secret'])
 
             json_data = await steam_webapi.do_login(self.username, encrypted, steam_key.timestamp, code.code)
             assert isinstance(json_data['success'], bool)

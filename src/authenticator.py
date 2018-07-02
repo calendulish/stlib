@@ -27,8 +27,6 @@ import subprocess
 from typing import Any, Dict, List, NamedTuple, Union
 from xml.etree import ElementTree
 
-from stlib import client
-
 __STEAM_ALPHABET = ['2', '3', '4', '5', '6', '7', '8', '9',
                     'B', 'C', 'D', 'F', 'G', 'H', 'J', 'K',
                     'M', 'N', 'P', 'Q', 'R', 'T', 'V', 'W',
@@ -146,10 +144,7 @@ class AndroidDebugBridge(object):
         return xml_data[0].text[8:]
 
 
-def get_code(shared_secret: Union[str, bytes]) -> AuthenticatorCode:
-    with client.SteamGameServer() as server:
-        server_time = server.get_server_time()
-
+def get_code(server_time: int, shared_secret: Union[str, bytes]) -> AuthenticatorCode:
     msg = int(server_time / 30).to_bytes(8, 'big')
     key = base64.b64decode(shared_secret)
     auth = hmac.new(key, msg, hashlib.sha1)

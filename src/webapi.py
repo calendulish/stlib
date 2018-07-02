@@ -28,7 +28,6 @@ from typing import Any, Dict, List, NamedTuple, Optional
 import aiohttp
 import rsa
 from bs4 import BeautifulSoup
-from stlib import client
 
 
 class SteamKey(NamedTuple):
@@ -97,7 +96,21 @@ class SteamWebAPI(object):
 
         self.headers = headers
 
-    async def __get_data(
+    async def _new_query(self, deviceid: str, steamid: int, identity_secret: str, tag: str) -> Dict[str, Any]:
+        server_time = await self.get_server_time()
+
+        params = {
+            'p': deviceid,
+            'a': steamid,
+            'k': new_time_hash(server_time, tag, identity_secret),
+            't': server_time,
+            'm': 'android',
+            'tag': tag,
+        }
+
+        return params
+
+    async def _get_data(
             self,
             interface: str,
             method: str,
@@ -117,8 +130,12 @@ class SteamWebAPI(object):
             assert isinstance(json_data, dict), "Json data from SteamWebAPI is not a dict"
             return json_data
 
+    async def get_server_time(self):
+        data = await self._get_data('ISteamWebAPIUtil', 'GetServerInfo', 1)
+        return int(data['servertime'])
+
     async def get_user_id(self, nickname: str) -> int:
-        data = await self.__get_data('ISteamUser', 'ResolveVanityURL', 1, {'vanityurl': nickname})
+        data = await self._get_data('ISteamUser', 'ResolveVanityURL', 1, {'vanityurl': nickname})
 
         if not data['response']['success'] is 1:
             raise ValueError('Failed to get user id.')
@@ -222,7 +239,7 @@ class SteamWebAPI(object):
         return result
 
     async def get_confirmations(self, identity_secret: str, steamid: int, deviceid: str) -> List[Confirmation]:
-        params = new_query(deviceid, steamid, identity_secret, 'conf')
+        params = await self._new_query(deviceid, steamid, identity_secret, 'conf')
 
         async with self.session.get(f'{self.mobileconf_url}/conf', params=params, allow_redirects=False) as response:
             html = BeautifulSoup(await response.text(), 'html.parser')
@@ -232,7 +249,9 @@ class SteamWebAPI(object):
 
         confirmations = []
         for confirmation in html.find_all('div', class_='mobileconf_list_entry'):
-            details_params = new_query(deviceid, steamid, identity_secret, f"details{confirmation['data-confid']}")
+            details_params = await self._new_query(
+                deviceid, steamid, identity_secret, f"details{confirmation['data-confid']}"
+            )
 
             async with self.session.get(
                     f"{self.mobileconf_url}/details/{confirmation['data-confid']}",
@@ -277,6 +296,7 @@ class SteamWebAPI(object):
 
     async def finalize_confirmation(
             self,
+            server_time: int,
             identity_secret: str,
             steamid: int,
             deviceid: str,
@@ -285,7 +305,7 @@ class SteamWebAPI(object):
             action: str
     ) -> Dict[str, Any]:
         extra_params = {'cid': trade_id, 'ck': trade_key, 'op': action}
-        params = new_query(deviceid, steamid, identity_secret, 'conf')
+        params = await self._new_query(deviceid, steamid, identity_secret, 'conf')
 
         async with self.session.get(f'{self.mobileconf_url}/ajaxop', params={**params, **extra_params}) as response:
             json_data = await response.json()
@@ -363,22 +383,6 @@ class SteamTrades(SteamWebAPI):
                     return True
                 else:
                     return False
-
-
-def new_query(deviceid: str, steamid: int, identity_secret: str, tag: str) -> Dict[str, Any]:
-    with client.SteamGameServer() as server:
-        server_time = server.get_server_time()
-
-    params = {
-        'p': deviceid,
-        'a': steamid,
-        'k': new_time_hash(server_time, tag, identity_secret),
-        't': server_time,
-        'm': 'android',
-        'tag': tag,
-    }
-
-    return params
 
 
 def encrypt_password(steam_key: SteamKey, password: str) -> bytes:
