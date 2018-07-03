@@ -54,7 +54,7 @@ class LoginError(Exception): pass
 
 
 class TradeClosedError(Exception):
-    def __init__(self, trade_info, message) -> None:
+    def __init__(self, trade_info: TradeInfo, message: str) -> None:
         super().__init__(message)
 
         self.id = trade_info.id
@@ -62,7 +62,7 @@ class TradeClosedError(Exception):
 
 
 class TradeNotReadyError(Exception):
-    def __init__(self, trade_info, time_left, message) -> None:
+    def __init__(self, trade_info: TradeInfo, time_left: int, message: str) -> None:
         super().__init__(message)
 
         self.time_left = time_left
@@ -130,7 +130,7 @@ class SteamWebAPI(object):
             assert isinstance(json_data, dict), "Json data from SteamWebAPI is not a dict"
             return json_data
 
-    async def get_server_time(self):
+    async def get_server_time(self) -> int:
         data = await self._get_data('ISteamWebAPIUtil', 'GetServerInfo', 1)
         return int(data['servertime'])
 
@@ -234,7 +234,7 @@ class SteamWebAPI(object):
                 else:
                     result.append(json_data['name'])
             else:
-                result.append(None)
+                result.append('')
 
         return result
 
@@ -320,8 +320,8 @@ class SteamTrades(SteamWebAPI):
             server: str = 'https://www.steamtrades.com',
             bump_script: str = 'ajax.php',
             headers: Optional[Dict[str, str]] = None,
-            *args,
-            **kwargs,
+            *args: Any,
+            **kwargs: Any,
     ) -> None:
         super().__init__(session, *args, **kwargs)
 
