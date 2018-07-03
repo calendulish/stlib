@@ -21,14 +21,8 @@ build:
             - pip install pylint>=1.8.1 mypy>=0.580 lxml coverage pytest pytest-cov
 
     project_setup:
-        before:
-            - command: cd src/steam_api
-            - command: image_id=$(docker create shypixie/steamworks_sdk)
-            - command: docker cp $image_id:steamworks_sdk - > steamworks.tar.gz
-            - command: tar xfv steamworks.tar.gz
-            - command: cd ../..
         override:
-            - python setup.py build
+            - python setup.py build --disable-steam-api
             - command: python setup.py install
 
     tests:
