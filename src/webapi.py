@@ -84,18 +84,12 @@ class SteamWebAPI(object):
             self,
             session: aiohttp.ClientSession,
             api_url: str = 'https://api.steampowered.com',
-            login_url: str = 'https://steamcommunity.com/login',
-            openid_url: str = 'https://steamcommunity.com/openid',
-            mobilelogin_url: str = 'httos://steamcommunity.com/mobilelogin',
             mobileconf_url: str = 'https://steamcommunity.com/mobileconf',
             economy_url: str = 'https://steamcommunity.com/economy',
             headers: Optional[Dict[str, str]] = None,
     ) -> None:
         self.session = session
         self.api_url = api_url
-        self.login_url = login_url
-        self.openid_url = openid_url
-        self.mobilelogin_url = mobilelogin_url
         self.mobileconf_url = mobileconf_url
         self.economy_url = economy_url
 
@@ -117,35 +111,6 @@ class SteamWebAPI(object):
         }
 
         return params
-
-    async def _new_login_data(
-            self,
-            username: str,
-            encrypted_password: bytes,
-            key_timestamp: int,
-            authenticator_code: str = '',
-            emailauth: str = '',
-            captcha_gid: int = -1,
-            captcha_text: str = '',
-            mobile_login: bool = False,
-    ):
-        data = {
-            'username': username,
-            "password": encrypted_password.decode(),
-            "emailauth": emailauth,
-            "twofactorcode": authenticator_code,
-            "captchagid": captcha_gid,
-            "captcha_text": captcha_text,
-            "loginfriendlyname": "stlib",
-            "rsatimestamp": key_timestamp,
-            "remember_login": 'true',
-            "donotcache": ''.join([str(int(time.time())), '000']),
-        }
-
-        if mobile_login:
-            data['oauth_client_id'] = _STEAM_UNIVERSE['public']
-
-        return data
 
     async def _get_data(
             self,
@@ -178,79 +143,6 @@ class SteamWebAPI(object):
             raise ValueError('Failed to get user id.')
 
         return int(data['response']['steamid'])
-
-    async def get_steam_key(self, username: str) -> SteamKey:
-        async with self.session.get(f'{self.login_url}/getrsakey/', params={'username': username}) as response:
-            json_data = await response.json()
-
-        if json_data['success']:
-            public_mod = int(json_data['publickey_mod'], 16)
-            public_exp = int(json_data['publickey_exp'], 16)
-            timestamp = int(json_data['timestamp'])
-        else:
-            raise ValueError('Failed to get public key.')
-
-        return SteamKey(rsa.PublicKey(public_mod, public_exp), timestamp)
-
-    async def get_captcha(self, gid: int) -> bytes:
-        async with self.session.get(f'{self.login_url}/rendercaptcha/', params={'gid': gid}) as response:
-            data = await response.read()
-            assert isinstance(data, bytes), "rendercaptcha response is not bytes"
-            return data
-
-    async def do_login(
-            self,
-            username: str,
-            encrypted_password: bytes,
-            key_timestamp: int,
-            authenticator_code: str = '',
-            emailauth: str = '',
-            captcha_gid: int = -1,
-            captcha_text: str = '',
-            mobile_login: bool = False,
-    ) -> Dict[str, Any]:
-        data = await self._new_login_data(
-            username,
-            encrypted_password,
-            key_timestamp,
-            authenticator_code,
-            emailauth,
-            captcha_gid,
-            captcha_text,
-            mobile_login,
-        )
-
-        if mobile_login:
-            login_url = self.mobilelogin_url
-        else:
-            login_url = self.login_url
-
-        async with self.session.post(f'{login_url}/dologin', data=data) as response:
-            json_data = await response.json()
-            assert isinstance(json_data, dict), "Json data from dologin is not a dict"
-
-            return json_data
-
-    async def do_openid_login(self, custom_login_page: str) -> Dict[str, Any]:
-        async with self.session.get(custom_login_page, headers=self.headers) as response:
-            form = BeautifulSoup(await response.text(), 'html.parser').find('form')
-            data = {}
-
-            for input_ in form.findAll('input'):
-                with contextlib.suppress(KeyError):
-                    data[input_['name']] = input_['value']
-
-        async with self.session.post(f'{self.openid_url}/login', headers=self.headers, data=data) as response:
-            avatar = BeautifulSoup(await response.text(), 'html.parser').find('a', class_='nav_avatar')
-
-            if avatar:
-                json_data = {'success': True, 'steamid': avatar['href'].split('/')[2]}
-            else:
-                raise LoginError('Unable to log-in')
-
-            json_data.update(data)
-
-            return json_data
 
     async def __get_names_from_item_list(
             self,
@@ -351,6 +243,125 @@ class SteamWebAPI(object):
         async with self.session.get(f'{self.mobileconf_url}/ajaxop', params={**params, **extra_params}) as response:
             json_data = await response.json()
             assert isinstance(json_data, dict), "Json data from ajaxop is not a dict"
+            return json_data
+
+
+class Login(object):
+    def __init__(
+            self,
+            session: aiohttp.ClientSession,
+            username: str,
+            password: str,
+            login_url: str = 'https://steamcommunity.com/login',
+            mobile_login_url: str = 'https://steamcommunity.com/mobilelogin',
+            openid_url: str = 'https://steamcommunity.com/openid',
+            headers: Optional[Dict[str, str]] = None,
+    ):
+        self.session = session
+        self.username = username
+        self.__password = password
+        self.login_url = login_url
+        self.mobile_login_url = mobile_login_url
+        self.openid_url = openid_url
+
+        if not headers:
+            headers = {'User-Agent': 'Unknown/0.0.0'}
+
+        self.headers = headers
+
+    async def _new_login_data(
+            self,
+            authenticator_code: str = '',
+            emailauth: str = '',
+            captcha_gid: int = -1,
+            captcha_text: str = '',
+            mobile_login: bool = False,
+    ):
+        steam_key = await self.get_steam_key(self.username)
+        encrypted_password = encrypt_password(steam_key, self.__password)
+
+        data = {
+            'username': self.username,
+            "password": encrypted_password.decode(),
+            "emailauth": emailauth,
+            "twofactorcode": authenticator_code,
+            "captchagid": captcha_gid,
+            "captcha_text": captcha_text,
+            "loginfriendlyname": "stlib",
+            "rsatimestamp": steam_key.timestamp,
+            "remember_login": 'true',
+            "donotcache": ''.join([str(int(time.time())), '000']),
+        }
+
+        if mobile_login:
+            data['oauth_client_id'] = _STEAM_UNIVERSE['public']
+
+        return data
+
+    async def get_steam_key(self, username: str) -> SteamKey:
+        async with self.session.get(f'{self.login_url}/getrsakey/', params={'username': username}) as response:
+            json_data = await response.json()
+
+        if json_data['success']:
+            public_mod = int(json_data['publickey_mod'], 16)
+            public_exp = int(json_data['publickey_exp'], 16)
+            timestamp = int(json_data['timestamp'])
+        else:
+            raise ValueError('Failed to get public key.')
+
+        return SteamKey(rsa.PublicKey(public_mod, public_exp), timestamp)
+
+    async def get_captcha(self, gid: int) -> bytes:
+        async with self.session.get(f'{self.login_url}/rendercaptcha/', params={'gid': gid}) as response:
+            data = await response.read()
+            assert isinstance(data, bytes), "rendercaptcha response is not bytes"
+            return data
+
+    async def do_login(
+            self,
+            authenticator_code: str = '',
+            emailauth: str = '',
+            captcha_gid: int = -1,
+            captcha_text: str = '',
+            mobile_login: bool = False,
+    ) -> Dict[str, Any]:
+        data = await self._new_login_data(authenticator_code, emailauth, captcha_gid, captcha_text, mobile_login)
+
+        if mobile_login:
+            login_url = self.mobile_login_url
+
+            self.session.cookie_jar.update_cookies({
+                'mobileClientVersion': '0 (2.3.1)',
+                'mobileClient': "android",
+            })
+        else:
+            login_url = self.login_url
+
+        async with self.session.post(f'{login_url}/dologin', data=data) as response:
+            json_data = await response.json()
+            assert isinstance(json_data, dict), "Json data from dologin is not a dict"
+
+            return json_data
+
+    async def do_openid_login(self, custom_login_page: str) -> Dict[str, Any]:
+        async with self.session.get(custom_login_page, headers=self.headers) as response:
+            form = BeautifulSoup(await response.text(), 'html.parser').find('form')
+            data = {}
+
+            for input_ in form.findAll('input'):
+                with contextlib.suppress(KeyError):
+                    data[input_['name']] = input_['value']
+
+        async with self.session.post(f'{self.openid_url}/login', headers=self.headers, data=data) as response:
+            avatar = BeautifulSoup(await response.text(), 'html.parser').find('a', class_='nav_avatar')
+
+            if avatar:
+                json_data = {'success': True, 'steamid': avatar['href'].split('/')[2]}
+            else:
+                raise LoginError('Unable to log-in')
+
+            json_data.update(data)
+
             return json_data
 
 
