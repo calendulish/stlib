@@ -29,6 +29,12 @@ import aiohttp
 import rsa
 from bs4 import BeautifulSoup
 
+_STEAM_UNIVERSE = {
+    'public': 'DE45CD61',
+    'private': '7DC60112',
+    'alpha': 'E77327FA',
+}
+
 
 class SteamKey(NamedTuple):
     key: rsa.PublicKey
@@ -80,6 +86,7 @@ class SteamWebAPI(object):
             api_url: str = 'https://api.steampowered.com',
             login_url: str = 'https://steamcommunity.com/login',
             openid_url: str = 'https://steamcommunity.com/openid',
+            mobilelogin_url: str = 'httos://steamcommunity.com/mobilelogin',
             mobileconf_url: str = 'https://steamcommunity.com/mobileconf',
             economy_url: str = 'https://steamcommunity.com/economy',
             headers: Optional[Dict[str, str]] = None,
@@ -88,6 +95,7 @@ class SteamWebAPI(object):
         self.api_url = api_url
         self.login_url = login_url
         self.openid_url = openid_url
+        self.mobilelogin_url = mobilelogin_url
         self.mobileconf_url = mobileconf_url
         self.economy_url = economy_url
 
@@ -109,6 +117,35 @@ class SteamWebAPI(object):
         }
 
         return params
+
+    async def _new_login_data(
+            self,
+            username: str,
+            encrypted_password: bytes,
+            key_timestamp: int,
+            authenticator_code: str = '',
+            emailauth: str = '',
+            captcha_gid: int = -1,
+            captcha_text: str = '',
+            mobile_login: bool = False,
+    ):
+        data = {
+            'username': username,
+            "password": encrypted_password.decode(),
+            "emailauth": emailauth,
+            "twofactorcode": authenticator_code,
+            "captchagid": captcha_gid,
+            "captcha_text": captcha_text,
+            "loginfriendlyname": "stlib",
+            "rsatimestamp": key_timestamp,
+            "remember_login": 'true',
+            "donotcache": ''.join([str(int(time.time())), '000']),
+        }
+
+        if mobile_login:
+            data['oauth_client_id'] = _STEAM_UNIVERSE['public']
+
+        return data
 
     async def _get_data(
             self,
@@ -170,21 +207,25 @@ class SteamWebAPI(object):
             emailauth: str = '',
             captcha_gid: int = -1,
             captcha_text: str = '',
+            mobile_login: bool = False,
     ) -> Dict[str, Any]:
-        data = {
-            'username': username,
-            "password": encrypted_password.decode(),
-            "emailauth": emailauth,
-            "twofactorcode": authenticator_code,
-            "captchagid": captcha_gid,
-            "captcha_text": captcha_text,
-            "loginfriendlyname": "stlib",
-            "rsatimestamp": key_timestamp,
-            "remember_login": 'true',
-            "donotcache": ''.join([str(int(time.time())), '000']),
-        }
+        data = await self._new_login_data(
+            username,
+            encrypted_password,
+            key_timestamp,
+            authenticator_code,
+            emailauth,
+            captcha_gid,
+            captcha_text,
+            mobile_login,
+        )
 
-        async with self.session.post(f'{self.login_url}/dologin', data=data) as response:
+        if mobile_login:
+            login_url = self.mobilelogin_url
+        else:
+            login_url = self.login_url
+
+        async with self.session.post(f'{login_url}/dologin', data=data) as response:
             json_data = await response.json()
             assert isinstance(json_data, dict), "Json data from dologin is not a dict"
 
