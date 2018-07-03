@@ -53,16 +53,16 @@ class TradeInfo(NamedTuple):
 class LoginError(Exception): pass
 
 
-class ClosedError(Exception):
-    def __init__(self, trade_info, message):
+class TradeClosedError(Exception):
+    def __init__(self, trade_info, message) -> None:
         super().__init__(message)
 
         self.id = trade_info.id
         self.title = trade_info.title
 
 
-class NotReadyError(Exception):
-    def __init__(self, trade_info, time_left, message):
+class TradeNotReadyError(Exception):
+    def __init__(self, trade_info, time_left, message) -> None:
         super().__init__(message)
 
         self.time_left = time_left
@@ -348,7 +348,7 @@ class SteamTrades(SteamWebAPI):
             raise LoginError("User is not logged in")
 
         if soup.find('div', class_='js_trade_open'):
-            raise ClosedError(trade_info, f"Trade {trade_info.id} is closed")
+            raise TradeClosedError(trade_info, f"Trade {trade_info.id} is closed")
 
         form = soup.find('form')
         data = {}
@@ -374,7 +374,7 @@ class SteamTrades(SteamWebAPI):
             if 'Please wait another' in html:
                 error = json.loads(html)['popup_heading_h2'][0]
                 minutes_left = int(error.split(' ')[3])
-                raise NotReadyError(trade_info, minutes_left, f"Trade {trade_info.id} is not ready")
+                raise TradeNotReadyError(trade_info, minutes_left, f"Trade {trade_info.id} is not ready")
             else:
                 async with self.session.post(f'{self.server}/trades', headers=self.headers) as response:
                     text = await response.text()
