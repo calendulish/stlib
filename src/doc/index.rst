@@ -106,9 +106,9 @@ Exceptions:
 
 .. autoexception:: LoginError
 
-.. autoexception:: ClosedError
+.. autoexception:: TradeClosedError
 
-.. autoexception:: NotReadyError
+.. autoexception:: TradeNotReadyError
 
 .. autoexception:: NoTradesError
 
