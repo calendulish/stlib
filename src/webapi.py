@@ -56,7 +56,20 @@ class TradeInfo(NamedTuple):
     html: str
 
 
-class LoginError(Exception): pass
+class LoginError(ValueError): pass
+
+
+class CaptchaError(LoginError):
+    def __init__(self, captcha_gid: int, message: str) -> None:
+        super().__init__(message)
+
+        self.captcha_gid = captcha_gid
+
+
+class MailCodeError(LoginError): pass
+
+
+class TwoFactorCodeError(LoginError): pass
 
 
 class TradeClosedError(Exception):
@@ -349,7 +362,19 @@ class Login(object):
             json_data = await response.json()
             assert isinstance(json_data, dict), "Json data from dologin is not a dict"
 
-            return json_data
+            if json_data['success']:
+                return json_data
+
+            if json_data['emailauth_needed']:
+                raise MailCodeError("Mail code requested")
+            elif json_data['requires_twofactor']:
+                raise TwoFactorCodeError("Authenticator code requested")
+            elif json_data['captcha_needed']:
+                raise CaptchaError(json_data['captcha_gid'], "Captcha code requested")
+            elif mobile_login and not 'oauth' in json_data:
+                raise LoginError("Unable to log-in on mobile session")
+            else:
+                raise LoginError("Unable to log-in")
 
     async def do_openid_login(self, custom_login_page: str) -> Dict[str, Any]:
         async with self.session.get(custom_login_page, headers=self.headers) as response:
