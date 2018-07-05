@@ -117,13 +117,13 @@ class SteamWebAPI(object):
             interface: str,
             method: str,
             version: int,
-            payload: Optional[Dict[str, str]] = None,
+            params: Optional[Dict[str, str]] = None,
             data: Optional[Dict[str, str]] = None,
     ) -> Dict[str, Any]:
         kwargs = {
             'method': 'POST' if data else 'GET',
             'url': f'{self.api_url}/{interface}/{method}/v{version}/',
-            'params': payload,
+            'params': params,
             'json': data,
         }
 
