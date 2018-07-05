@@ -145,7 +145,7 @@ class SteamWebAPI(object):
             'method': 'POST' if data else 'GET',
             'url': f'{self.api_url}/{interface}/{method}/v{version}/',
             'params': params,
-            'json': data,
+            'data': data,
         }
 
         async with self.session.request(**kwargs) as response:
