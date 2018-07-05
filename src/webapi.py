@@ -276,6 +276,7 @@ class Login(object):
             login_url: str = 'https://steamcommunity.com/login',
             mobile_login_url: str = 'https://steamcommunity.com/mobilelogin',
             openid_url: str = 'https://steamcommunity.com/openid',
+            steamguard_url: str = 'https://steamcommunity.com/steamguard',
             headers: Optional[Dict[str, str]] = None,
     ):
         self.session = session
@@ -284,6 +285,7 @@ class Login(object):
         self.login_url = login_url
         self.mobile_login_url = mobile_login_url
         self.openid_url = openid_url
+        self.steamguard_url = steamguard_url
 
         if not headers:
             headers = {'User-Agent': 'Unknown/0.0.0'}
@@ -337,6 +339,24 @@ class Login(object):
             data = await response.read()
             assert isinstance(data, bytes), "rendercaptcha response is not bytes"
             return data
+
+    async def has_phone(self, sessionid: int) -> bool:
+        data = {
+            'op': "has_phone",
+            'sessionid': sessionid,
+        }
+
+        async with self.session.post(f'{self.steamguard_url}/phoneajax', data=data) as response:
+            json_data = await response.json()
+            assert isinstance(json_data, dict), "phoneajax is not a dict"
+
+        if not json_data['success']:
+            raise LoginError(json_data['error_text'])
+
+        if json_data["has_phone"]:
+            return True
+        else:
+            return False
 
     async def do_login(
             self,
