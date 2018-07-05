@@ -87,11 +87,13 @@ class SteamWebAPI(object):
             mobileconf_url: str = 'https://steamcommunity.com/mobileconf',
             economy_url: str = 'https://steamcommunity.com/economy',
             headers: Optional[Dict[str, str]] = None,
+            key: Optional[str] = None,
     ) -> None:
         self.session = session
         self.api_url = api_url
         self.mobileconf_url = mobileconf_url
         self.economy_url = economy_url
+        self.key = key
 
         if not headers:
             headers = {'User-Agent': 'Unknown/0.0.0'}
@@ -120,6 +122,12 @@ class SteamWebAPI(object):
             params: Optional[Dict[str, str]] = None,
             data: Optional[Dict[str, str]] = None,
     ) -> Dict[str, Any]:
+        if not params:
+            params = {}
+
+        if self.key:
+            params['key'] = self.key
+
         kwargs = {
             'method': 'POST' if data else 'GET',
             'url': f'{self.api_url}/{interface}/{method}/v{version}/',
