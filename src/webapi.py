@@ -35,6 +35,12 @@ _STEAM_UNIVERSE = {
     'alpha': 'E77327FA',
 }
 
+_TOKEN_TYPE = {
+    'none': 0,
+    'mobileapp': 1,
+    'thirdparty': 2,
+}
+
 
 class SteamKey(NamedTuple):
     key: rsa.PublicKey
@@ -70,6 +76,12 @@ class MailCodeError(LoginError): pass
 
 
 class TwoFactorCodeError(LoginError): pass
+
+
+class PhoneNotRegistered(Exception): pass
+
+
+class AuthenticatorExists(Exception): pass
 
 
 class TradeClosedError(Exception):
@@ -164,6 +176,28 @@ class SteamWebAPI(object):
             raise ValueError('Failed to get user id.')
 
         return int(data['response']['steamid'])
+
+    async def add_authenticator(self, session, steamid, deviceid, oauth_token, phone_id: int = 1):
+        common_data = {
+            'steamid': steamid,
+            'access_token': oauth_token,
+            'authenticator_time': int(time.time()),
+            'authenticator_type': _TOKEN_TYPE['mobileapp'],
+        }
+
+        extra_data = {
+            'device_identifier': deviceid,
+            'sms_phone_id': phone_id,
+        }
+
+        json_data = await self._get_data('ITwoFactorService', 'AddAuthenticator', 1, data={**common_data, **extra_data})
+
+        if json_data['response']['status'] == 29:
+            raise AuthenticatorExists('An Authenticator is already active for that account.')
+        elif json_data['response']['status'] == 84:
+            raise PhoneNotRegistered('Phone not registered on Steam Account.')
+
+        return json_data
 
     async def __get_names_from_item_list(
             self,
