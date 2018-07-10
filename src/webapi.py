@@ -70,6 +70,9 @@ class MailCodeError(LoginError): pass
 class TwoFactorCodeError(LoginError): pass
 
 
+class SMSCodeError(LoginError): pass
+
+
 class PhoneNotRegistered(Exception): pass
 
 
@@ -107,6 +110,18 @@ class SteamWebAPI(object):
             't': server_time,
             'm': 'android',
             'tag': tag,
+        }
+
+        return params
+
+    async def _new_mobile_query(self, steamid: int, oauth_token: str, token_type: str = 'mobileapp'):
+        current_time = int(time.time())
+
+        params = {
+            'steamid': steamid,
+            'access_token': oauth_token,
+            'authenticator_time': current_time,
+            'authenticator_type': _TOKEN_TYPE[token_type],
         }
 
         return params
@@ -149,27 +164,40 @@ class SteamWebAPI(object):
 
         return int(data['response']['steamid'])
 
-    async def add_authenticator(self, session, steamid, deviceid, oauth_token, phone_id: int = 1):
-        common_data = {
-            'steamid': steamid,
-            'access_token': oauth_token,
-            'authenticator_time': int(time.time()),
-            'authenticator_type': _TOKEN_TYPE['mobileapp'],
-        }
+    async def add_authenticator(self, steamid: int, deviceid: str, oauth_token, phone_id: int = 1) -> Dict[str, Any]:
+        data = await self._new_mobile_query(steamid, oauth_token)
+        data['device_identifier'] = deviceid
+        data['sms_phone_id'] = phone_id
 
-        extra_data = {
-            'device_identifier': deviceid,
-            'sms_phone_id': phone_id,
-        }
-
-        json_data = await self._get_data('ITwoFactorService', 'AddAuthenticator', 1, data={**common_data, **extra_data})
+        json_data = await self._get_data('ITwoFactorService', 'AddAuthenticator', 1, data=data)
 
         if json_data['response']['status'] == 29:
             raise AuthenticatorExists('An Authenticator is already active for that account.')
         elif json_data['response']['status'] == 84:
             raise PhoneNotRegistered('Phone not registered on Steam Account.')
 
-        return json_data
+        return json_data['response']
+
+    async def finalize_add_authenticator(
+            self,
+            steamid: int,
+            oauth_token: str,
+            authenticator_code: str,
+            sms_code: str
+    ) -> bool:
+        data = await self._new_mobile_query(steamid, oauth_token)
+        data['authenticator_code'] = authenticator_code
+        data['activation_code'] = sms_code
+
+        json_data = await self._get_data("ITwoFactorService", "FinalizeAddAuthenticator", 1, data=data)
+
+        if json_data['response']['status'] == 89:
+            raise SMSCodeError("Invalid sms code")
+
+        if json_data['response']['status'] == 2:
+            return True
+        else:
+            return False
 
     async def __get_names_from_item_list(
             self,
