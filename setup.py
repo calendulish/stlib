@@ -151,6 +151,7 @@ setup(
               'asyncio',
               'beautifulsoup4',
               'rsa',
+              'setuptools',
               ],
     python_requires='>=3.6',
     zip_safe=False,
