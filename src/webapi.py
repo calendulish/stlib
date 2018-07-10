@@ -183,7 +183,8 @@ class SteamWebAPI(object):
             steamid: int,
             oauth_token: str,
             authenticator_code: str,
-            sms_code: str
+            sms_code: str,
+            email_type: int = 2,
     ) -> bool:
         data = await self._new_mobile_query(steamid, oauth_token)
         data['authenticator_code'] = authenticator_code
@@ -195,9 +196,18 @@ class SteamWebAPI(object):
             raise SMSCodeError("Invalid sms code")
 
         if json_data['response']['status'] == 2:
-            return True
-        else:
-            return False
+            data.pop('authenticator_code')
+            data.pop('activation_code')
+            data['email_type'] = email_type
+
+            try:
+                await self._get_data('ITwoFactorService', 'SendEmail', 1, data=data)
+            except aiohttp.ContentTypeError:
+                return False
+            else:
+                return True
+
+        return False
 
     async def __get_names_from_item_list(
             self,
