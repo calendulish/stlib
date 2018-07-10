@@ -81,7 +81,7 @@ Webapi Module
    :members:
    :undoc-members:
 
-.. autoclass:: SteamTrades
+.. autoclass:: Login
    :members:
    :undoc-members:
 
@@ -98,19 +98,30 @@ Data Structures:
 
 .. autoclass:: Confirmation
 
-.. autoclass:: TradeInfo
-
-
 Exceptions:
 ^^^^^^^^^^^
 
 .. autoexception:: LoginError
 
-.. autoexception:: TradeClosedError
+.. autoexception:: CaptchaError
 
-.. autoexception:: TradeNotReadyError
+.. autoexception:: MailCodeError
 
-.. autoexception:: NoTradesError
+.. autoexception:: TwoFactorCodeError
+
+.. autoexception:: SMSCodeError
+
+.. autoexception:: PhoneNotRegistered
+
+.. autoexception:: AuthenticatorExists
+
+
+Plugins
+-------
+
+.. automodule:: plugins
+
+.. autofunction:: get_plugin
 
 Indices and tables
 ------------------
