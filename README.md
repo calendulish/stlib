@@ -15,6 +15,9 @@ Async library that provides features related to Steam client and compatible stuf
 WARNING: stlib is not intended to be used in game development, there is no support to callbacks and I'll not work on that.
 stlib is intended to develop console or GUI applications that need interaction with SteamAPI or SteamWebAPI.
 
+stlib now supports plugins!
+---------------------------
+See more at: [stlib-plugins](https://github.com/ShyPixie/stlib-plugins)
 
 Dependencies to build SteamAPI C Extension (Optional)
 -----------------------------------------------------
