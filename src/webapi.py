@@ -20,8 +20,6 @@ import base64
 import contextlib
 import hashlib
 import hmac
-import json
-import os
 import time
 from typing import Any, Dict, List, NamedTuple, Optional
 
@@ -56,12 +54,6 @@ class Confirmation(NamedTuple):
     receive: List[str]
 
 
-class TradeInfo(NamedTuple):
-    id: str
-    title: str
-    html: str
-
-
 class LoginError(ValueError): pass
 
 
@@ -82,26 +74,6 @@ class PhoneNotRegistered(Exception): pass
 
 
 class AuthenticatorExists(Exception): pass
-
-
-class TradeClosedError(Exception):
-    def __init__(self, trade_info: TradeInfo, message: str) -> None:
-        super().__init__(message)
-
-        self.id = trade_info.id
-        self.title = trade_info.title
-
-
-class TradeNotReadyError(Exception):
-    def __init__(self, trade_info: TradeInfo, time_left: int, message: str) -> None:
-        super().__init__(message)
-
-        self.time_left = time_left
-        self.id = trade_info.id
-        self.title = trade_info.title
-
-
-class NoTradesError(Exception): pass
 
 
 class SteamWebAPI(object):
@@ -450,78 +422,6 @@ class Login(object):
             json_data.update(data)
 
             return json_data
-
-
-class SteamTrades(SteamWebAPI):
-    def __init__(
-            self,
-            session: aiohttp.ClientSession,
-            server: str = 'https://www.steamtrades.com',
-            bump_script: str = 'ajax.php',
-            headers: Optional[Dict[str, str]] = None,
-            *args: Any,
-            **kwargs: Any,
-    ) -> None:
-        super().__init__(session, *args, **kwargs)
-
-        self.session = session
-        self.server = server
-        self.bump_script = bump_script
-
-        if not headers:
-            headers = {'User-Agent': 'Unknown/0.0.0'}
-
-        self.headers = headers
-
-    async def get_trade_info(self, trade_id: str) -> TradeInfo:
-        async with self.session.get(f'{self.server}/trade/{trade_id}/', headers=self.headers) as response:
-            id = response.url.path.split('/')[2]
-            title = os.path.basename(response.url.path).replace('-', ' ')
-            html = await response.text()
-            return TradeInfo(id, title, html)
-
-    async def bump(self, trade_info: TradeInfo) -> bool:
-        soup = BeautifulSoup(trade_info.html, 'html.parser')
-
-        if not soup.find('a', class_='nav_avatar'):
-            raise LoginError("User is not logged in")
-
-        if soup.find('div', class_='js_trade_open'):
-            raise TradeClosedError(trade_info, f"Trade {trade_info.id} is closed")
-
-        form = soup.find('form')
-        data = {}
-
-        try:
-            for input_ in form.findAll('input'):
-                data[input_['name']] = input_['value']
-        except AttributeError:
-            raise NoTradesError("No trades available to bump")
-
-        payload = {
-            'code': data['code'],
-            'xsrf_token': data['xsrf_token'],
-            'do': 'trade_bump',
-        }
-
-        async with self.session.post(
-                f'{self.server}/{self.bump_script}',
-                data=payload,
-                headers=self.headers,
-        ) as response:
-            html = await response.text()
-            if 'Please wait another' in html:
-                error = json.loads(html)['popup_heading_h2'][0]
-                minutes_left = int(error.split(' ')[3])
-                raise TradeNotReadyError(trade_info, minutes_left, f"Trade {trade_info.id} is not ready")
-            else:
-                async with self.session.post(f'{self.server}/trades', headers=self.headers) as response:
-                    text = await response.text()
-
-                if trade_info.id in text:
-                    return True
-                else:
-                    return False
 
 
 def encrypt_password(steam_key: SteamKey, password: str) -> bytes:
