@@ -429,11 +429,11 @@ class Login(object):
             if json_data['success']:
                 return json_data
 
-            if json_data['emailauth_needed']:
+            if 'emailauth_needed' in json_data and json_data['emailauth_needed']:
                 raise MailCodeError("Mail code requested")
-            elif json_data['requires_twofactor']:
+            elif 'requires_twofactor' in json_data and json_data['requires_twofactor']:
                 raise TwoFactorCodeError("Authenticator code requested")
-            elif json_data['captcha_needed']:
+            elif 'captcha_needed' in json_data and json_data['captcha_needed']:
                 raise CaptchaError(json_data['captcha_gid'], "Captcha code requested")
             elif mobile_login and not 'oauth' in json_data:
                 raise LoginError("Unable to log-in on mobile session")
