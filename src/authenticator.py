@@ -24,7 +24,7 @@ import json
 import logging
 import os
 import subprocess
-from typing import Any, Dict, List, NamedTuple, Union
+from typing import Any, Dict, List, NamedTuple, Optional, Union
 from xml.etree import ElementTree
 
 __STEAM_ALPHABET = ['2', '3', '4', '5', '6', '7', '8', '9',
@@ -161,8 +161,15 @@ def get_code(server_time: int, shared_secret: Union[str, bytes]) -> Authenticato
     return AuthenticatorCode(''.join(auth_code), server_time)
 
 
-def generate_device_id(identity_secret: str) -> str:
-    digest = hashlib.sha1(identity_secret.encode()).hexdigest()
+def generate_device_id(identity_secret: Optional[str] = None, token: Optional[str] = None) -> str:
+    if identity_secret:
+        data = identity_secret.encode()
+    elif token:
+        data = token.encode()
+    else:
+        raise AttributeError("You must provide at least one argument")
+
+    digest = hashlib.sha1(data).hexdigest()
     device_id = ['android:']
 
     for start, end in ([0, 8], [8, 12], [12, 16], [16, 20], [20, 32]):
