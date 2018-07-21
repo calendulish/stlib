@@ -319,7 +319,6 @@ class Login(object):
             password: str,
             login_url: str = 'https://steamcommunity.com/login',
             mobile_login_url: str = 'https://steamcommunity.com/mobilelogin',
-            openid_url: str = 'https://steamcommunity.com/openid',
             steamguard_url: str = 'https://steamcommunity.com/steamguard',
             headers: Optional[Dict[str, str]] = None,
     ):
@@ -328,7 +327,6 @@ class Login(object):
         self.__password = password
         self.login_url = login_url
         self.mobile_login_url = mobile_login_url
-        self.openid_url = openid_url
         self.steamguard_url = steamguard_url
 
         if not headers:
@@ -439,27 +437,6 @@ class Login(object):
                 raise LoginError("Unable to log-in on mobile session")
             else:
                 raise LoginError("Unable to log-in")
-
-    async def do_openid_login(self, custom_login_page: str) -> Dict[str, Any]:
-        async with self.session.get(custom_login_page, headers=self.headers) as response:
-            form = BeautifulSoup(await response.text(), 'html.parser').find('form')
-            data = {}
-
-            for input_ in form.findAll('input'):
-                with contextlib.suppress(KeyError):
-                    data[input_['name']] = input_['value']
-
-        async with self.session.post(f'{self.openid_url}/login', headers=self.headers, data=data) as response:
-            avatar = BeautifulSoup(await response.text(), 'html.parser').find('a', class_='nav_avatar')
-
-            if avatar:
-                json_data = {'success': True, 'steamid': avatar['href'].split('/')[2]}
-            else:
-                raise LoginError('Unable to log-in')
-
-            json_data.update(data)
-
-            return json_data
 
 
 def encrypt_password(steam_key: SteamKey, password: str) -> bytes:
