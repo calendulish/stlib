@@ -41,7 +41,7 @@ class SteamGameServerError(Exception): pass
 class SteamAPIError(Exception): pass
 
 
-class _CaptureSTD(object):
+class _CaptureSTD:
     def __init__(self) -> None:
         self.old_stdout = os.dup(1)
         self.old_stderr = os.dup(2)
@@ -60,7 +60,7 @@ class _CaptureSTD(object):
         os.close(self.devnull)
 
 
-class SteamGameServer(object):
+class SteamGameServer:
     def __init__(self, ip: int = 0x0100007f, steam_port: int = 27015, game_port: int = 27016,
                  game_id: int = 480) -> None:
         os.environ["SteamAppId"] = str(game_id)

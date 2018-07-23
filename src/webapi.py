@@ -79,7 +79,7 @@ class PhoneNotRegistered(Exception): pass
 class AuthenticatorExists(Exception): pass
 
 
-class SteamWebAPI(object):
+class SteamWebAPI:
     def __init__(
             self,
             session: aiohttp.ClientSession,
@@ -311,7 +311,7 @@ class SteamWebAPI(object):
             return json_data
 
 
-class Login(object):
+class Login:
     def __init__(
             self,
             session: aiohttp.ClientSession,

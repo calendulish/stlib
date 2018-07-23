@@ -53,7 +53,7 @@ class SteamGuardError(Exception): pass
 class MobileAppError(SteamGuardError): pass
 
 
-class AndroidDebugBridge(object):
+class AndroidDebugBridge:
     def __init__(
             self,
             adb_path: str,
