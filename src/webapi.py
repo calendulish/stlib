@@ -164,6 +164,16 @@ class SteamWebAPI:
 
         return int(data['response']['steamid'])
 
+    async def is_logged_in(self, nickname: str) -> bool:
+        async with self.session.get(
+                f'https://steamcommunity.com/id/{nickname}/edit',
+                allow_redirects=False
+        ) as response:
+            if response.status == 200:
+                return True
+            else:
+                return False
+
     async def add_authenticator(self, steamid: int, deviceid: str, oauth_token, phone_id: int = 1) -> Dict[str, Any]:
         data = await self._new_mobile_query(steamid, oauth_token)
         data['device_identifier'] = deviceid
