@@ -454,7 +454,7 @@ class Login:
             elif mobile_login and not 'oauth' in json_data:
                 raise LoginError("Unable to log-in on mobile session")
             else:
-                raise LoginError("Unable to log-in")
+                raise LoginError(f"Unable to log-in: {json_data['message']}")
 
 
 def encrypt_password(steam_key: SteamKey, password: str) -> bytes:
