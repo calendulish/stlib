@@ -17,12 +17,15 @@
 #
 
 import contextlib
-from types import ModuleType
+from typing import Any
 
 import pkg_resources
 
 
 class PluginNotFoundError(KeyError): pass
+
+
+class IncompatiblePluginError(AttributeError): pass
 
 
 __plugins__ = {}
@@ -32,10 +35,13 @@ for entry_point in pkg_resources.iter_entry_points("stlib_plugins"):
         __plugins__[entry_point.name] = entry_point.load()
 
 
-def get_plugin(name: str) -> ModuleType:
+def get_plugin(name: str, *args: Any, **kwargs: Any) -> Any:
     try:
         _module = __plugins__[name]
     except KeyError:
         raise PluginNotFoundError() from None
 
-    return _module
+    try:
+        return _module.Main(*args, **kwargs)
+    except AttributeError:
+        raise IncompatiblePluginError() from None
