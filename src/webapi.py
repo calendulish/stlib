@@ -452,9 +452,9 @@ class Login:
             elif 'captcha_needed' in json_data and json_data['captcha_needed']:
                 raise CaptchaError(json_data['captcha_gid'], "Captcha code requested")
             elif mobile_login and not 'oauth' in json_data:
-                raise LoginError("Unable to log-in on mobile session")
+                raise LoginError(f"Unable to log-in on mobile session: {json_data['message']}")
             else:
-                raise LoginError("Unable to log-in")
+                raise LoginError(f"Unable to log-in: {json_data['message']}")
 
 
 def encrypt_password(steam_key: SteamKey, password: str) -> bytes:
