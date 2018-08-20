@@ -164,6 +164,14 @@ class SteamWebAPI:
 
         return int(data['response']['steamid'])
 
+    async def get_nickname(self, steamid: int) -> str:
+        data = await self._get_data('ISteamUser', 'GetPlayerSummaries', 2, {'steamids': str(steamid)})
+
+        if not data['response']['players']:
+            raise ValueError('Failed to get nickname.')
+
+        return data['response']['players'][0]['personaname']
+
     async def is_logged_in(self, nickname: str) -> bool:
         async with self.session.get(
                 f'https://steamcommunity.com/id/{nickname}/edit',
