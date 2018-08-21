@@ -27,6 +27,8 @@ import subprocess
 from typing import Any, Dict, List, NamedTuple, Optional, Union
 from xml.etree import ElementTree
 
+log = logging.getLogger(__name__)
+
 __STEAM_ALPHABET = ['2', '3', '4', '5', '6', '7', '8', '9',
                     'B', 'C', 'D', 'F', 'G', 'H', 'J', 'K',
                     'M', 'N', 'P', 'Q', 'R', 'T', 'V', 'W',
@@ -72,7 +74,7 @@ class AndroidDebugBridge:
             ['root'],
         ]
 
-        logging.info('Your phone can be reconnected to switch adb to root mode')
+        log.info('Your phone can be reconnected to switch adb to root mode')
         pre_tasks_result = await asyncio.gather(*[self._run(pre_task) for pre_task in pre_tasks],
                                                 return_exceptions=True)
 
@@ -91,6 +93,7 @@ class AndroidDebugBridge:
         ]
 
         tasks_result = await asyncio.gather(*[self._run(task) for task in tasks], return_exceptions=True)
+        log.debug('tasks_result: %s', tasks_result)
 
         for index, result in enumerate(tasks_result):
             if isinstance(result, Exception):
@@ -119,6 +122,7 @@ class AndroidDebugBridge:
     async def _get_data(self, path: str) -> str:
         await self._do_checks()
 
+        logging.debug('Getting data from %s', path)
         data = await self._run(['shell', 'su', '-c', f'"cat {os.path.join(self.app_path, path)}"'])
 
         if not data or 'No such file' in data:
