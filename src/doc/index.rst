@@ -103,6 +103,8 @@ Exceptions:
 
 .. autoexception:: LoginError
 
+.. autoexception:: LoginBlockedError
+
 .. autoexception:: CaptchaError
 
 .. autoexception:: MailCodeError
