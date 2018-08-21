@@ -20,12 +20,15 @@ import base64
 import contextlib
 import hashlib
 import hmac
+import logging
 import time
 from typing import Any, Dict, List, NamedTuple, Optional
 
 import aiohttp
 import rsa
 from bs4 import BeautifulSoup
+
+log = logging.getLogger(__name__)
 
 _STEAM_UNIVERSE = {
     'public': 'DE45CD61',
@@ -147,6 +150,8 @@ class SteamWebAPI:
             'data': data,
         }
 
+        log.debug("Requesting %s:%s via %s with %s:%s", interface, method, 'POST' if data else 'GET', params, data)
+
         async with self.session.request(**kwargs) as response:
             json_data = await response.json()
             assert isinstance(json_data, dict), "Json data from SteamWebAPI is not a dict"
@@ -154,6 +159,7 @@ class SteamWebAPI:
 
     async def get_server_time(self) -> int:
         data = await self._get_data('ISteamWebAPIUtil', 'GetServerInfo', 1)
+        log.debug("server time found: %s", data['servertime'])
         return int(data['servertime'])
 
     async def get_user_id(self, nickname: str) -> int:
@@ -162,6 +168,7 @@ class SteamWebAPI:
         if not data['response']['success'] is 1:
             raise ValueError('Failed to get user id.')
 
+        log.debug("steamid found: %s (from %s)", data['response']['steamid'], nickname)
         return int(data['response']['steamid'])
 
     async def get_nickname(self, steamid: int) -> str:
@@ -170,6 +177,7 @@ class SteamWebAPI:
         if not data['response']['players']:
             raise ValueError('Failed to get nickname.')
 
+        log.debug("nickname found: %s (from %s)", data['response']['players'][0]['personaname'], steamid)
         return data['response']['players'][0]['personaname']
 
     async def is_logged_in(self, nickname: str) -> bool:
@@ -177,6 +185,7 @@ class SteamWebAPI:
                 f'https://steamcommunity.com/id/{nickname}/edit',
                 allow_redirects=False
         ) as response:
+            log.debug("login status code: %s", response.status)
             if response.status == 200:
                 return True
             else:
@@ -246,10 +255,15 @@ class SteamWebAPI:
 
             if json_data:
                 if json_data['market_name']:
-                    result.append(f"{json_data['market_name']} ({json_data['type']})")
+                    item_name = f"{json_data['market_name']} ({json_data['type']})"
+                    log.debug("Using `market_name' for %s:%s (%s)", appid, classid, item_name)
+                    result.append(item_name)
                 else:
-                    result.append(json_data['name'])
+                    item_name = json_data['name']
+                    log.debug("Using `name' for %s:%s (%s)", appid, classid, item_name)
+                    result.append(item_name)
             else:
+                log.debug("Unable to find human readable name for %s:%s. Ignoring.", appid, classid)
                 result.append('')
 
         return result
@@ -279,6 +293,13 @@ class SteamWebAPI:
                     raise AttributeError(f"Unable to get details for confirmation {confirmation['data-confid']}")
 
                 html = BeautifulSoup(json_data["html"], 'html.parser')
+
+            log.debug(
+                "Getting human readable information from %s as type %s (%s)",
+                confirmation['data-config'],
+                confirmation['data-type'],
+                "Market" if confirmation['data-type'] == '3' else 'Trade Item',
+            )
 
             if confirmation['data-type'] == "1" or confirmation['data-type'] == "2":
                 to = html.find('span', class_="trade_partner_headline_sub").get_text()
@@ -412,6 +433,8 @@ class Login:
 
         if not json_data['success']:
             raise LoginError(json_data['error_text'])
+
+        log.debug("User has phone? %s", json_data["has_phone"])
 
         if json_data["has_phone"]:
             return True

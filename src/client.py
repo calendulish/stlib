@@ -16,6 +16,7 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 
+import logging
 import multiprocessing
 import os
 import sys
@@ -33,6 +34,7 @@ except ImportError:
 
 SteamApiExecutorType = TypeVar('SteamApiExecutorType', bound='SteamApiExecutor')
 PipeType = connection.Connection
+log = logging.getLogger(__name__)
 
 
 class SteamGameServerError(Exception): pass
@@ -63,10 +65,12 @@ class _CaptureSTD:
 class SteamGameServer:
     def __init__(self, ip: int = 0x0100007f, steam_port: int = 27015, game_port: int = 27016,
                  game_id: int = 480) -> None:
+        log.debug('Set SteamAppId to %s', game_id)
         os.environ["SteamAppId"] = str(game_id)
 
         with _CaptureSTD():
             result = steam_api.server_init(ip, steam_port, game_port)
+            log.debug('server init returns %s', result)
 
         if result is False:
             raise SteamGameServerError("Unable to initialize SteamGameServer")
@@ -78,6 +82,7 @@ class SteamGameServer:
                  exception_type: Optional[Type[BaseException]],
                  exception_value: Optional[Exception],
                  traceback: Optional[TracebackType]) -> None:
+        log.debug('Closing GameServer')
         steam_api.server_shutdown()
         os.environ.pop('SteamAppId')
 
@@ -98,6 +103,7 @@ class SteamApiExecutor(multiprocessing.Process):
 
     def __enter__(self: SteamApiExecutorType) -> SteamApiExecutorType:
         result = self.init()
+        log.debug("SteamAPI init returns %s", result)
 
         if result is False:
             raise SteamAPIError("Unable to initialize SteamAPI (Invalid game id?)")
@@ -113,11 +119,14 @@ class SteamApiExecutor(multiprocessing.Process):
     @staticmethod
     def _wait_return(return_pipe: PipeType, exception_pipe: PipeType) -> Any:
         if return_pipe.poll(timeout=5):
+            log.debug("Returning result from pipe")
             return return_pipe.recv()
         else:
             if exception_pipe.poll():
+                log.debug("Raise custom exception from pipe")
                 raise exception_pipe.recv()
             else:
+                log.debug("Raise TimeoutError when waiting `Process' return")
                 raise multiprocessing.TimeoutError("No return from `Process' in SteamAppExecutor")
 
     def init(self: SteamApiExecutorType) -> Any:
@@ -139,15 +148,19 @@ class SteamApiExecutor(multiprocessing.Process):
         return self._wait_return(self._interface_return, self._interface_exception)
 
     def run(self: SteamApiExecutorType) -> None:
+        log.debug("Set SteamAppId to %s", self.game_id)
         os.environ["SteamAppId"] = str(self.game_id)
 
         try:
             with _CaptureSTD():
                 result = steam_api.init()
+                log.debug("SteamAPI init returns %s", result)
         except Exception as exception:
+            log.debug("Send exception to child process")
             self.__child_init_exception.send(exception)
             return None
         else:
+            log.debug("Send result to child process")
             self.__child_init_return.send(result)
 
         while not self.exit_now.is_set():
@@ -155,11 +168,15 @@ class SteamApiExecutor(multiprocessing.Process):
                 interface_class = self.__child_interface.recv()
                 try:
                     result = interface_class()
+                    log.debug("interface_class returns %s", result)
                 except Exception as exception:
+                    log.debug("Send interface_class exception to child interface")
                     self.__child_interface_exception.send(exception)
                     return None
                 else:
+                    log.debug("Send interface_class return to child interface")
                     self.__child_interface_return.send(result)
 
+        log.debug("Shutdown SteamAPI")
         steam_api.shutdown()
         os.environ.pop("SteamAppId")

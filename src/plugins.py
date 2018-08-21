@@ -16,10 +16,12 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 
-import contextlib
+import logging
 from typing import Any
 
 import pkg_resources
+
+log = logging.getLogger(__name__)
 
 
 class PluginNotFoundError(KeyError): pass
@@ -31,8 +33,11 @@ class IncompatiblePluginError(AttributeError): pass
 __plugins__ = {}
 
 for entry_point in pkg_resources.iter_entry_points("stlib_plugins"):
-    with contextlib.suppress(pkg_resources.VersionConflict):
+    try:
         __plugins__[entry_point.name] = entry_point.load()
+        log.info("Plugin loaded: %s", entry_point.name)
+    except pkg_resources.VersionConflict:
+        log.warning("Incompatible plugin: %s", entry_point.name)
 
 
 def get_plugin(name: str, *args: Any, **kwargs: Any) -> Any:
