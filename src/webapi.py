@@ -186,6 +186,11 @@ class SteamWebAPI:
                 allow_redirects=False
         ) as response:
             log.debug("login status code: %s", response.status)
+
+            if 'profile could not be found' in await response.text():
+                log.warning("nickname doesn't exist: %s", nickname)
+                return False
+
             if response.status == 200:
                 return True
             else:
