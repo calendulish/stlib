@@ -17,6 +17,7 @@
 #
 
 import logging
+import sys
 from typing import Any
 
 import pkg_resources
@@ -35,6 +36,7 @@ __plugins__ = {}
 for entry_point in pkg_resources.iter_entry_points("stlib_plugins"):
     try:
         __plugins__[entry_point.name] = entry_point.load()
+        setattr(sys.modules[__name__], entry_point.name, __plugins__[entry_point.name])
         log.info("Plugin loaded: %s", entry_point.name)
     except pkg_resources.VersionConflict:
         log.warning("Incompatible plugin: %s", entry_point.name)
