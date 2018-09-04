@@ -183,6 +183,19 @@ class SteamWebAPI:
         log.debug("nickname found: %s (from %s)", data['response']['players'][0]['personaname'], steamid)
         return data['response']['players'][0]['personaname']
 
+    async def get_session_id(self):
+        async with self.session.get('https://steamcommunity.com') as response:
+            if 'sessionid' in response.cookies:
+                return response.cookies['sessionid'].value
+            else:
+                html = await response.text()
+                for line in html.split('\t+'):
+                    if 'g_sessionID' in line:
+                        _, raw_value = line.split('= "')
+                        return raw_value[:-2]
+
+                raise KeyError
+
     async def is_logged_in(self, nickname: str) -> bool:
         async with self.session.get(
                 f'https://steamcommunity.com/id/{nickname}/edit',
