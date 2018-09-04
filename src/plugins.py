@@ -52,3 +52,10 @@ def get_plugin(name: str, *args: Any, **kwargs: Any) -> Any:
         return _module.Main(*args, **kwargs)
     except AttributeError:
         raise IncompatiblePluginError() from None
+
+
+def has_plugin(name: str) -> bool:
+    if name in __plugins__:
+        return True
+    else:
+        return False
