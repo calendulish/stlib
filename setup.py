@@ -135,7 +135,7 @@ class InstallWithoutBuild(install):
 
 setup(
     name='stlib',
-    version='0.6.2.rc1',
+    version='0.7.0.rc1',
     description="Async library that provides features related to Steam client and compatible stuffs",
     author='Lara Maia',
     author_email='dev@lara.click',
