@@ -125,6 +125,8 @@ Plugins
 
 .. autofunction:: get_plugin
 
+.. autofunction:: has_plugin
+
 Indices and tables
 ------------------
 
