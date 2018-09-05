@@ -24,7 +24,7 @@ import json
 import logging
 import os
 import subprocess
-from typing import Any, Dict, List, NamedTuple, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 from xml.etree import ElementTree
 
 log = logging.getLogger(__name__)
@@ -33,11 +33,6 @@ __STEAM_ALPHABET = ['2', '3', '4', '5', '6', '7', '8', '9',
                     'B', 'C', 'D', 'F', 'G', 'H', 'J', 'K',
                     'M', 'N', 'P', 'Q', 'R', 'T', 'V', 'W',
                     'X', 'Y']
-
-
-class AuthenticatorCode(NamedTuple):
-    code: str
-    server_time: int
 
 
 class DeviceError(Exception): pass
@@ -148,7 +143,7 @@ class AndroidDebugBridge:
         return xml_data[0].text[8:]
 
 
-def get_code(server_time: int, shared_secret: Union[str, bytes]) -> AuthenticatorCode:
+def get_code(server_time: int, shared_secret: Union[str, bytes]) -> str:
     msg = int(server_time / 30).to_bytes(8, 'big')
     key = base64.b64decode(shared_secret)
     auth = hmac.new(key, msg, hashlib.sha1)
@@ -162,7 +157,7 @@ def get_code(server_time: int, shared_secret: Union[str, bytes]) -> Authenticato
         auth_code.append(__STEAM_ALPHABET[int(auth_code_raw % len(__STEAM_ALPHABET))])
         auth_code_raw //= len(__STEAM_ALPHABET)
 
-    return AuthenticatorCode(''.join(auth_code), server_time)
+    return ''.join(auth_code)
 
 
 def generate_device_id(identity_secret: Optional[str] = None, token: Optional[str] = None) -> str:
