@@ -43,6 +43,14 @@ _TOKEN_TYPE = {
 }
 
 
+class Game(NamedTuple):
+    name: str
+    appid: int
+    playtime: int
+    icon_id: str
+    logo_id: str
+
+
 class SteamKey(NamedTuple):
     key: rsa.PublicKey
     timestamp: int
@@ -182,6 +190,27 @@ class SteamWebAPI:
 
         log.debug("nickname found: %s (from %s)", data['response']['players'][0]['personaname'], steamid)
         return data['response']['players'][0]['personaname']
+
+    async def get_owned_games(self, steamid: int) -> List[Game]:
+        params = {
+            'steamid': str(steamid),
+            'include_appinfo': 1,
+        }
+
+        # fallback: <community>/id/<id>/games/?tab=all&sort=playtime&xml=1
+        data = await self._get_data('IPlayerService', 'GetOwnedGames', 1, params)
+        games = []
+
+        if not data['response']['games']:
+            raise ValueError('Failed to get owned games.')
+
+        for game in data['response']['games']:
+            games.append(
+                Game(game['name'], game['appid'], game['playtime_forever'], game['img_icon_url'], game['img_logo_url']),
+            )
+
+        log.debug(f"{data['response']['game_count']} owned games found.")
+        return games
 
     async def get_session_id(self):
         async with self.session.get('https://steamcommunity.com') as response:
