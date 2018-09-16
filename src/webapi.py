@@ -218,7 +218,7 @@ class SteamWebAPI:
                 return response.cookies['sessionid'].value
             else:
                 html = await response.text()
-                for line in html.split('\t+'):
+                for line in html.splitlines():
                     if 'g_sessionID' in line:
                         _, raw_value = line.split('= "')
                         return raw_value[:-2]
