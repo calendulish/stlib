@@ -482,7 +482,11 @@ class Login:
             assert isinstance(json_data, dict), "phoneajax is not a dict"
 
         if not json_data['success']:
-            raise LoginError(json_data['error_text'])
+            try:
+                raise LoginError(json_data['error_text'])
+            except KeyError:
+                # FIXME: Why no error_text is found in Steam response?
+                raise LoginError from None
 
         log.debug("User has phone? %s", json_data["has_phone"])
 
