@@ -346,7 +346,7 @@ class SteamWebAPI:
 
             log.debug(
                 "Getting human readable information from %s as type %s (%s)",
-                confirmation['data-config'],
+                confirmation['data-confid'],
                 confirmation['data-type'],
                 "Market" if confirmation['data-type'] == '3' else 'Trade Item',
             )
