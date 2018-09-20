@@ -16,11 +16,15 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 
+import importlib
 import logging
 import sys
 from typing import Any
 
 import pkg_resources
+
+if hasattr(sys, 'frozen'):
+    import stlib_plugins
 
 log = logging.getLogger(__name__)
 
@@ -43,10 +47,16 @@ for entry_point in pkg_resources.iter_entry_points("stlib_plugins"):
 
 
 def get_plugin(name: str, *args: Any, **kwargs: Any) -> Any:
-    try:
-        _module = __plugins__[name]
-    except KeyError:
-        raise PluginNotFoundError() from None
+    if hasattr(sys, 'frozen'):
+        try:
+            _module = importlib.import_module(f'.{name}', 'stlib_plugins')
+        except ModuleNotFoundError:
+            raise PluginNotFoundError() from None
+    else:
+        try:
+            _module = __plugins__[name]
+        except KeyError:
+            raise PluginNotFoundError() from None
 
     try:
         return _module.Main(*args, **kwargs)
@@ -55,7 +65,13 @@ def get_plugin(name: str, *args: Any, **kwargs: Any) -> Any:
 
 
 def has_plugin(name: str) -> bool:
-    if name in __plugins__:
-        return True
+    result = False
+
+    if hasattr(sys, 'frozen'):
+        if hasattr(stlib_plugins, name):
+            result = True
     else:
-        return False
+        if name in __plugins__:
+            result = True
+
+    return result
