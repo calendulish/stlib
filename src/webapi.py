@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
-
+import asyncio
 import base64
 import contextlib
 import hashlib
@@ -163,10 +163,22 @@ class SteamWebAPI:
 
         log.debug("Requesting %s:%s via %s with %s:%s", interface, method, 'POST' if data else 'GET', params, data)
 
-        async with self.session.request(**kwargs) as response:
-            json_data = await response.json()
-            assert isinstance(json_data, dict), "Json data from SteamWebAPI is not a dict"
-            return json_data
+        try_again = True
+
+        while True:
+            try:
+                async with self.session.request(**kwargs) as response:
+                    json_data = await response.json()
+                    assert isinstance(json_data, dict), "Json data from SteamWebAPI is not a dict"
+                    return json_data
+            except aiohttp.ClientResponseError as exception:
+                if try_again:
+                    try_again = False
+                    log.debug("WebAPI response error. Trying again...")
+                    await asyncio.sleep(3)
+                    continue
+                else:
+                    raise exception from None
 
     async def get_server_time(self) -> int:
         data = await self._get_data('ISteamWebAPIUtil', 'GetServerInfo', 1)
