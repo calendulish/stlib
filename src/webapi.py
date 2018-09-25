@@ -93,6 +93,9 @@ class PhoneNotRegistered(Exception): pass
 class AuthenticatorExists(Exception): pass
 
 
+class RevocationError(Exception): pass
+
+
 class SteamWebAPI:
     def __init__(
             self,
@@ -297,6 +300,30 @@ class SteamWebAPI:
                 return True
 
         return False
+
+    async def remove_authenticator(
+            self,
+            steamid: int,
+            oauth_token: str,
+            revocation_code: str,
+            scheme: int = 2,
+    ) -> bool:
+        data = await self._new_mobile_query(steamid, oauth_token)
+        data['revocation_code'] = revocation_code
+        data['steamguard_scheme'] = scheme
+
+        try:
+            json_data = await self._get_data('ITwoFactorService', 'RemoveAuthenticator', 1, data=data)
+        except aiohttp.ClientResponseError:
+            return False
+
+        if json_data['response']['revocation_attempts_remaining'] == 0:
+            raise RevocationError('No more attempts')
+
+        if 'success' in json_data['response'] and json_data['response']['success'] is True:
+            return True
+        else:
+            return False
 
     async def __get_names_from_item_list(
             self,

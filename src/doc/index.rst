@@ -117,6 +117,7 @@ Exceptions:
 
 .. autoexception:: AuthenticatorExists
 
+.. autoexception:: RevocationError
 
 Plugins
 -------
