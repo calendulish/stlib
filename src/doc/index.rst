@@ -34,11 +34,6 @@ Authenticator Module
 
 .. autofunction:: generate_device_id
 
-Data Structures:
-^^^^^^^^^^^^^^^^
-
-.. autofunction:: AuthenticatorCode
-
 Exceptions:
 ^^^^^^^^^^^
 
@@ -97,6 +92,8 @@ Data Structures:
 .. autoclass:: SteamKey
 
 .. autoclass:: Confirmation
+
+.. autoclass:: Game
 
 Exceptions:
 ^^^^^^^^^^^
