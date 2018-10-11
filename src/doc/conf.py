@@ -28,7 +28,7 @@ author = 'Lara Maia'
 # The short X.Y version
 version = ''
 # The full version, including alpha/beta/rc tags
-release = '0.4.0.rc1'
+release = '0.8.1'
 
 
 # -- General configuration ---------------------------------------------------
