@@ -566,9 +566,12 @@ class Login:
             elif 'requires_twofactor' in json_data and json_data['requires_twofactor']:
                 raise TwoFactorCodeError("Authenticator code requested")
             elif 'captcha_needed' in json_data and json_data['captcha_needed']:
-                raise CaptchaError(json_data['captcha_gid'], "Captcha code requested")
+                if captcha_text and captcha_gid:
+                    raise LoginError("Wrong captcha code")
+                else:
+                    raise CaptchaError(json_data['captcha_gid'], "Captcha code requested")
             elif 'too many login failures' in json_data['message']:
-                raise LoginBlockedError(f"Your network is blocked. Please, try again later")
+                raise LoginBlockedError("Your network is blocked. Please, try again later")
             elif mobile_login and not 'oauth' in json_data:
                 raise LoginError(f"Unable to log-in on mobile session: {json_data['message']}")
             else:
