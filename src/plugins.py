@@ -17,6 +17,7 @@
 #
 
 import glob
+import importlib.machinery
 import importlib.util
 import logging
 import os
@@ -25,6 +26,8 @@ from types import ModuleType
 from typing import Tuple, Dict
 
 log = logging.getLogger(__name__)
+
+default_search_paths: Tuple[str, ...]
 
 if hasattr(sys, 'frozen') or os.name == 'nt':
     default_search_paths = (
@@ -49,9 +52,9 @@ class PluginLoaderError(PluginError): pass
 
 
 class Manager:
-    def __init__(self, plugin_search_paths: Tuple[str] = default_search_paths) -> None:
+    def __init__(self, plugin_search_paths: Tuple[str, ...] = default_search_paths) -> None:
         self._plugin_search_paths = plugin_search_paths
-        self._available_plugins: Dict[str, importlib._bootstrap.ModuleSpec] = {}
+        self._available_plugins: Dict[str, importlib.machinery.ModuleSpec] = {}
         self._loaded_plugins: Dict[str, ModuleType] = {}
 
         for plugin_directory in self._plugin_search_paths:
@@ -66,11 +69,11 @@ class Manager:
                 log.debug(f'Plugin {plugin_name} registered.')
 
     @property
-    def available_plugins(self) -> Tuple[str]:
+    def available_plugins(self) -> Tuple[str, ...]:
         return tuple(self._available_plugins.keys())
 
     @property
-    def loaded_plugins(self) -> Tuple[str]:
+    def loaded_plugins(self) -> Tuple[str, ...]:
         return tuple(self._loaded_plugins.keys())
 
     def has_plugin(self, plugin_name: str) -> bool:
@@ -87,7 +90,7 @@ class Manager:
         elif plugin_name in self._available_plugins.keys():
             plugin_spec = self._available_plugins[plugin_name]
             module_ = importlib.util.module_from_spec(plugin_spec)
-            plugin_spec.loader.exec_module(module_)
+            plugin_spec.loader.exec_module(module_)  # type: ignore
             self._loaded_plugins[plugin_name] = module_
         else:
             raise PluginNotFoundError(f"Unable to find a plugin named {plugin_name}.")

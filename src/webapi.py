@@ -131,7 +131,7 @@ class SteamWebAPI:
 
         return params
 
-    async def _new_mobile_query(self, steamid: int, oauth_token: str, token_type: str = 'mobileapp'):
+    async def _new_mobile_query(self, steamid: int, oauth_token: str, token_type: str = 'mobileapp') -> Dict[str, Any]:
         current_time = int(time.time())
 
         params = {
@@ -157,14 +157,16 @@ class SteamWebAPI:
         if self.key:
             params['key'] = self.key
 
-        kwargs = {
-            'method': 'POST' if data else 'GET',
+        http_method = 'POST' if data else 'GET'
+
+        kwargs: Dict[str, Any] = {
+            'method': http_method,
             'url': f'{self.api_url}/{interface}/{method}/v{version}/',
             'params': params,
             'data': data,
         }
 
-        log.debug("Requesting %s:%s via %s with %s:%s", interface, method, 'POST' if data else 'GET', params, data)
+        log.debug("Requesting %s:%s via %s with %s:%s", interface, method, http_method, params, data)
 
         try_again = True
 
@@ -203,13 +205,14 @@ class SteamWebAPI:
         if not data['response']['players']:
             raise ValueError('Failed to get nickname.')
 
-        log.debug("nickname found: %s (from %s)", data['response']['players'][0]['personaname'], steamid)
-        return data['response']['players'][0]['personaname']
+        nickname = str(data['response']['players'][0]['personaname'])
+        log.debug("nickname found: %s (from %s)", nickname, steamid)
+        return nickname
 
     async def get_owned_games(self, steamid: int) -> List[Game]:
         params = {
             'steamid': str(steamid),
-            'include_appinfo': 1,
+            'include_appinfo': "1",
         }
 
         # fallback: <community>/id/<id>/games/?tab=all&sort=playtime&xml=1
@@ -227,10 +230,10 @@ class SteamWebAPI:
         log.debug(f"{data['response']['game_count']} owned games found.")
         return games
 
-    async def get_session_id(self):
+    async def get_session_id(self) -> str:
         async with self.session.get('https://steamcommunity.com') as response:
             if 'sessionid' in response.cookies:
-                return response.cookies['sessionid'].value
+                return str(response.cookies['sessionid'].value)
             else:
                 html = await response.text()
                 for line in html.splitlines():
@@ -256,19 +259,26 @@ class SteamWebAPI:
             else:
                 return False
 
-    async def add_authenticator(self, steamid: int, deviceid: str, oauth_token, phone_id: int = 1) -> Dict[str, Any]:
+    async def add_authenticator(
+            self,
+            steamid: int,
+            deviceid: str,
+            oauth_token: str,
+            phone_id: int = 1,
+    ) -> Dict[str, Any]:
         data = await self._new_mobile_query(steamid, oauth_token)
         data['device_identifier'] = deviceid
         data['sms_phone_id'] = phone_id
 
         json_data = await self._get_data('ITwoFactorService', 'AddAuthenticator', 1, data=data)
+        response: Dict[str, Any] = json_data['response']
 
-        if json_data['response']['status'] == 29:
+        if response['status'] == 29:
             raise AuthenticatorExists('An Authenticator is already active for that account.')
-        elif json_data['response']['status'] == 84:
+        elif response['status'] == 84:
             raise PhoneNotRegistered('Phone not registered on Steam Account.')
 
-        return json_data['response']
+        return response
 
     async def finalize_add_authenticator(
             self,
@@ -449,7 +459,7 @@ class Login:
             mobile_login_url: str = 'https://steamcommunity.com/mobilelogin',
             steamguard_url: str = 'https://steamcommunity.com/steamguard',
             headers: Optional[Dict[str, str]] = None,
-    ):
+    ) -> None:
         self.session = session
         self.username = username
         self.__password = password
@@ -469,7 +479,7 @@ class Login:
             captcha_gid: int = -1,
             captcha_text: str = '',
             mobile_login: bool = False,
-    ):
+    ) -> Dict[str, Any]:
         steam_key = await self.get_steam_key(self.username)
         encrypted_password = encrypt_password(steam_key, self.__password)
 
@@ -547,7 +557,7 @@ class Login:
         if mobile_login:
             login_url = self.mobile_login_url
 
-            self.session.cookie_jar.update_cookies({
+            self.session.cookie_jar.update_cookies({  # type: ignore
                 'mobileClientVersion': '0 (2.3.1)',
                 'mobileClient': "android",
             })
