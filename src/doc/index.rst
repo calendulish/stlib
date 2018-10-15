@@ -121,9 +121,18 @@ Plugins
 
 .. automodule:: plugins
 
-.. autofunction:: get_plugin
+.. autoclass:: Manager
+   :members:
+   :undoc-members:
 
-.. autofunction:: has_plugin
+Exceptions:
+^^^^^^^^^^^
+
+.. autoexception:: PluginError
+
+.. autoexception:: PluginNotFoundError
+
+.. autoexception:: PluginLoaderError
 
 Indices and tables
 ------------------
