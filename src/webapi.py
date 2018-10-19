@@ -353,7 +353,7 @@ class SteamWebAPI:
             json_data = js_to_json(javascript)
 
             if json_data:
-                if json_data['market_name']:
+                if 'market_name' in json_data:
                     item_name = f"{json_data['market_name']} ({json_data['type']})"
                     log.debug("Using `market_name' for %s:%s (%s)", appid, classid, item_name)
                     result.append(item_name)
