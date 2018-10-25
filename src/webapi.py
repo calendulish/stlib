@@ -51,6 +51,12 @@ class Game(NamedTuple):
     logo_id: str
 
 
+class Badge(NamedTuple):
+    game_name: str
+    game_id: int
+    cards: int
+
+
 class SteamKey(NamedTuple):
     key: rsa.PublicKey
     timestamp: int
@@ -103,6 +109,7 @@ class SteamWebAPI:
             api_url: str = 'https://api.steampowered.com',
             mobileconf_url: str = 'https://steamcommunity.com/mobileconf',
             economy_url: str = 'https://steamcommunity.com/economy',
+            community_url: str = 'https://steamcommunity.com',
             headers: Optional[Dict[str, str]] = None,
             key: Optional[str] = None,
     ) -> None:
@@ -110,6 +117,7 @@ class SteamWebAPI:
         self.api_url = api_url
         self.mobileconf_url = mobileconf_url
         self.economy_url = economy_url
+        self.community_url = community_url
         self.key = key
 
         if not headers:
@@ -447,6 +455,69 @@ class SteamWebAPI:
             json_data = await response.json()
             assert isinstance(json_data, dict), "Json data from ajaxop is not a dict"
             return json_data
+
+    async def update_badge_drops(self, badge: Badge, nickname: str) -> Badge:
+        params = {'l': 'english'}
+
+        async with self.session.get(f"{self.community_url}/id/{nickname}/gamecards/{badge.game_id}") as response:
+            html = BeautifulSoup(await response.text(), "html.parser")
+            stats = html.find('div', class_='badge_title_stats_drops')
+            progress = stats.find('span', class_='progress_info_bold')
+
+        if not progress or "No" in progress.text:
+            cards = 0
+        else:
+            cards = int(progress.text.split(' ', 3)[0])
+
+        return badge._replace(cards=cards)
+
+    async def get_badges(self, nickname: str, show_no_drops: bool = False) -> List[Badge]:
+        badges = []
+        params = {'l': 'english'}
+
+        async with self.session.get(f"{self.community_url}/id/{nickname}/badges/", params=params) as response:
+            html = BeautifulSoup(await response.text(), "html.parser")
+            badges_raw = html.find_all('div', class_='badge_title_row')
+
+        try:
+            pages = int(html.find_all('a', class_='pagelink')[-1].text)
+        except IndexError:
+            pages = 1
+
+        for page in range(1, pages):
+            params['p'] = page
+
+            async with self.session.get(f"{self.community_url}/id/{nickname}/badges/", params=params) as response:
+                html = BeautifulSoup(await response.text(), "html.parser")
+                badges_raw += html.find_all('div', class_='badge_title_row')
+
+        for badge_raw in badges_raw:
+            title = badge_raw.find('div', class_='badge_title')
+            game_name = title.text.split('\t\t\t\t\t\t\t\t\t', 2)[1]
+
+            try:
+                game_ref = badge_raw.find('a')['href']
+            except TypeError:
+                # FIXME: It's a foil badge. The game id is above the badge_title_row
+                game_id = 000000
+            else:
+                try:
+                    game_id = int(game_ref.split('/', 3)[3])
+                except IndexError:
+                    # Possibly a game without cards
+                    game_id = int(game_ref.split('_', 6)[4])
+
+            progress = badge_raw.find('span', class_='progress_info_bold')
+
+            if not progress or "No" in progress.text:
+                cards = 0
+            else:
+                cards = int(progress.text.split(' ', 3)[0])
+
+            if cards != 0 or show_no_drops:
+                badges.append(Badge(game_name, game_id, cards))
+
+        return badges
 
 
 class Login:
