@@ -20,6 +20,9 @@ See more at: [stlib-plugins](https://github.com/ShyPixie/stlib-plugins)
 Dependencies to build SteamAPI C Extension (Optional)
 -----------------------------------------------------
 
+WARNING: SteamAPI C Extension is incomplete, but it's easy to implement. if you need a feature that is not present,
+send a pull request or open an issue.
+
 - Python and headers >= 3.6
 - Microsoft Visual C++ compiler (MSVC) or GNU Compiler (GCC)
 - Steamworks SDK >= v1.42
@@ -39,77 +42,10 @@ API Reference
 
 https://lara.click/stlib
 
-Examples
---------
+Made with stlib
+---------------
 
-- **Client**
-
-```
-from stlib import client
-
-# It's not required, but SteamGameServer can accept parameters
-# (ip, steam_port, game_port, game_id)
-with client.SteamGameServer() as server:
-    server_time = server.get_server_time()
-```
-
-```
-from stlib import client, steam_api
-
-# SteamApiExecutor will run commands in a protected
-# environment using multiprocessing module
-with client.SteamApiExecutor() as executor:
-    # use `call' method to call functions inside
-    # the protected environment and return the result.
-    # Exceptions will be reraised
-    result = executor.call(steam_api.init)
-
-    # also will work for classes
-    steam_user = executor.call(steam_api.SteamUser)
-    steam_id = executor.call(steam_user.get_steam_id)
-```
-
-```
-# It'll work without context manager as well
-executor = client.SteamApiExecutor()
-# start protected environment
-executor.init()
-<your code here>
-# stop protected environment
-executor.shutdown()
-```
-
-- **Authenticator**
-
-```
-from stlib import authenticator
-
-# It'll return an AuthenticatorCode object with "code" and "server_time" attributes:
-# code is the Steam Guard code in str format (E.g.: ABCDE)
-# server_time is received from server in unix format (E.g.: 0123456789)
-steam_guard_code = authenticator.get_code(<your secret here>)
-
-# If you don't have the secret already, you can use the
-# AndroidDebugBridge method. See bellow
-```
-
-```
-from stlib import authenticator
-
-# You can use AndroidDebugBridge method for get user info from
-# a phone with Steam Guard enabled.
-# Requirements:
-# - adb tool from google
-# - a "rooted" Android phone with adb debugging enabled
-adb = authenticator.AndroidDebugBridge(
-    <path where adb tool is located>,
-    <path to Steam Mobile App> = '/data/data/com.valvesoftware.android.steam.community/'
-)
-
-# Get any Steam Guard data in json format
-# (E.g.: adb.get_json('userid', 'identity_secret'))
-secret = await adb.get_json(*names)
-```
+Steam Tools NG - https://github.com/ShyPixie/steam-tools-ng
 
 ___________________________________________________________________________________________
 

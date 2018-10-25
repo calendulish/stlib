@@ -95,6 +95,8 @@ Data Structures:
 
 .. autoclass:: Game
 
+.. autoclass:: Badge
+
 Exceptions:
 ^^^^^^^^^^^
 
