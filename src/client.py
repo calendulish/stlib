@@ -20,6 +20,7 @@ import logging
 import multiprocessing
 import os
 import sys
+import time
 from multiprocessing import connection
 from types import TracebackType
 from typing import Any, Callable, Optional, Type, TypeVar
@@ -163,7 +164,7 @@ class SteamApiExecutor(multiprocessing.Process):
             log.debug("Send result to child process")
             self.__child_init_return.send(result)
 
-        while not self.exit_now.is_set():
+        while True:
             if self.__child_interface.poll():
                 interface_class = self.__child_interface.recv()
                 try:
@@ -176,6 +177,11 @@ class SteamApiExecutor(multiprocessing.Process):
                 else:
                     log.debug("Send interface_class return to child interface")
                     self.__child_interface_return.send(result)
+
+            time.sleep(3)
+
+            if self.exit_now.is_set():
+                break
 
         log.debug("Shutdown SteamAPI")
         steam_api.shutdown()
