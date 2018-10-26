@@ -459,7 +459,10 @@ class SteamWebAPI:
     async def update_badge_drops(self, badge: Badge, nickname: str) -> Badge:
         params = {'l': 'english'}
 
-        async with self.session.get(f"{self.community_url}/id/{nickname}/gamecards/{badge.game_id}") as response:
+        async with self.session.get(
+                f"{self.community_url}/id/{nickname}/gamecards/{badge.game_id}",
+                params=params,
+        ) as response:
             html = BeautifulSoup(await response.text(), "html.parser")
             stats = html.find('div', class_='badge_title_stats_drops')
             progress = stats.find('span', class_='progress_info_bold')
