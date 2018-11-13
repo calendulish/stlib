@@ -60,7 +60,11 @@ class SteamGameServer:
                  traceback: Optional[TracebackType]) -> None:
         log.debug('Closing GameServer')
         steam_api.server_shutdown()
-        os.environ.pop('SteamAppId')
+
+        try:
+            os.environ.pop('SteamAppId')
+        except KeyError:
+            log.warning("Tried to unset SteamAppId but it's already unset")
 
 
 class SteamApiExecutor(ProcessPoolExecutor):
@@ -93,4 +97,8 @@ class SteamApiExecutor(ProcessPoolExecutor):
         log.debug("Shutdown SteamAPI")
         await self.loop.run_in_executor(self, steam_api.shutdown)
         super().shutdown(wait)
-        os.environ.pop("SteamAppId")
+
+        try:
+            os.environ.pop("SteamAppId")
+        except KeyError:
+            log.warning("Tried to unset SteamAppId but it's already unset")
