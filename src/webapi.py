@@ -594,7 +594,7 @@ class Login:
             assert isinstance(data, bytes), "rendercaptcha response is not bytes"
             return data
 
-    async def has_phone(self, sessionid: int) -> bool:
+    async def has_phone(self, sessionid: str) -> bool:
         data = {
             'op': "has_phone",
             'sessionid': sessionid,
