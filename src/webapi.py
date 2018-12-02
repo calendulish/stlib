@@ -440,7 +440,6 @@ class SteamWebAPI:
 
     async def finalize_confirmation(
             self,
-            server_time: int,
             identity_secret: str,
             steamid: int,
             deviceid: str,
