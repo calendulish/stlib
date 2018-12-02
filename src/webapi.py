@@ -424,7 +424,10 @@ class SteamWebAPI:
 
                 javascript = html.find_all("script")[2]
                 json_data = js_to_json(javascript)
-                give = [f"{json_data['market_name']} - {json_data['type']}"]
+                if 'market_name' in json_data:
+                    give = [f"{json_data['market_name']} - {json_data['type']}"]
+                else:
+                    give = [json_data['type']]
             else:
                 raise NotImplementedError(f"Data Type: {confirmation['data-type']}")
 
