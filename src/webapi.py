@@ -286,6 +286,8 @@ class SteamWebAPI:
             raise AuthenticatorExists('An Authenticator is already active for that account.')
         elif response['status'] == 84:
             raise PhoneNotRegistered('Phone not registered on Steam Account.')
+        elif response['status'] != 1:
+            raise NotImplementedError(f"add_authenticator is returning status {response['status']}")
 
         return response
 
