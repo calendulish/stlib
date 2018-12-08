@@ -654,12 +654,19 @@ class Login:
 
     async def do_login(
             self,
-            authenticator_code: str = '',
+            shared_secret: str = '',
             emailauth: str = '',
             captcha_gid: int = -1,
             captcha_text: str = '',
             mobile_login: bool = False,
     ) -> LoginData:
+        if shared_secret:
+            server_time = await self.webapi_session.get_server_time()
+            authenticator_code = universe.generate_steam_code(server_time, shared_secret)
+        else:
+            log.warning("No shared secret found. Trying to log-in without two-factor authentication.")
+            authenticator_code = ''
+
         data = await self._new_login_data(authenticator_code, emailauth, captcha_gid, captcha_text, mobile_login)
 
         if mobile_login:
