@@ -182,6 +182,7 @@ class SteamWebAPI:
             'url': f'{self.api_url}/{interface}/{method}/v{version}/',
             'params': params,
             'data': data,
+            'headers': self.headers,
         }
 
         log.debug("Requesting %s:%s via %s with %s:%s", interface, method, http_method, params, data)
@@ -249,7 +250,10 @@ class SteamWebAPI:
         return games
 
     async def get_session_id(self) -> str:
-        async with self.session.get('https://steamcommunity.com') as response:
+        async with self.session.get(
+                'https://steamcommunity.com',
+                headers=self.headers,
+        ) as response:
             if 'sessionid' in response.cookies:
                 return str(response.cookies['sessionid'].value)
             else:
@@ -264,7 +268,8 @@ class SteamWebAPI:
     async def is_logged_in(self, nickname: str) -> bool:
         async with self.session.get(
                 f'https://steamcommunity.com/id/{nickname}/edit',
-                allow_redirects=False
+                allow_redirects=False,
+                headers=self.headers,
         ) as response:
             log.debug("login status code: %s", response.status)
 
@@ -366,6 +371,7 @@ class SteamWebAPI:
             async with self.session.get(
                     f"{self.economy_url}/itemclasshover/{appid}/{classid}",
                     params={'content_only': 1},
+                    headers=self.headers,
             ) as response:
                 html = BeautifulSoup(await response.text(), "html.parser")
                 javascript = html.find('script')
@@ -390,7 +396,12 @@ class SteamWebAPI:
     async def get_confirmations(self, identity_secret: str, steamid: int, deviceid: str) -> List[Confirmation]:
         params = await self._new_query(deviceid, steamid, identity_secret, 'conf')
 
-        async with self.session.get(f'{self.mobileconf_url}/conf', params=params, allow_redirects=False) as response:
+        async with self.session.get(
+                f'{self.mobileconf_url}/conf',
+                params=params,
+                allow_redirects=False,
+                headers=self.headers,
+        ) as response:
             html = BeautifulSoup(await response.text(), 'html.parser')
 
             if response.status == 302:
@@ -405,6 +416,7 @@ class SteamWebAPI:
             async with self.session.get(
                     f"{self.mobileconf_url}/details/{confirmation['data-confid']}",
                     params=details_params,
+                    headers=self.headers,
             ) as response:
                 json_data = await response.json()
 
@@ -465,7 +477,11 @@ class SteamWebAPI:
         extra_params = {'cid': trade_id, 'ck': trade_key, 'op': action}
         params = await self._new_query(deviceid, steamid, identity_secret, 'conf')
 
-        async with self.session.get(f'{self.mobileconf_url}/ajaxop', params={**params, **extra_params}) as response:
+        async with self.session.get(
+                f'{self.mobileconf_url}/ajaxop',
+                params={**params, **extra_params},
+                headers=self.headers,
+        ) as response:
             json_data = await response.json()
             assert isinstance(json_data, dict), "Json data from ajaxop is not a dict"
             return json_data
@@ -476,6 +492,7 @@ class SteamWebAPI:
         async with self.session.get(
                 f"{self.community_url}/id/{nickname}/gamecards/{badge.game_id}",
                 params=params,
+                headers=self.headers,
         ) as response:
             html = BeautifulSoup(await response.text(), "html.parser")
             stats = html.find('div', class_='badge_title_stats_drops')
@@ -492,7 +509,11 @@ class SteamWebAPI:
         badges = []
         params = {'l': 'english'}
 
-        async with self.session.get(f"{self.community_url}/id/{nickname}/badges/", params=params) as response:
+        async with self.session.get(
+                f"{self.community_url}/id/{nickname}/badges/",
+                params=params,
+                headers=self.headers,
+        ) as response:
             html = BeautifulSoup(await response.text(), "html.parser")
             badges_raw = html.find_all('div', class_='badge_title_row')
 
@@ -504,7 +525,11 @@ class SteamWebAPI:
         for page in range(1, pages):
             params['p'] = page
 
-            async with self.session.get(f"{self.community_url}/id/{nickname}/badges/", params=params) as response:
+            async with self.session.get(
+                    f"{self.community_url}/id/{nickname}/badges/",
+                    params=params,
+                    headers=self.headers,
+            ) as response:
                 html = BeautifulSoup(await response.text(), "html.parser")
                 badges_raw += html.find_all('div', class_='badge_title_row')
 
@@ -592,7 +617,11 @@ class Login:
         return data
 
     async def get_steam_key(self, username: str) -> SteamKey:
-        async with self.session.get(f'{self.login_url}/getrsakey/', params={'username': username}) as response:
+        async with self.session.get(
+                f'{self.login_url}/getrsakey/',
+                params={'username': username},
+                headers=self.headers,
+        ) as response:
             json_data = await response.json()
 
         if json_data['success']:
@@ -605,7 +634,11 @@ class Login:
         return SteamKey(rsa.PublicKey(public_mod, public_exp), timestamp)
 
     async def get_captcha(self, gid: int) -> bytes:
-        async with self.session.get(f'{self.login_url}/rendercaptcha/', params={'gid': gid}) as response:
+        async with self.session.get(
+                f'{self.login_url}/rendercaptcha/',
+                params={'gid': gid},
+                headers=self.headers,
+        ) as response:
             data = await response.read()
             assert isinstance(data, bytes), "rendercaptcha response is not bytes"
             return data
@@ -616,7 +649,11 @@ class Login:
             'sessionid': sessionid,
         }
 
-        async with self.session.post(f'{self.steamguard_url}/phoneajax', data=data) as response:
+        async with self.session.post(
+                f'{self.steamguard_url}/phoneajax',
+                data=data,
+                headers=self.headers,
+        ) as response:
             json_data = await response.json()
             assert isinstance(json_data, dict), "phoneajax is not a dict"
 
@@ -653,7 +690,11 @@ class Login:
         else:
             login_url = self.login_url
 
-        async with self.session.post(f'{login_url}/dologin', data=data) as response:
+        async with self.session.post(
+                f'{login_url}/dologin',
+                data=data,
+                headers=self.headers,
+        ) as response:
             json_data = await response.json()
             assert isinstance(json_data, dict), "Json data from dologin is not a dict"
 
