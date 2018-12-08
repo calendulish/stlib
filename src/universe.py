@@ -85,16 +85,16 @@ def generate_device_id(identity_secret: Optional[str] = None, token: Optional[st
     return ''.join(device_id)
 
 
-def encrypt_password(steam_key: SteamKey, password: str) -> bytes:
-    encrypted_password = rsa.encrypt(password.encode(), steam_key.key)
-
-    return base64.b64encode(encrypted_password)
-
-
-def new_time_hash(server_time: int, tag: str, secret: str) -> str:
+def generate_time_hash(server_time: int, tag: str, secret: str) -> str:
     key = base64.b64decode(secret)
     msg = server_time.to_bytes(8, 'big') + tag.encode()
     auth = hmac.new(key, msg, hashlib.sha1)
     code = base64.b64encode(auth.digest())
 
     return code.decode()
+
+
+def encrypt_password(steam_key: SteamKey, password: str) -> bytes:
+    encrypted_password = rsa.encrypt(password.encode(), steam_key.key)
+
+    return base64.b64encode(encrypted_password)

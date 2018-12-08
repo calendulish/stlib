@@ -21,31 +21,23 @@ stlib reference
    :maxdepth: 2
    :caption: Contents:
 
-Authenticator Module
+Universe Module
 --------------------
 
-.. automodule:: authenticator
+.. automodule:: universe
 
-.. autoclass:: AndroidDebugBridge
-   :members:
-   :undoc-members:
-
-.. autofunction:: get_code
+.. autofunction:: generate_steam_code
 
 .. autofunction:: generate_device_id
 
-Exceptions:
-^^^^^^^^^^^
+.. autofunction:: generate_time_hash
 
-.. autoexception:: DeviceError
+.. autofunction:: encrypt_password
 
-.. autoexception:: RootError
+Data Structures:
+^^^^^^^^^^^^^^^^
 
-.. autoexception:: LoginError
-
-.. autoexception:: SteamGuardError
-
-.. autoexception:: MobileAppError
+.. autoclass:: SteamKey
 
 Client Module:
 --------------
@@ -80,16 +72,10 @@ Webapi Module
    :members:
    :undoc-members:
 
-.. autofunction:: encrypt_password
-
-.. autofunction:: new_time_hash
-
 .. autofunction:: js_to_json
 
 Data Structures:
 ^^^^^^^^^^^^^^^^
-
-.. autoclass:: SteamKey
 
 .. autoclass:: LoginData
 
