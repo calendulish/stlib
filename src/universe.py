@@ -20,7 +20,9 @@ import base64
 import hashlib
 import hmac
 import logging
-from typing import Optional, Union
+from typing import Optional, Union, NamedTuple
+
+import rsa
 
 log = logging.getLogger(__name__)
 
@@ -29,8 +31,25 @@ __STEAM_ALPHABET = ['2', '3', '4', '5', '6', '7', '8', '9',
                     'M', 'N', 'P', 'Q', 'R', 'T', 'V', 'W',
                     'X', 'Y']
 
+_STEAM_UNIVERSE = {
+    'public': 'DE45CD61',
+    'private': '7DC60112',
+    'alpha': 'E77327FA',
+}
 
-def get_code(server_time: int, shared_secret: Union[str, bytes]) -> str:
+_TOKEN_TYPE = {
+    'none': 0,
+    'mobileapp': 1,
+    'thirdparty': 2,
+}
+
+
+class SteamKey(NamedTuple):
+    key: rsa.PublicKey
+    timestamp: int
+
+
+def generate_steam_code(server_time: int, shared_secret: Union[str, bytes]) -> str:
     msg = int(server_time / 30).to_bytes(8, 'big')
     key = base64.b64decode(shared_secret)
     auth = hmac.new(key, msg, hashlib.sha1)
@@ -64,3 +83,18 @@ def generate_device_id(identity_secret: Optional[str] = None, token: Optional[st
 
     device_id.pop(-1)
     return ''.join(device_id)
+
+
+def encrypt_password(steam_key: SteamKey, password: str) -> bytes:
+    encrypted_password = rsa.encrypt(password.encode(), steam_key.key)
+
+    return base64.b64encode(encrypted_password)
+
+
+def new_time_hash(server_time: int, tag: str, secret: str) -> str:
+    key = base64.b64decode(secret)
+    msg = server_time.to_bytes(8, 'big') + tag.encode()
+    auth = hmac.new(key, msg, hashlib.sha1)
+    code = base64.b64encode(auth.digest())
+
+    return code.decode()

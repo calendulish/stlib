@@ -16,10 +16,7 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 import asyncio
-import base64
 import contextlib
-import hashlib
-import hmac
 import json
 import logging
 import time
@@ -29,19 +26,9 @@ import aiohttp
 import rsa
 from bs4 import BeautifulSoup
 
+from . import universe
+
 log = logging.getLogger(__name__)
-
-_STEAM_UNIVERSE = {
-    'public': 'DE45CD61',
-    'private': '7DC60112',
-    'alpha': 'E77327FA',
-}
-
-_TOKEN_TYPE = {
-    'none': 0,
-    'mobileapp': 1,
-    'thirdparty': 2,
-}
 
 
 class Game(NamedTuple):
@@ -58,13 +45,8 @@ class Badge(NamedTuple):
     cards: int
 
 
-class SteamKey(NamedTuple):
-    key: rsa.PublicKey
-    timestamp: int
-
-
 class LoginData(NamedTuple):
-    username: str,
+    username: str
     auth: Dict[str, Any]
     oauth: Dict[str, Any]
     has_phone: bool
@@ -140,7 +122,7 @@ class SteamWebAPI:
         params = {
             'p': deviceid,
             'a': steamid,
-            'k': new_time_hash(server_time, tag, identity_secret),
+            'k': universe.new_time_hash(server_time, tag, identity_secret),
             't': server_time,
             'm': 'android',
             'tag': tag,
@@ -156,7 +138,7 @@ class SteamWebAPI:
             'steamid': steamid,
             'access_token': oauth_token,
             'authenticator_time': current_time,
-            'authenticator_type': _TOKEN_TYPE[token_type],
+            'authenticator_type': universe._TOKEN_TYPE[token_type],
         }
 
         return params
@@ -596,7 +578,7 @@ class Login:
             mobile_login: bool = False,
     ) -> Dict[str, Any]:
         steam_key = await self.get_steam_key(self.username)
-        encrypted_password = encrypt_password(steam_key, self.__password)
+        encrypted_password = universe.encrypt_password(steam_key, self.__password)
 
         data = {
             'username': self.username,
@@ -612,11 +594,11 @@ class Login:
         }
 
         if mobile_login:
-            data['oauth_client_id'] = _STEAM_UNIVERSE['public']
+            data['oauth_client_id'] = universe._STEAM_UNIVERSE['public']
 
         return data
 
-    async def get_steam_key(self, username: str) -> SteamKey:
+    async def get_steam_key(self, username: str) -> universe.SteamKey:
         async with self.session.get(
                 f'{self.login_url}/getrsakey/',
                 params={'username': username},
@@ -631,7 +613,7 @@ class Login:
         else:
             raise ValueError('Failed to get public key.')
 
-        return SteamKey(rsa.PublicKey(public_mod, public_exp), timestamp)
+        return universe.SteamKey(rsa.PublicKey(public_mod, public_exp), timestamp)
 
     async def get_captcha(self, gid: int) -> bytes:
         async with self.session.get(
@@ -736,21 +718,6 @@ class Login:
                 raise LoginError(f"Unable to log-in on mobile session: {json_data['message']}")
             else:
                 raise LoginError(f"Unable to log-in: {json_data['message']}")
-
-
-def encrypt_password(steam_key: SteamKey, password: str) -> bytes:
-    encrypted_password = rsa.encrypt(password.encode(), steam_key.key)
-
-    return base64.b64encode(encrypted_password)
-
-
-def new_time_hash(server_time: int, tag: str, secret: str) -> str:
-    key = base64.b64decode(secret)
-    msg = server_time.to_bytes(8, 'big') + tag.encode()
-    auth = hmac.new(key, msg, hashlib.sha1)
-    code = base64.b64encode(auth.digest())
-
-    return code.decode()
 
 
 def js_to_json(javascript: BeautifulSoup) -> Dict[str, Any]:
