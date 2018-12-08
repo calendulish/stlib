@@ -78,10 +78,11 @@ class LoginBlockedError(LoginError): pass
 
 
 class CaptchaError(LoginError):
-    def __init__(self, captcha_gid: int, message: str) -> None:
+    def __init__(self, captcha_gid: int, captcha: bytes, message: str) -> None:
         super().__init__(message)
 
         self.captcha_gid = captcha_gid
+        self.captcha = captcha
 
 
 class MailCodeError(LoginError): pass
@@ -657,7 +658,8 @@ class Login:
                 if captcha_text and captcha_gid:
                     raise LoginError("Wrong captcha code")
                 else:
-                    raise CaptchaError(json_data['captcha_gid'], "Captcha code requested")
+                    captcha = await self.get_captcha(json_data['captcha_gid'])
+                    raise CaptchaError(captcha_gid, captcha, "Captcha code requested")
             elif 'too many login failures' in json_data['message']:
                 raise LoginBlockedError("Your network is blocked. Please, try again later")
             elif mobile_login and not 'oauth' in json_data:
