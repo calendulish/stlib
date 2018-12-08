@@ -91,6 +91,8 @@ Data Structures:
 
 .. autoclass:: SteamKey
 
+.. autoclass:: LoginData
+
 .. autoclass:: Confirmation
 
 .. autoclass:: Game

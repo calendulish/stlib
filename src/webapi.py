@@ -20,6 +20,7 @@ import base64
 import contextlib
 import hashlib
 import hmac
+import json
 import logging
 import time
 from typing import Any, Dict, List, NamedTuple, Optional
@@ -60,6 +61,13 @@ class Badge(NamedTuple):
 class SteamKey(NamedTuple):
     key: rsa.PublicKey
     timestamp: int
+
+
+class LoginData(NamedTuple):
+    username: str,
+    auth: Dict[str, Any]
+    oauth: Dict[str, Any]
+    has_phone: bool
 
 
 class Confirmation(NamedTuple):
@@ -533,6 +541,7 @@ class Login:
     def __init__(
             self,
             session: aiohttp.ClientSession,
+            webapi_session: SteamWebAPI,
             username: str,
             password: str,
             login_url: str = 'https://steamcommunity.com/login',
@@ -541,6 +550,7 @@ class Login:
             headers: Optional[Dict[str, str]] = None,
     ) -> None:
         self.session = session
+        self.webapi_session = webapi_session
         self.username = username
         self.__password = password
         self.login_url = login_url
@@ -630,7 +640,7 @@ class Login:
             captcha_gid: int = -1,
             captcha_text: str = '',
             mobile_login: bool = False,
-    ) -> Dict[str, Any]:
+    ) -> LoginData:
         data = await self._new_login_data(authenticator_code, emailauth, captcha_gid, captcha_text, mobile_login)
 
         if mobile_login:
@@ -648,7 +658,26 @@ class Login:
             assert isinstance(json_data, dict), "Json data from dologin is not a dict"
 
             if json_data['success']:
-                return json_data
+                if mobile_login:
+                    oauth_data = json.loads(json_data['oauth'])
+                    steamid = oauth_data['steamid']
+                    token = oauth_data['wgtoken']
+                    token_secure = oauth_data['wgtoken_secure']
+                else:
+                    oauth_data = {}
+                    steamid = json_data['transfer_parameters']['steamid']
+                    token = json_data['transfer_parameters']['webcookie']
+                    token_secure = json_data['transfer_parameters']['token_secure']
+
+                self.session.cookie_jar.update_cookies({
+                    'steamLogin': f'{steamid}%7C%7C{token}',
+                    'steamLoginSecure': f'{steamid}%7C%7C{token_secure}',
+                })
+
+                sessionid = await self.webapi_session.get_session_id()
+                has_phone = await self.has_phone(sessionid)
+
+                return LoginData(self.username, json_data, oauth_data, has_phone)
 
             if 'emailauth_needed' in json_data and json_data['emailauth_needed']:
                 raise MailCodeError("Mail code requested")
