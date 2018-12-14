@@ -266,13 +266,12 @@ class SteamWebAPI:
 
     async def add_authenticator(
             self,
-            steamid: int,
-            deviceid: str,
-            oauth_token: str,
+            login_data: LoginData,
+            device_id: str,
             phone_id: int = 1,
-    ) -> Dict[str, Any]:
-        data = await self._new_mobile_query(steamid, oauth_token)
-        data['device_identifier'] = deviceid
+    ) -> LoginData:
+        data = await self._new_mobile_query(login_data.oauth['steamid'], login_data.oauth['oauth_token'])
+        data['device_identifier'] = device_id
         data['sms_phone_id'] = phone_id
 
         json_data = await self._get_data('ITwoFactorService', 'AddAuthenticator', 1, data=data)
@@ -285,17 +284,16 @@ class SteamWebAPI:
         elif response['status'] != 1:
             raise NotImplementedError(f"add_authenticator is returning status {response['status']}")
 
-        return response
+        return login_data._replace(oauth=response)
 
     async def finalize_add_authenticator(
             self,
-            steamid: int,
-            oauth_token: str,
+            login_data: LoginData,
             authenticator_code: str,
             sms_code: str,
             email_type: int = 2,
     ) -> bool:
-        data = await self._new_mobile_query(steamid, oauth_token)
+        data = await self._new_mobile_query(login_data.oauth['steamid'], login_data.oauth['oauth_token'])
         data['authenticator_code'] = authenticator_code
         data['activation_code'] = sms_code
 
@@ -320,12 +318,11 @@ class SteamWebAPI:
 
     async def remove_authenticator(
             self,
-            steamid: int,
-            oauth_token: str,
+            login_data: LoginData,
             revocation_code: str,
             scheme: int = 2,
     ) -> bool:
-        data = await self._new_mobile_query(steamid, oauth_token)
+        data = await self._new_mobile_query(login_data.oauth['steamid'], login_data.oauth['oauth_token'])
         data['revocation_code'] = revocation_code
         data['steamguard_scheme'] = scheme
 
