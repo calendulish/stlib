@@ -131,12 +131,12 @@ class SteamWebAPI:
         return params
 
     @staticmethod
-    async def _new_mobile_query(steamid: int, oauth_token: str, token_type: str = 'mobileapp') -> Dict[str, Any]:
+    async def _new_mobile_query(oauth_data: Dict[str, Any], token_type: str = 'mobileapp') -> Dict[str, Any]:
         current_time = int(time.time())
 
         params = {
-            'steamid': steamid,
-            'access_token': oauth_token,
+            'steamid': oauth_data['steamid'],
+            'access_token': oauth_data['oauth_token'],
             'authenticator_time': current_time,
             'authenticator_type': universe._TOKEN_TYPE[token_type],
         }
