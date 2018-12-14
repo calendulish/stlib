@@ -270,7 +270,7 @@ class SteamWebAPI:
             device_id: str,
             phone_id: int = 1,
     ) -> LoginData:
-        data = await self._new_mobile_query(login_data.oauth['steamid'], login_data.oauth['oauth_token'])
+        data = await self._new_mobile_query(login_data.oauth)
         data['device_identifier'] = device_id
         data['sms_phone_id'] = phone_id
 
@@ -293,7 +293,7 @@ class SteamWebAPI:
             sms_code: str,
             email_type: int = 2,
     ) -> bool:
-        data = await self._new_mobile_query(login_data.oauth['steamid'], login_data.oauth['oauth_token'])
+        data = await self._new_mobile_query(login_data.oauth)
         data['authenticator_code'] = authenticator_code
         data['activation_code'] = sms_code
 
@@ -322,7 +322,7 @@ class SteamWebAPI:
             revocation_code: str,
             scheme: int = 2,
     ) -> bool:
-        data = await self._new_mobile_query(login_data.oauth['steamid'], login_data.oauth['oauth_token'])
+        data = await self._new_mobile_query(login_data.oauth)
         data['revocation_code'] = revocation_code
         data['steamguard_scheme'] = scheme
 
