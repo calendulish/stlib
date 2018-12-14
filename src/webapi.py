@@ -714,7 +714,7 @@ class Login:
                     raise LoginError("Wrong captcha code")
                 else:
                     captcha = await self.get_captcha(json_data['captcha_gid'])
-                    raise CaptchaError(captcha_gid, captcha, "Captcha code requested")
+                    raise CaptchaError(json_data['captcha_gid'], captcha, "Captcha code requested")
             elif 'too many login failures' in json_data['message']:
                 raise LoginBlockedError("Your network is blocked. Please, try again later")
             elif mobile_login and not 'oauth' in json_data:
