@@ -122,7 +122,7 @@ class SteamWebAPI:
         params = {
             'p': deviceid,
             'a': steamid,
-            'k': universe.new_time_hash(server_time, tag, identity_secret),
+            'k': universe.generate_time_hash(server_time, tag, identity_secret),
             't': server_time,
             'm': 'android',
             'tag': tag,
