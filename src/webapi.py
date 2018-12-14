@@ -289,14 +289,13 @@ class SteamWebAPI:
     async def finalize_add_authenticator(
             self,
             login_data: LoginData,
-            authenticator_code: str,
             sms_code: str,
             email_type: int = 2,
     ) -> bool:
         data = await self._new_mobile_query(login_data.oauth)
-        data['authenticator_code'] = authenticator_code
+        server_time = await self.get_server_time()
+        data['authenticator_code'] = universe.generate_steam_code(server_time, login_data.auth['shared_secret'])
         data['activation_code'] = sms_code
-
         json_data = await self._get_data("ITwoFactorService", "FinalizeAddAuthenticator", 1, data=data)
 
         if json_data['response']['status'] == 89:
