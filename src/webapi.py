@@ -655,9 +655,10 @@ class Login:
             captcha_gid: int = -1,
             captcha_text: str = '',
             mobile_login: bool = False,
+            time_offset: int = 0,
     ) -> LoginData:
         if shared_secret:
-            server_time = await self.webapi_session.get_server_time()
+            server_time = int(time.time()) - time_offset
             authenticator_code = universe.generate_steam_code(server_time, shared_secret)
         else:
             log.warning("No shared secret found. Trying to log-in without two-factor authentication.")
