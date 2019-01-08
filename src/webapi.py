@@ -291,9 +291,10 @@ class SteamWebAPI:
             login_data: LoginData,
             sms_code: str,
             email_type: int = 2,
+            time_offset: int = 0,
     ) -> bool:
         data = await self._new_mobile_query(login_data.oauth)
-        server_time = await self.get_server_time()
+        server_time = int(time.time()) - time_offset
         data['authenticator_code'] = universe.generate_steam_code(server_time, login_data.auth['shared_secret'])
         data['activation_code'] = sms_code
         json_data = await self._get_data("ITwoFactorService", "FinalizeAddAuthenticator", 1, data=data)
