@@ -116,9 +116,14 @@ class SteamWebAPI:
 
         self.headers = headers
 
-    async def _new_query(self, deviceid: str, steamid: int, identity_secret: str, tag: str) -> Dict[str, Any]:
-        server_time = await self.get_server_time()
-
+    @staticmethod
+    async def _new_query(
+            server_time: int,
+            deviceid: str,
+            steamid: int,
+            identity_secret: str,
+            tag: str,
+    ) -> Dict[str, Any]:
         params = {
             'p': deviceid,
             'a': steamid,
@@ -372,8 +377,15 @@ class SteamWebAPI:
 
         return result
 
-    async def get_confirmations(self, identity_secret: str, steamid: int, deviceid: str) -> List[Confirmation]:
-        params = await self._new_query(deviceid, steamid, identity_secret, 'conf')
+    async def get_confirmations(
+            self,
+            identity_secret: str,
+            steamid: int,
+            deviceid: str,
+            time_offset: int = 0,
+    ) -> List[Confirmation]:
+        server_time = int(time.time()) - time_offset
+        params = await self._new_query(server_time, deviceid, steamid, identity_secret, 'conf')
 
         async with self.session.get(
                 f'{self.mobileconf_url}/conf',
@@ -388,8 +400,16 @@ class SteamWebAPI:
 
         confirmations = []
         for confirmation in html.find_all('div', class_='mobileconf_list_entry'):
+            # server_time is defined again here because
+            # confirmations loop (steam server) can be slow
+            server_time = int(time.time()) - time_offset
+
             details_params = await self._new_query(
-                deviceid, steamid, identity_secret, f"details{confirmation['data-confid']}"
+                server_time,
+                deviceid,
+                steamid,
+                identity_secret,
+                f"details{confirmation['data-confid']}",
             )
 
             async with self.session.get(
@@ -451,10 +471,12 @@ class SteamWebAPI:
             deviceid: str,
             trade_id: int,
             trade_key: int,
-            action: str
+            action: str,
+            time_offset: int = 0,
     ) -> Dict[str, Any]:
         extra_params = {'cid': trade_id, 'ck': trade_key, 'op': action}
-        params = await self._new_query(deviceid, steamid, identity_secret, 'conf')
+        server_time = int(time.time()) - time_offset
+        params = await self._new_query(server_time, deviceid, steamid, identity_secret, 'conf')
 
         async with self.session.get(
                 f'{self.mobileconf_url}/ajaxop',
