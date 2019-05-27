@@ -289,7 +289,7 @@ class SteamWebAPI:
         elif response['status'] != 1:
             raise NotImplementedError(f"add_authenticator is returning status {response['status']}")
 
-        return login_data._replace(oauth=response)
+        return login_data._replace(auth=response)
 
     async def finalize_add_authenticator(
             self,
