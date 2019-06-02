@@ -49,14 +49,19 @@ class SteamKey(NamedTuple):
     timestamp: int
 
 
-def generate_steam_code(server_time: int, shared_secret: Union[str, bytes]) -> str:
-    msg = int(server_time / 30).to_bytes(8, 'big')
-    key = base64.b64decode(shared_secret)
+def generate_otp_code(msg: bytes, key: bytes) -> int:
     auth = hmac.new(key, msg, hashlib.sha1)
     digest = auth.digest()
     start = digest[19] & 0xF
     code = digest[start:start + 4]
-    auth_code_raw = int.from_bytes(code, byteorder='big') & 0x7FFFFFFF
+
+    return int.from_bytes(code, byteorder='big') & 0x7FFFFFFF
+
+
+def generate_steam_code(server_time: int, shared_secret: Union[str, bytes]) -> str:
+    msg = int(server_time / 30).to_bytes(8, 'big')
+    key = base64.b64decode(shared_secret)
+    auth_code_raw = generate_otp_code(msg, key)
 
     auth_code = []
     for _ in range(5):
