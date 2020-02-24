@@ -202,7 +202,7 @@ class SteamWebAPI:
     async def get_user_id(self, nickname: str) -> int:
         data = await self._get_data('ISteamUser', 'ResolveVanityURL', 1, {'vanityurl': nickname})
 
-        if not data['response']['success'] is 1:
+        if data['response']['success'] != 1:
             raise ValueError('Failed to get user id.')
 
         log.debug("steamid found: %s (from %s)", data['response']['steamid'], nickname)
