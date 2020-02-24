@@ -61,6 +61,9 @@ class Confirmation(NamedTuple):
     receive: List[str]
 
 
+class BadgeError(AttributeError): pass
+
+
 class LoginError(ValueError): pass
 
 
@@ -497,6 +500,10 @@ class SteamWebAPI:
         ) as response:
             html = BeautifulSoup(await response.text(), "html.parser")
             stats = html.find('div', class_='badge_title_stats_drops')
+
+            if stats is None:
+                raise BadgeError(f"Unable to get card count for {badge.game_id}")
+
             progress = stats.find('span', class_='progress_info_bold')
 
         if not progress or "No" in progress.text:
