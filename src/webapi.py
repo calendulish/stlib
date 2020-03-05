@@ -453,6 +453,10 @@ class SteamWebAPI:
                     give = [f"{json_data['market_name']} - {json_data['type']}"]
                 else:
                     give = [json_data['type']]
+            elif confirmation['data-type'] == '5':
+                to = "Steam"
+                give = ["Phone Number"]
+                receive = ["Nothing"]
             else:
                 raise NotImplementedError(f"Data Type: {confirmation['data-type']}")
 
