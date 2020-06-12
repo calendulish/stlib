@@ -462,7 +462,9 @@ class SteamWebAPI:
                 give = ["Email"]
                 receive = ["Confirm"]
             else:
-                raise NotImplementedError(f"Data Type: {confirmation['data-type']}")
+                to = "NotImplemented"
+                give = f"{confirmation['data-confid']}"
+                receive = f"{confirmation['data-key']}"
 
             confirmations.append(
                 Confirmation(
