@@ -456,7 +456,11 @@ class SteamWebAPI:
             elif confirmation['data-type'] == '5':
                 to = "Steam"
                 give = ["Phone Number"]
-                receive = ["Nothing"]
+                receive = ["Confirm"]
+            elif confirmation['data-type'] == '6':
+                to = "Steam"
+                give = ["Email"]
+                receive = ["Confirm"]
             else:
                 raise NotImplementedError(f"Data Type: {confirmation['data-type']}")
 
