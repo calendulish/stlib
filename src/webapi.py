@@ -19,6 +19,7 @@ import asyncio
 import contextlib
 import json
 import logging
+import re
 import time
 from typing import Any, Dict, List, NamedTuple, Optional
 
@@ -461,6 +462,9 @@ class SteamWebAPI:
                 to = "Steam"
                 give = ["Email"]
                 receive = ["Confirm"]
+                num_pattern = re.compile(r"^\s*\d+\s*$")
+                for num_text in html.find_all(string=num_pattern):
+                    receive.append(num_text.strip())
             else:
                 to = "NotImplemented"
                 give = f"{confirmation['data-confid']}"
