@@ -489,7 +489,7 @@ class SteamWebAPI:
     ) -> Dict[str, Any]:
         extra_params = {'cid': trade_id, 'ck': trade_key, 'op': action}
         server_time = int(time.time()) - time_offset
-        params = await self._new_query(server_time, deviceid, steamid, identity_secret, 'conf')
+        params = await self._new_query(server_time, deviceid, steamid, identity_secret, action)
 
         async with self.session.get(
                 f'{self.mobileconf_url}/ajaxop',
