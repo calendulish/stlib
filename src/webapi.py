@@ -455,12 +455,12 @@ class SteamWebAPI:
                     give = [json_data['type']]
             elif confirmation['data-type'] == '5':
                 to = "Steam"
-                give = ["Phone Number"]
-                receive = ["Confirm"]
+                give = ["Change phone number"]
+                receive = ["Phone number has not been entered yet"]
             elif confirmation['data-type'] == '6':
                 to = "Steam"
-                give = ["Email"]
-                receive = ["Confirm"]
+                give = ["Make changes to your account"]
+                receive = [f"Number to match: {html.find_all('div')[3].text.strip()}"]
             else:
                 to = "NotImplemented"
                 give = f"{confirmation['data-confid']}"
