@@ -16,4 +16,13 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 
+import os
+import sys
+
 __all__ = ["steam_api"]
+
+if os.name == 'nt' and sys.version_info.minor > 7:
+    import site
+
+    for path in site.getsitepackages():
+        os.add_dll_directory(path)
