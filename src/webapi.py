@@ -198,6 +198,16 @@ class SteamWebAPI:
         log.debug("server time found: %s", data['servertime'])
         return int(data['servertime'])
 
+    async def get_profile_url(self, steamid: int) -> None:
+        data = await self._get_data('ISteamUser', 'GetPlayerSummaries', 2, {'steamids': str(steamid)})
+
+        if not data['response']['players']:
+            raise ValueError('Failed to get profile url.')
+
+        profile_url = str(data['response']['players'][0]['profileurl'])
+        log.debug("profile url found: %s (from %s)", nickname, steamid)
+        return profile_url
+
     async def get_user_id(self, nickname: str) -> int:
         data = await self._get_data('ISteamUser', 'ResolveVanityURL', 1, {'vanityurl': nickname})
 
