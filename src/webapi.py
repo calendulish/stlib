@@ -205,7 +205,7 @@ class SteamWebAPI:
             raise ValueError('Failed to get profile url.')
 
         profile_url = str(data['response']['players'][0]['profileurl'])
-        log.debug("profile url found: %s (from %s)", nickname, steamid)
+        log.debug("profile url found: %s (from %s)", profile_url, steamid)
         return profile_url
 
     async def get_user_id(self, nickname: str) -> int:
@@ -264,16 +264,18 @@ class SteamWebAPI:
 
                 raise KeyError
 
-    async def is_logged_in(self, nickname: str) -> bool:
+    async def is_logged_in(self, steamid: int) -> bool:
+        profile_url = await self.get_profile_url(steamid)
+
         async with self.session.get(
-                f'https://steamcommunity.com/id/{nickname}/edit',
+                f'{profile_url}/edit',
                 allow_redirects=False,
                 headers=self.headers,
         ) as response:
             log.debug("login status code: %s", response.status)
 
             if 'profile could not be found' in await response.text():
-                log.warning("nickname doesn't exist: %s", nickname)
+                log.error("profile %s doesn't exist", steamid)
                 return False
 
             if response.status == 200:
@@ -509,11 +511,12 @@ class SteamWebAPI:
             assert isinstance(json_data, dict), "Json data from ajaxop is not a dict"
             return json_data
 
-    async def update_badge_drops(self, badge: Badge, nickname: str) -> Badge:
+    async def update_badge_drops(self, badge: Badge, steamid: int) -> Badge:
         params = {'l': 'english'}
+        profile_url = await self.get_profile_url(steamid)
 
         async with self.session.get(
-                f"{self.community_url}/id/{nickname}/gamecards/{badge.game_id}",
+                f"{profile_url}/gamecards/{badge.game_id}",
                 params=params,
                 headers=self.headers,
         ) as response:
@@ -532,12 +535,13 @@ class SteamWebAPI:
 
         return badge._replace(cards=cards)
 
-    async def get_badges(self, nickname: str, show_no_drops: bool = False) -> List[Badge]:
+    async def get_badges(self, steamid: int, show_no_drops: bool = False) -> List[Badge]:
         badges = []
         params = {'l': 'english'}
+        profile_url = await self.get_profile_url(steamid)
 
         async with self.session.get(
-                f"{self.community_url}/id/{nickname}/badges/",
+                f"{profile_url}/badges/",
                 params=params,
                 headers=self.headers,
         ) as response:
@@ -553,7 +557,7 @@ class SteamWebAPI:
             params['p'] = page
 
             async with self.session.get(
-                    f"{self.community_url}/id/{nickname}/badges/",
+                    f"{profile_url}/badges/",
                     params=params,
                     headers=self.headers,
             ) as response:
