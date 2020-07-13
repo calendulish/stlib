@@ -15,16 +15,15 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
+import aiohttp
 import asyncio
 import contextlib
 import json
 import logging
-import time
-from typing import Any, Dict, List, NamedTuple, Optional
-
-import aiohttp
 import rsa
+import time
 from bs4 import BeautifulSoup
+from typing import Any, Dict, List, NamedTuple, Optional
 
 from . import universe
 
@@ -696,13 +695,16 @@ class Login:
             captcha_text: str = '',
             mobile_login: bool = False,
             time_offset: int = 0,
+            authenticator_code: str = '',
     ) -> LoginData:
         if shared_secret:
             server_time = int(time.time()) - time_offset
             authenticator_code = universe.generate_steam_code(server_time, shared_secret)
         else:
-            log.warning("No shared secret found. Trying to log-in without two-factor authentication.")
-            authenticator_code = ''
+            if authenticator_code:
+                log.warning("Using external authenticator code to log-in")
+            else:
+                log.warning("Logging without two-factor authentication.")
 
         data = await self._new_login_data(authenticator_code, emailauth, captcha_gid, captcha_text, mobile_login)
 
