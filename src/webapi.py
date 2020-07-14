@@ -208,13 +208,13 @@ class SteamWebAPI:
         log.debug("profile url found: %s (from %s)", profile_url, steamid)
         return profile_url
 
-    async def get_steamid(self, nickname: str) -> int:
-        data = await self._get_data('ISteamUser', 'ResolveVanityURL', 1, {'vanityurl': nickname})
+    async def get_steamid(self, profile_url: str) -> int:
+        data = await self._get_data('ISteamUser', 'ResolveVanityURL', 1, {'vanityurl': profile_url.split('/')[4]})
 
         if data['response']['success'] != 1:
             raise ValueError('Failed to get user id.')
 
-        log.debug("steamid found: %s (from %s)", data['response']['steamid'], nickname)
+        log.debug("steamid found: %s (from %s)", data['response']['steamid'], profile_url)
         return int(data['response']['steamid'])
 
     async def get_nickname(self, steamid: int) -> str:
