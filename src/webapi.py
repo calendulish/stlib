@@ -208,7 +208,7 @@ class SteamWebAPI:
         log.debug("profile url found: %s (from %s)", profile_url, steamid)
         return profile_url
 
-    async def get_user_id(self, nickname: str) -> int:
+    async def get_steamid(self, nickname: str) -> int:
         data = await self._get_data('ISteamUser', 'ResolveVanityURL', 1, {'vanityurl': nickname})
 
         if data['response']['success'] != 1:
