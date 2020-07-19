@@ -56,6 +56,6 @@ The stlib is distributed in the hope that it will be useful, but WITHOUT ANY WAR
 
 You should have received a copy of the GNU General Public License along with this program. If not, see http://www.gnu.org/licenses/.
 
-Lara Maia <dev@lara.click>
+Lara Maia <dev@lara.monster>
 
 [![Made with](https://img.shields.io/badge/made%20with-girl%20power-f070D0.svg?longCache=true&style=for-the-badge)](http://lara.click)
