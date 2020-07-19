@@ -46,10 +46,8 @@ class Badge(NamedTuple):
 
 
 class LoginData(NamedTuple):
-    username: str
     auth: Dict[str, Any]
     oauth: Dict[str, Any]
-    has_phone: bool
 
 
 class Confirmation(NamedTuple):
@@ -745,26 +743,12 @@ class Login:
             assert isinstance(json_data, dict), "Json data from dologin is not a dict"
 
             if json_data['success']:
+                oauth_data = {}
+
                 if mobile_login:
-                    oauth_data = json.loads(json_data['oauth'])
-                    steamid = oauth_data['steamid']
-                    token = oauth_data['wgtoken']
-                    token_secure = oauth_data['wgtoken_secure']
-                else:
-                    oauth_data = {}
-                    steamid = json_data['transfer_parameters']['steamid']
-                    token = json_data['transfer_parameters']['webcookie']
-                    token_secure = json_data['transfer_parameters']['token_secure']
+                    oauth_data = json.loads(json_data.pop('oauth'))
 
-                self.session.cookie_jar.update_cookies({
-                    'steamLogin': f'{steamid}%7C%7C{token}',
-                    'steamLoginSecure': f'{steamid}%7C%7C{token_secure}',
-                })
-
-                sessionid = await self.webapi_session.get_session_id()
-                has_phone = await self.has_phone(sessionid)
-
-                return LoginData(self.username, json_data, oauth_data, has_phone)
+                return LoginData(json_data, oauth_data)
 
             if 'emailauth_needed' in json_data and json_data['emailauth_needed']:
                 raise MailCodeError("Mail code requested")
