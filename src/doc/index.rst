@@ -1,4 +1,4 @@
-.. Lara Maia <dev@lara.click> 2015 ~ 2018
+.. Lara Maia <dev@lara.monster> 2015 ~ 2020
 .. .
 .. The stlib is free software: you can redistribute it and/or
 .. modify it under the terms of the GNU General Public License as
@@ -25,6 +25,8 @@ Universe Module
 --------------------
 
 .. automodule:: universe
+
+.. autofunction:: generate_otp_code
 
 .. autofunction:: generate_steam_code
 
@@ -87,6 +89,8 @@ Data Structures:
 
 Exceptions:
 ^^^^^^^^^^^
+
+.. autoexception:: BadgeError
 
 .. autoexception:: LoginError
 

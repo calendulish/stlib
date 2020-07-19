@@ -22,7 +22,7 @@ def setup(app):
 # -- Project information -----------------------------------------------------
 
 project = 'stlib'
-copyright = '2018, Lara Maia'
+copyright = '2020, Lara Maia'
 author = 'Lara Maia'
 
 # The short X.Y version

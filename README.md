@@ -39,7 +39,7 @@ Dependencies to run
 API Reference
 -------------
 
-https://lara.click/stlib
+https://lara.monster/stlib
 
 Made with stlib
 ---------------
@@ -58,4 +58,4 @@ You should have received a copy of the GNU General Public License along with thi
 
 Lara Maia <dev@lara.monster>
 
-[![Made with](https://img.shields.io/badge/made%20with-girl%20power-f070D0.svg?longCache=true&style=for-the-badge)](http://lara.click)
+[![Made with](https://img.shields.io/badge/made%20with-girl%20power-f070D0.svg?longCache=true&style=for-the-badge)](https://lara.monster)
