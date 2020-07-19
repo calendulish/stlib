@@ -199,7 +199,7 @@ class SteamWebAPI:
         log.debug("server time found: %s", data['servertime'])
         return int(data['servertime'])
 
-    async def get_profile_url(self, steamid: int) -> None:
+    async def get_profile_url(self, steamid: int) -> str:
         data = await self._get_data('ISteamUser', 'GetPlayerSummaries', 2, {'steamids': str(steamid)})
 
         if not data['response']['players']:
