@@ -762,7 +762,7 @@ class Login:
                     raise CaptchaError(json_data['captcha_gid'], captcha, "Captcha code requested")
             elif 'too many login failures' in json_data['message']:
                 raise LoginBlockedError("Your network is blocked. Please, try again later")
-            elif mobile_login and not 'oauth' in json_data:
+            elif mobile_login and 'oauth' not in json_data:
                 raise LoginError(f"Unable to log-in on mobile session: {json_data['message']}")
             else:
                 raise LoginError(f"Unable to log-in: {json_data['message']}")
