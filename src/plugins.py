@@ -42,13 +42,19 @@ else:
     )
 
 
-class PluginError(Exception): pass
+class PluginError(Exception):
+    """Base exception for plugin exceptions"""
+    pass
 
 
-class PluginNotFoundError(PluginError): pass
+class PluginNotFoundError(PluginError):
+    """Raised when a plugin can't be found"""
+    pass
 
 
-class PluginLoaderError(PluginError): pass
+class PluginLoaderError(PluginError):
+    """Raised when a plugin can't be loaded"""
+    pass
 
 
 class Manager:

@@ -60,16 +60,24 @@ class Confirmation(NamedTuple):
     receive: List[str]
 
 
-class BadgeError(AttributeError): pass
+class BadgeError(AttributeError):
+    """Raised when can`t find stats for the badge"""
+    pass
 
 
-class LoginError(ValueError): pass
+class LoginError(ValueError):
+    """Raised when login can`t be completed"""
+    pass
 
 
-class LoginBlockedError(LoginError): pass
+class LoginBlockedError(LoginError):
+    """Raised when user is temporarily blocked from login session"""
+    pass
 
 
 class CaptchaError(LoginError):
+    """Raised when captcha is requested"""
+
     def __init__(self, captcha_gid: int, captcha: bytes, message: str) -> None:
         super().__init__(message)
 
@@ -77,22 +85,34 @@ class CaptchaError(LoginError):
         self.captcha = captcha
 
 
-class MailCodeError(LoginError): pass
+class MailCodeError(LoginError):
+    """Raised when mail code is requested"""
+    pass
 
 
-class TwoFactorCodeError(LoginError): pass
+class TwoFactorCodeError(LoginError):
+    """Raised when two factor code is requested"""
+    pass
 
 
-class SMSCodeError(LoginError): pass
+class SMSCodeError(LoginError):
+    """Raised when a sms code is requested"""
+    pass
 
 
-class PhoneNotRegistered(Exception): pass
+class PhoneNotRegistered(Exception):
+    """Raised when no phone number is registered on account"""
+    pass
 
 
-class AuthenticatorExists(Exception): pass
+class AuthenticatorExists(Exception):
+    """Raised when an authenticator is already active for the account"""
+    pass
 
 
-class RevocationError(Exception): pass
+class RevocationError(Exception):
+    """Raised when user can't use revocation codes anymore"""
+    pass
 
 
 class SteamWebAPI:

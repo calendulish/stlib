@@ -33,10 +33,14 @@ except ImportError:
 log = logging.getLogger(__name__)
 
 
-class SteamGameServerError(Exception): pass
+class SteamGameServerError(Exception):
+    """Raised when SteamGameServer can't be initialized"""
+    pass
 
 
-class SteamAPIError(Exception): pass
+class SteamAPIError(Exception):
+    """Raised when SteamAPI can't be initialized"""
+    pass
 
 
 class SteamGameServer:
