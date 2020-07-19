@@ -15,15 +15,16 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
-import aiohttp
 import asyncio
 import contextlib
 import json
 import logging
-import rsa
 import time
-from bs4 import BeautifulSoup
 from typing import Any, Dict, List, NamedTuple, Optional
+
+import aiohttp
+import rsa
+from bs4 import BeautifulSoup
 
 from . import universe
 
@@ -227,11 +228,14 @@ class SteamWebAPI:
         log.debug("nickname found: %s (from %s)", nickname, steamid)
         return nickname
 
-    async def get_owned_games(self, steamid: int) -> List[Game]:
+    async def get_owned_games(self, steamid: int, *, appids_filter: Optional[List[int]] = None) -> List[Game]:
         params = {
             'steamid': str(steamid),
             'include_appinfo': "1",
         }
+
+        for index, appid in enumerate(appids_filter):
+            params[f"appids_filter[{index}]"] = str(appid)
 
         # fallback: <community>/id/<id>/games/?tab=all&sort=playtime&xml=1
         data = await self._get_data('IPlayerService', 'GetOwnedGames', 1, params)
