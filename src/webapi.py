@@ -17,6 +17,7 @@
 #
 import asyncio
 import contextlib
+import http
 import json
 import logging
 import time
@@ -726,11 +727,10 @@ class Login:
 
         if mobile_login:
             login_url = self.mobile_login_url
-
-            self.session.cookie_jar.update_cookies({  # type: ignore
-                'mobileClientVersion': '0 (2.3.1)',
-                'mobileClient': "android",
-            })
+            cookies = http.cookies.SimpleCookie()
+            cookies['mobileClientVersion'] = '0 (2.3.1)'
+            cookies['mobileClient'] = "android"
+            self.session.cookie_jar.update_cookies(cookies)
         else:
             login_url = self.login_url
 
