@@ -30,6 +30,7 @@ from bs4 import BeautifulSoup
 from . import universe
 
 log = logging.getLogger(__name__)
+session_list = []
 
 
 class Game(NamedTuple):
@@ -115,28 +116,41 @@ class RevocationError(Exception):
     pass
 
 
+# Don't instantiate this class directly!
+# Use get_session to support multiple sessions!
 class SteamWebAPI:
     def __init__(
             self,
-            session: aiohttp.ClientSession,
+            *,
             api_url: str = 'https://api.steampowered.com',
             mobileconf_url: str = 'https://steamcommunity.com/mobileconf',
             economy_url: str = 'https://steamcommunity.com/economy',
             community_url: str = 'https://steamcommunity.com',
             headers: Optional[Dict[str, str]] = None,
-            key: Optional[str] = None,
+            http_session: Optional[aiohttp.ClientSession] = None,
+            key: str = '',
     ) -> None:
-        self.session = session
         self.api_url = api_url
         self.mobileconf_url = mobileconf_url
         self.economy_url = economy_url
         self.community_url = community_url
         self.key = key
+        self._headers = headers
+        self._http_session = http_session
 
-        if not headers:
-            headers = {'User-Agent': 'Unknown/0.0.0'}
+    @property
+    def headers(self) -> Dict[str, str]:
+        if not self._headers:
+            self._headers = {'User-Agent': 'Unknown/0.0.0'}
 
-        self.headers = headers
+        return self._headers
+
+    @property
+    def http(self) -> aiohttp.ClientSession:
+        if not self._http_session:
+            self._http_session = aiohttp.ClientSession(raise_for_status=True)
+
+        return self._http_session
 
     @staticmethod
     async def _new_query(
@@ -200,7 +214,7 @@ class SteamWebAPI:
 
         while True:
             try:
-                async with self.session.request(**kwargs) as response:
+                async with self.http.request(**kwargs) as response:
                     json_data = await response.json()
                     assert isinstance(json_data, dict), "Json data from SteamWebAPI is not a dict"
                     return json_data
@@ -273,7 +287,7 @@ class SteamWebAPI:
         return games
 
     async def get_session_id(self) -> str:
-        async with self.session.get(
+        async with self.http.get(
                 'https://steamcommunity.com',
                 headers=self.headers,
         ) as response:
@@ -291,7 +305,7 @@ class SteamWebAPI:
     async def is_logged_in(self, steamid: int) -> bool:
         profile_url = await self.get_profile_url(steamid)
 
-        async with self.session.get(
+        async with self.http.get(
                 f'{profile_url}/edit',
                 allow_redirects=False,
                 headers=self.headers,
@@ -390,7 +404,7 @@ class SteamWebAPI:
         for tradeoffer_item in item_list.find_all('div', class_="trade_item"):
             appid, classid = tradeoffer_item['data-economy-item'].split('/')[1:3]
 
-            async with self.session.get(
+            async with self.http.get(
                     f"{self.economy_url}/itemclasshover/{appid}/{classid}",
                     params={'content_only': 1},
                     headers=self.headers,
@@ -425,7 +439,7 @@ class SteamWebAPI:
         server_time = int(time.time()) - time_offset
         params = await self._new_query(server_time, deviceid, steamid, identity_secret, 'conf')
 
-        async with self.session.get(
+        async with self.http.get(
                 f'{self.mobileconf_url}/conf',
                 params=params,
                 allow_redirects=False,
@@ -450,7 +464,7 @@ class SteamWebAPI:
                 f"details{confirmation['data-confid']}",
             )
 
-            async with self.session.get(
+            async with self.http.get(
                     f"{self.mobileconf_url}/details/{confirmation['data-confid']}",
                     params=details_params,
                     headers=self.headers,
@@ -526,7 +540,7 @@ class SteamWebAPI:
         server_time = int(time.time()) - time_offset
         params = await self._new_query(server_time, deviceid, steamid, identity_secret, 'conf')
 
-        async with self.session.get(
+        async with self.http.get(
                 f'{self.mobileconf_url}/ajaxop',
                 params={**params, **extra_params},
                 headers=self.headers,
@@ -539,7 +553,7 @@ class SteamWebAPI:
         params = {'l': 'english'}
         profile_url = await self.get_profile_url(steamid)
 
-        async with self.session.get(
+        async with self.http.get(
                 f"{profile_url}/gamecards/{badge.game_id}",
                 params=params,
                 headers=self.headers,
@@ -564,7 +578,7 @@ class SteamWebAPI:
         params = {'l': 'english'}
         profile_url = await self.get_profile_url(steamid)
 
-        async with self.session.get(
+        async with self.http.get(
                 f"{profile_url}/badges/",
                 params=params,
                 headers=self.headers,
@@ -580,7 +594,7 @@ class SteamWebAPI:
         for page in range(1, pages):
             params['p'] = page
 
-            async with self.session.get(
+            async with self.http.get(
                     f"{profile_url}/badges/",
                     params=params,
                     headers=self.headers,
@@ -615,6 +629,22 @@ class SteamWebAPI:
                 badges.append(Badge(game_name, game_id, cards))
 
         return badges
+
+
+def get_session(session_number: int, **kwargs) -> SteamWebAPI:
+    if len(session_list) <= session_number:
+        log.debug(f"Creating a new webapi session at index {session_number}")
+        session = SteamWebAPI(**kwargs)
+
+        if len(session_list) < session_number:
+            log.error(f"Session number is invalid. Session will be created at index {len(session_list)}")
+
+        session_list.insert(session_number, session)
+    else:
+        log.info(f"Using existent webapi session at index {session_number}")
+        session = session_list[session_number]
+
+    return session
 
 
 class Login:
