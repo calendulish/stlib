@@ -17,17 +17,14 @@
 #
 import asyncio
 import contextlib
-import http
-import json
 import logging
 import time
 from typing import Any, Dict, List, NamedTuple, Optional
 
 import aiohttp
-import rsa
 from bs4 import BeautifulSoup
 
-from . import universe
+from . import universe, login
 
 log = logging.getLogger(__name__)
 session_list = []
@@ -47,11 +44,6 @@ class Badge(NamedTuple):
     cards: int
 
 
-class LoginData(NamedTuple):
-    auth: Dict[str, Any]
-    oauth: Dict[str, Any]
-
-
 class Confirmation(NamedTuple):
     mode: str
     id: int
@@ -63,41 +55,6 @@ class Confirmation(NamedTuple):
 
 class BadgeError(AttributeError):
     """Raised when can`t find stats for the badge"""
-    pass
-
-
-class LoginError(ValueError):
-    """Raised when login can`t be completed"""
-    pass
-
-
-class LoginBlockedError(LoginError):
-    """Raised when user is temporarily blocked from login session"""
-    pass
-
-
-class CaptchaError(LoginError):
-    """Raised when captcha is requested"""
-
-    def __init__(self, captcha_gid: int, captcha: bytes, message: str) -> None:
-        super().__init__(message)
-
-        self.captcha_gid = captcha_gid
-        self.captcha = captcha
-
-
-class MailCodeError(LoginError):
-    """Raised when mail code is requested"""
-    pass
-
-
-class TwoFactorCodeError(LoginError):
-    """Raised when two factor code is requested"""
-    pass
-
-
-class SMSCodeError(LoginError):
-    """Raised when a sms code is requested"""
     pass
 
 
@@ -113,6 +70,11 @@ class AuthenticatorExists(Exception):
 
 class RevocationError(Exception):
     """Raised when user can't use revocation codes anymore"""
+    pass
+
+
+class SMSCodeError(ValueError):
+    """Raised when a sms code is requested"""
     pass
 
 
@@ -323,10 +285,10 @@ class SteamWebAPI:
 
     async def add_authenticator(
             self,
-            login_data: LoginData,
+            login_data: login.LoginData,
             device_id: str,
             phone_id: int = 1,
-    ) -> LoginData:
+    ) -> login.LoginData:
         data = await self._new_mobile_query(login_data.oauth)
         data['device_identifier'] = device_id
         data['sms_phone_id'] = phone_id
@@ -345,7 +307,7 @@ class SteamWebAPI:
 
     async def finalize_add_authenticator(
             self,
-            login_data: LoginData,
+            login_data: login.LoginData,
             sms_code: str,
             email_type: int = 2,
             time_offset: int = 0,
@@ -375,7 +337,7 @@ class SteamWebAPI:
 
     async def remove_authenticator(
             self,
-            login_data: LoginData,
+            login_data: login.LoginData,
             revocation_code: str,
             scheme: int = 2,
     ) -> bool:
@@ -448,7 +410,7 @@ class SteamWebAPI:
             html = BeautifulSoup(await response.text(), 'html.parser')
 
             if response.status == 302:
-                raise LoginError('User is not logged in')
+                raise login.LoginError('User is not logged in')
 
         confirmations = []
         for confirmation in html.find_all('div', class_='mobileconf_list_entry'):
@@ -645,178 +607,6 @@ def get_session(session_number: int, **kwargs) -> SteamWebAPI:
         session = session_list[session_number]
 
     return session
-
-
-class Login:
-    def __init__(
-            self,
-            session: aiohttp.ClientSession,
-            webapi_session: SteamWebAPI,
-            username: str,
-            password: str,
-            login_url: str = 'https://steamcommunity.com/login',
-            mobile_login_url: str = 'https://steamcommunity.com/mobilelogin',
-            steamguard_url: str = 'https://steamcommunity.com/steamguard',
-            headers: Optional[Dict[str, str]] = None,
-    ) -> None:
-        self.session = session
-        self.webapi_session = webapi_session
-        self.username = username
-        self.__password = password
-        self.login_url = login_url
-        self.mobile_login_url = mobile_login_url
-        self.steamguard_url = steamguard_url
-
-        if not headers:
-            headers = {'User-Agent': 'Unknown/0.0.0'}
-
-        self.headers = headers
-
-    async def _new_login_data(
-            self,
-            authenticator_code: str = '',
-            emailauth: str = '',
-            captcha_gid: int = -1,
-            captcha_text: str = '',
-            mobile_login: bool = False,
-    ) -> Dict[str, Any]:
-        steam_key = await self.get_steam_key(self.username)
-        encrypted_password = universe.encrypt_password(steam_key, self.__password)
-
-        data = {
-            'username': self.username,
-            "password": encrypted_password.decode(),
-            "emailauth": emailauth,
-            "twofactorcode": authenticator_code,
-            "captchagid": captcha_gid,
-            "captcha_text": captcha_text,
-            "loginfriendlyname": "stlib",
-            "rsatimestamp": steam_key.timestamp,
-            "remember_login": 'true',
-            "donotcache": ''.join([str(int(time.time())), '000']),
-        }
-
-        if mobile_login:
-            data['oauth_client_id'] = universe._STEAM_UNIVERSE['public']
-
-        return data
-
-    async def get_steam_key(self, username: str) -> universe.SteamKey:
-        async with self.session.get(
-                f'{self.login_url}/getrsakey/',
-                params={'username': username},
-                headers=self.headers,
-        ) as response:
-            json_data = await response.json()
-
-        if json_data['success']:
-            public_mod = int(json_data['publickey_mod'], 16)
-            public_exp = int(json_data['publickey_exp'], 16)
-            timestamp = int(json_data['timestamp'])
-        else:
-            raise ValueError('Failed to get public key.')
-
-        return universe.SteamKey(rsa.PublicKey(public_mod, public_exp), timestamp)
-
-    async def get_captcha(self, gid: int) -> bytes:
-        async with self.session.get(
-                f'{self.login_url}/rendercaptcha/',
-                params={'gid': gid},
-                headers=self.headers,
-        ) as response:
-            data = await response.read()
-            assert isinstance(data, bytes), "rendercaptcha response is not bytes"
-            return data
-
-    async def has_phone(self, sessionid: str) -> bool:
-        data = {
-            'op': "has_phone",
-            'sessionid': sessionid,
-        }
-
-        async with self.session.post(
-                f'{self.steamguard_url}/phoneajax',
-                data=data,
-                headers=self.headers,
-        ) as response:
-            json_data = await response.json()
-            assert isinstance(json_data, dict), "phoneajax is not a dict"
-
-        if not json_data['success']:
-            if 'error_text' in json_data:
-                raise LoginError(json_data['error_text'])
-            else:
-                raise LoginError("Current session is invalid")
-
-        log.debug("User has phone? %s", json_data["has_phone"])
-
-        if json_data["has_phone"]:
-            return True
-        else:
-            return False
-
-    async def do_login(
-            self,
-            shared_secret: str = '',
-            emailauth: str = '',
-            captcha_gid: int = -1,
-            captcha_text: str = '',
-            mobile_login: bool = False,
-            time_offset: int = 0,
-            authenticator_code: str = '',
-    ) -> LoginData:
-        if shared_secret:
-            server_time = int(time.time()) - time_offset
-            authenticator_code = universe.generate_steam_code(server_time, shared_secret)
-        else:
-            if authenticator_code:
-                log.warning("Using external authenticator code to log-in")
-            else:
-                log.warning("Logging without two-factor authentication.")
-
-        data = await self._new_login_data(authenticator_code, emailauth, captcha_gid, captcha_text, mobile_login)
-
-        if mobile_login:
-            login_url = self.mobile_login_url
-            cookies = http.cookies.SimpleCookie()
-            cookies['mobileClientVersion'] = '0 (2.3.1)'
-            cookies['mobileClient'] = "android"
-            self.session.cookie_jar.update_cookies(cookies)
-        else:
-            login_url = self.login_url
-
-        async with self.session.post(
-                f'{login_url}/dologin',
-                data=data,
-                headers=self.headers,
-        ) as response:
-            json_data = await response.json()
-            assert isinstance(json_data, dict), "Json data from dologin is not a dict"
-
-            if json_data['success']:
-                oauth_data = {}
-
-                if mobile_login:
-                    oauth_data = json.loads(json_data.pop('oauth'))
-
-                return LoginData(json_data, oauth_data)
-
-            if 'emailauth_needed' in json_data and json_data['emailauth_needed']:
-                raise MailCodeError("Mail code requested")
-            elif 'requires_twofactor' in json_data and json_data['requires_twofactor']:
-                raise TwoFactorCodeError("Authenticator code requested")
-            elif 'captcha_needed' in json_data and json_data['captcha_needed']:
-                if captcha_text and captcha_gid:
-                    raise LoginError("Wrong captcha code")
-                else:
-                    captcha = await self.get_captcha(json_data['captcha_gid'])
-                    raise CaptchaError(json_data['captcha_gid'], captcha, "Captcha code requested")
-            elif 'too many login failures' in json_data['message']:
-                raise LoginBlockedError("Your network is blocked. Please, try again later")
-            elif mobile_login and 'oauth' not in json_data:
-                raise LoginError(f"Unable to log-in on mobile session: {json_data['message']}")
-            else:
-                raise LoginError(f"Unable to log-in: {json_data['message']}")
 
 
 def js_to_json(javascript: BeautifulSoup) -> Dict[str, Any]:
