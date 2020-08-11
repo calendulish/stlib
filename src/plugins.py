@@ -23,10 +23,12 @@ import logging
 import os
 import sys
 from types import ModuleType
-from typing import Tuple, Dict
+from typing import Tuple, Dict, Optional, Callable, Any, List, Union
+
+from . import webapi
 
 log = logging.getLogger(__name__)
-
+manager: Optional['Manager'] = None
 default_search_paths: Tuple[str, ...]
 
 if hasattr(sys, 'frozen') or os.name == 'nt':
@@ -57,54 +59,87 @@ class PluginLoaderError(PluginError):
     pass
 
 
-class Manager:
-    def __init__(self, plugin_search_paths: Tuple[str, ...] = default_search_paths) -> None:
-        self._plugin_search_paths = plugin_search_paths
-        self._available_plugins: Dict[str, importlib.machinery.ModuleSpec] = {}
-        self._loaded_plugins: Dict[str, ModuleType] = {}
+class Plugin:
+    def __init__(self, headers: Optional[Dict[str, str]] = None) -> None:
+        self._headers = headers
+        self._session_index = 0
 
-        for plugin_directory in self._plugin_search_paths:
+    def __init_subclass__(cls, **kwargs) -> None:
+        super().__init__(cls, **kwargs)
+        Manager.plugins[cls.__module__] = [None, cls.__name__]
+
+    @property
+    def headers(self) -> Dict[str, str]:
+        if not self._headers:
+            self._headers = self.session.headers
+
+        return self._headers
+
+    @property
+    def session(self) -> webapi.SteamWebAPI:
+        return webapi.get_session(self._session_index)
+
+    @session.setter
+    def session(self, index: int) -> None:
+        self._session_index = index
+
+
+class Manager:
+    plugins: Dict[str, List[Union[Optional[ModuleType], str]]] = {}
+
+    def __init__(self, module_search_paths: Tuple[str, ...] = default_search_paths) -> None:
+        self._module_search_paths = module_search_paths
+
+        for plugin_directory in self._module_search_paths:
             if not os.path.isdir(plugin_directory):
                 log.debug(f"Unable to find plugin directory in:\n{plugin_directory}")
                 continue
 
             for full_path in glob.glob(os.path.join(plugin_directory, '*.py*')):
-                plugin_name = os.path.basename(full_path).split('.')[0]
-                plugin_spec = importlib.util.spec_from_file_location(plugin_name, full_path)
-                self._available_plugins[plugin_name] = plugin_spec
-                log.debug(f'Plugin {plugin_name} registered.')
+                module_name = os.path.basename(full_path).split('.')[0]
+                log.debug(f"{module_name} found at {full_path}")
+                plugin_spec = importlib.util.spec_from_file_location(module_name, full_path)
+                module_ = importlib.util.module_from_spec(plugin_spec)
 
-    @property
-    def available_plugins(self) -> Tuple[str, ...]:
-        return tuple(self._available_plugins.keys())
+                try:
+                    plugin_spec.loader.exec_module(module_)  # type: ignore
+                except ImportError as exception:
+                    raise PluginLoaderError(exception)
 
-    @property
-    def loaded_plugins(self) -> Tuple[str, ...]:
-        return tuple(self._loaded_plugins.keys())
+                log.debug(f"Plugin {module_name} loaded.")
+                self.plugins[module_.__name__][0] = module_
 
     def has_plugin(self, plugin_name: str) -> bool:
-        if plugin_name in self._available_plugins.keys():
+        if plugin_name in self.plugins.keys():
             return True
         else:
             return False
 
-    def load_plugin(self, plugin_name: str) -> ModuleType:
-        if plugin_name in self._loaded_plugins.keys():
-            log.warning(f"Plugin {plugin_name} is already loaded. Skipping.")
-            return self._loaded_plugins[plugin_name]
+    def get_plugin(self, plugin_name: str, *args, **kwargs) -> Any:
+        plugin = getattr(self.plugins[plugin_name][0], self.plugins[plugin_name][1])
+        return plugin(*args, **kwargs)
 
-        elif plugin_name in self._available_plugins.keys():
-            plugin_spec = self._available_plugins[plugin_name]
-            module_ = importlib.util.module_from_spec(plugin_spec)
-            plugin_spec.loader.exec_module(module_)  # type: ignore
-            self._loaded_plugins[plugin_name] = module_
-        else:
-            raise PluginNotFoundError(f"Unable to find a plugin named {plugin_name}.")
 
-        return module_
+def plugin_manager(
+        function: Callable[..., Any],
+        plugin_search_paths: Tuple[str, ...] = default_search_paths,
+) -> Callable[..., Any]:
+    global manager
 
-    def unload_plugin(self, plugin_name: str) -> None:
-        if plugin_name in self._loaded_plugins.keys():
-            del self._loaded_plugins[plugin_name]
-        else:
-            raise PluginLoaderError(f"Plugin {plugin_name} is not loaded.")
+    if not manager:
+        log.debug("Creating a new plugin manager")
+        manager = Manager(plugin_search_paths)
+    else:
+        log.debug(f"Using existent plugin manager")
+
+    return function
+
+
+@plugin_manager
+def has_plugin(plugin_name: str) -> bool:
+    return manager.has_plugin(plugin_name)
+
+
+@plugin_manager
+def get_plugin(plugin_name: str) -> Any:
+    return manager.get_plugin(plugin_name)
