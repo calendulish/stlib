@@ -68,6 +68,14 @@ class Plugin:
         super().__init__(cls, **kwargs)
         Manager.plugins[cls.__module__] = [None, cls.__name__]
 
+    def __getattr__(self, item: str) -> Any:
+        module = Manager.plugins[self.__module__][0]
+
+        if hasattr(module, item):
+            return getattr(module, item)
+
+        raise AttributeError(f"{self} object has no attribute {item}")
+
     @property
     def headers(self) -> Dict[str, str]:
         if not self._headers:
