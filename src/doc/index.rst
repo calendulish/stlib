@@ -70,16 +70,12 @@ Webapi Module
    :members:
    :undoc-members:
 
-.. autoclass:: Login
-   :members:
-   :undoc-members:
+.. autofunction:: get_session
 
 .. autofunction:: js_to_json
 
 Data Structures:
 ^^^^^^^^^^^^^^^^
-
-.. autoclass:: LoginData
 
 .. autoclass:: Confirmation
 
@@ -92,16 +88,6 @@ Exceptions:
 
 .. autoexception:: BadgeError
 
-.. autoexception:: LoginError
-
-.. autoexception:: LoginBlockedError
-
-.. autoexception:: CaptchaError
-
-.. autoexception:: MailCodeError
-
-.. autoexception:: TwoFactorCodeError
-
 .. autoexception:: SMSCodeError
 
 .. autoexception:: PhoneNotRegistered
@@ -110,14 +96,51 @@ Exceptions:
 
 .. autoexception:: RevocationError
 
+Login
+-----
+
+.. automodule:: login
+
+.. autoclass:: Login
+   :members:
+   :undoc-members:
+
+.. autofunction:: get_session
+
+Data Structures:
+^^^^^^^^^^^^^^^^
+
+.. autoclass:: LoginData
+
+Exceptions:
+^^^^^^^^^^^
+
+.. autoexception:: LoginError
+
+.. autoexception:: LoginBlockedError
+
+.. autoexception:: MailCodeError
+
+.. autoexception:: TwoFactorCodeError
+
 Plugins
 -------
 
 .. automodule:: plugins
 
+.. autoclass:: Plugin
+   :members:
+   :undoc-members:
+
 .. autoclass:: Manager
    :members:
    :undoc-members:
+
+.. autofunction:: plugin_manager
+
+.. autofunction:: has_plugin
+
+.. autofunction:: get_plugin
 
 Exceptions:
 ^^^^^^^^^^^
