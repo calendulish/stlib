@@ -19,7 +19,7 @@ import asyncio
 import contextlib
 import logging
 import time
-from typing import Any, Dict, List, NamedTuple, Optional
+from typing import Any, Dict, List, NamedTuple, Optional, Union
 
 import aiohttp
 from bs4 import BeautifulSoup
@@ -223,7 +223,12 @@ class SteamWebAPI:
         log.debug("nickname found: %s (from %s)", nickname, steamid)
         return nickname
 
-    async def get_owned_games(self, steamid: int, *, appids_filter: Optional[List[int]] = None) -> List[Game]:
+    async def get_owned_games(
+            self,
+            steamid: int,
+            *,
+            appids_filter: Optional[List[int]] = None,
+    ) -> Union[Game, List[Game]]:
         params = {
             'steamid': str(steamid),
             'include_appinfo': "1",
@@ -246,6 +251,10 @@ class SteamWebAPI:
             )
 
         log.debug(f"{data['response']['game_count']} owned games found.")
+
+        if len(games) == 1:
+            return games[0]
+
         return games
 
     async def get_session_id(self) -> str:
