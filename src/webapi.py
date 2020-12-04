@@ -15,14 +15,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
+import aiohttp
 import asyncio
 import contextlib
 import logging
 import time
-from typing import Any, Dict, List, NamedTuple, Optional, Union
-
-import aiohttp
 from bs4 import BeautifulSoup
+from typing import Any, Dict, List, NamedTuple, Optional, Union
 
 from . import universe, login
 
@@ -242,7 +241,7 @@ class SteamWebAPI:
         data = await self._get_data('IPlayerService', 'GetOwnedGames', 1, params)
         games = []
 
-        if not data['response']['games']:
+        if 'games' not in data['response']:
             raise ValueError('Failed to get owned games.')
 
         for game in data['response']['games']:
