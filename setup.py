@@ -32,10 +32,10 @@ if sys.maxsize > 2 ** 32:
 else:
     arch = 32
 
-PACKAGE_PATH = os.path.join(get_python_lib(), 'stlib')
-SOURCES_PATH = os.path.join('src', 'steam_api')
-SDK_PATH = os.path.join(SOURCES_PATH, 'steamworks_sdk')
-HEADERS_PATH = os.path.join(SDK_PATH, 'public')
+PACKAGE_PATH = os.getenv("PACKAGE_PATH", os.path.join(get_python_lib(), 'stlib'))
+SOURCES_PATH = os.getenv("SOURCES_PATH", os.path.join('src', 'steam_api'))
+SDK_PATH = os.getenv("SDK_PATH", os.path.join(SOURCES_PATH, 'steamworks_sdk'))
+HEADERS_PATH = os.getenv("HEADERS_PATH", os.path.join(SDK_PATH, 'public'))
 
 DISABLE_STEAM_API = False
 
