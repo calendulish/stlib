@@ -236,10 +236,11 @@ class Login:
                 raise TwoFactorCodeError("Authenticator code requested")
             elif 'captcha_needed' in json_data and json_data['captcha_needed']:
                 if captcha_text and captcha_gid:
-                    raise LoginError("Wrong captcha code")
-                else:
-                    captcha = await self.get_captcha(json_data['captcha_gid'])
-                    raise CaptchaError(json_data['captcha_gid'], captcha, "Captcha code requested")
+                    if 'message' in json_data and not 'verify your humanity' in json_data['message']:
+                        raise LoginError(json_data['message'])
+
+                captcha = await self.get_captcha(json_data['captcha_gid'])
+                raise CaptchaError(json_data['captcha_gid'], captcha, "Captcha code requested")
             elif 'too many login failures' in json_data['message']:
                 raise LoginBlockedError("Your network is blocked. Please, try again later")
             elif mobile_login and 'oauth' not in json_data:
