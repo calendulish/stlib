@@ -40,19 +40,18 @@ static PyObject *server_init(PyObject *self, PyObject *args) {
     }
 
     uint32 ip;
-    uint16 steam_port;
     uint16 game_port;
     uint16 query_port = MASTERSERVERUPDATERPORT_USEGAMESOCKETSHARE;
     EServerMode server_mode = eServerModeNoAuthentication;
     const char *version_string = STEAMGAMESERVER_INTERFACE_VERSION;
 
-    if (!PyArg_ParseTuple(args, "lii|iss", &ip, &steam_port, &game_port, &query_port, &server_mode, &version_string)
+    if (!PyArg_ParseTuple(args, "li|iss", &ip, &game_port, &query_port, &server_mode, &version_string)
         ) {
         PyErr_SetString(PyExc_TypeError, "server_init missing required positional arguments");
         return NULL;
     }
 
-    bool result = SteamGameServer_Init(ip, steam_port, game_port, query_port, server_mode, version_string);
+    bool result = SteamGameServer_Init(ip, game_port, query_port, server_mode, version_string);
 
     return PyBool_FromLong(result);
 }

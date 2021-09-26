@@ -44,12 +44,12 @@ class SteamAPIError(Exception):
 
 
 class SteamGameServer:
-    def __init__(self, ip: int = 0x0100007f, steam_port: int = 27015, game_port: int = 27016,
+    def __init__(self, ip: int = 0x0100007f, game_port: int = 27016,
                  game_id: int = 480) -> None:
         log.debug('Set SteamAppId to %s', game_id)
         os.environ["SteamAppId"] = str(game_id)
 
-        result = steam_api.server_init(ip, steam_port, game_port)
+        result = steam_api.server_init(ip, game_port)
         log.debug('server init returns %s', result)
 
         if result is False:
