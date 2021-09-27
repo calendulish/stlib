@@ -261,5 +261,7 @@ def get_session(session_number: int, username: str, password: str, **kwargs) -> 
     else:
         log.info(f"Using existent login session at index {session_number}")
         session = session_list[session_number]
+        session.username = username
+        session.__password = password
 
     return session
