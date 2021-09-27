@@ -273,7 +273,11 @@ class SteamWebAPI:
                 raise KeyError
 
     async def is_logged_in(self, steamid: int) -> bool:
-        profile_url = await self.get_profile_url(steamid)
+        try:
+            profile_url = await self.get_profile_url(steamid)
+        except ValueError:
+            log.error("the steamid %s is invalid", steamid)
+            return False
 
         async with self.http.get(
                 f'{profile_url}/edit',
