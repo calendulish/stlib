@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Lara Maia <dev@lara.monster> 2015 ~ 2020
+# Lara Maia <dev@lara.monster> 2015 ~ 2021
 #
 # The stlib is free software: you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -16,29 +16,14 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 
-import contextlib
 from types import ModuleType
 
 from stlib import plugins
 
-with contextlib.suppress(ImportError):
-    pass
-
-# noinspection PyUnresolvedReferences
-from tests import debug
-
-
 class TestPlugins:
-    manager = plugins.Manager()
-
     def test_plugins(self) -> None:
-        for plugin in self.manager.available_plugins:
-            debug(f"Testing plugin {plugin}")
-
-            assert self.manager.has_plugin(plugin) is True
-
-            assert isinstance(self.manager.load_plugin(plugin), ModuleType)
-
-            assert plugin in self.manager.loaded_plugins
-
-            assert self.manager.unload_plugin(plugin) is None
+        for plugin in plugins.manager.plugins:
+            assert plugins.has_plugin(plugin) is True
+            plugin_module = plugins.get_plugin(plugin)
+            
+            assert isinstance(plugin_module, ModuleType)

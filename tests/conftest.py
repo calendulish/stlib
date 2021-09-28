@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Lara Maia <dev@lara.monster> 2015 ~ 2020
+# Lara Maia <dev@lara.monster> 2015 ~ 2021
 #
 # The stlib is free software: you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -23,7 +23,7 @@ from typing import Generator
 import pytest
 
 
-@pytest.yield_fixture()
+@pytest.fixture()
 def event_loop() -> Generator[asyncio.AbstractEventLoop, None, None]:
     if sys.platform == "win32":
         loop = asyncio.ProactorEventLoop()

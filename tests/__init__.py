@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Lara Maia <dev@lara.monster> 2015 ~ 2020
+# Lara Maia <dev@lara.monster> 2015 ~ 2021
 #
 # The stlib is free software: you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -48,7 +48,7 @@ def get_event_loop() -> asyncio.AbstractEventLoop:
     return asyncio.new_event_loop()  # default on UNIX is fine
 
 
-@pytest.yield_fixture(autouse=True)
+@pytest.fixture(autouse=True)
 def event_loop() -> Generator[asyncio.AbstractEventLoop, None, None]:
     if sys.platform != "win32":
         asyncio.set_event_loop(None)  # type: ignore # see https://github.com/pytest-dev/pytest-asyncio/issues/73
