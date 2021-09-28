@@ -230,7 +230,9 @@ class Login:
 
                 return LoginData(json_data, oauth_data)
 
-            if 'emailauth_needed' in json_data and json_data['emailauth_needed']:
+            if 'message' in json_data and 'too many login failures' in json_data['message']:
+                raise LoginBlockedError("Your network is blocked. Please, try again later")
+            elif 'emailauth_needed' in json_data and json_data['emailauth_needed']:
                 raise MailCodeError("Mail code requested")
             elif 'requires_twofactor' in json_data and json_data['requires_twofactor']:
                 raise TwoFactorCodeError("Authenticator code requested")
@@ -241,8 +243,6 @@ class Login:
 
                 captcha = await self.get_captcha(json_data['captcha_gid'])
                 raise CaptchaError(json_data['captcha_gid'], captcha, "Captcha code requested")
-            elif 'too many login failures' in json_data['message']:
-                raise LoginBlockedError("Your network is blocked. Please, try again later")
             elif mobile_login and 'oauth' not in json_data:
                 raise LoginError(f"Unable to log-in on mobile session: {json_data['message']}")
             else:
