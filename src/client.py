@@ -97,6 +97,10 @@ class SteamApiExecutor(ProcessPoolExecutor):
         if result is False:
             raise SteamAPIError("Unable to initialize SteamAPI (Invalid game id?)")
 
+    async def soft_shutdown(self) -> None:
+        log.debug("Soft Shutdown SteamAPI")
+        await self.loop.run_in_executor(self, steam_api.shutdown)
+
     async def shutdown(self, wait: bool = True) -> None:
         log.debug("Shutdown SteamAPI")
         await self.loop.run_in_executor(self, steam_api.shutdown)
