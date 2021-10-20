@@ -472,8 +472,12 @@ class SteamWebAPI:
 
                 javascript = html.find_all("script")[2]
                 json_data = js_to_json(javascript)
+
                 if 'market_name' in json_data:
-                    give = [f"{json_data['market_name']} - {json_data['type']}"]
+                    give = [json_data['market_name']]
+
+                    if json_data['type']:
+                        give[0] += f" - {json_data['type']}"
                 else:
                     give = [json_data['type']]
             elif confirmation['data-type'] == '5':
@@ -486,8 +490,8 @@ class SteamWebAPI:
                 receive = [f"Number to match: {html.find_all('div')[3].text.strip()}"]
             else:
                 to = "NotImplemented"
-                give = f"{confirmation['data-confid']}"
-                receive = f"{confirmation['data-key']}"
+                give = [f"{confirmation['data-confid']}"]
+                receive = [f"{confirmation['data-key']}"]
 
             confirmations.append(
                 Confirmation(
