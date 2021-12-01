@@ -231,6 +231,7 @@ class SteamWebAPI:
         params = {
             'steamid': str(steamid),
             'include_appinfo': "1",
+            'skip_unvetted_apps': "0",
         }
 
         if appids_filter:
