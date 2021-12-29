@@ -9,7 +9,7 @@ filter:
 
 build:
     environment:
-        python: '3.6'
+        python: '3.7'
         postgresql: false
         redis: false
 
@@ -22,8 +22,7 @@ build:
 
     project_setup:
         override:
-            - python setup.py build --disable-steam-api
-            - command: python setup.py install
+            - python -m pip install .
 
     tests:
         override:
