@@ -16,53 +16,43 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 
-import glob
-import os
 import sys
-from distutils.command.build import build
-from distutils.command.install_data import install_data
-from distutils.sysconfig import get_python_lib
+
+import logging
+import os
+import sysconfig
+from setuptools import Extension, setup, find_packages
+from setuptools.command.build_ext import build_ext
 from typing import List, Mapping
 
-from setuptools import Extension, setup
-from setuptools.command.install import install
-
-if sys.maxsize > 2 ** 32:
-    arch = 64
-else:
-    arch = 32
-
-PACKAGE_PATH = os.getenv("PACKAGE_PATH", os.path.join(get_python_lib(), 'stlib'))
 SOURCES_PATH = os.getenv("SOURCES_PATH", os.path.join('src', 'steam_api'))
 SDK_PATH = os.getenv("SDK_PATH", os.path.join(SOURCES_PATH, 'steamworks_sdk'))
 HEADERS_PATH = os.getenv("HEADERS_PATH", os.path.join(SDK_PATH, 'public'))
 
-DISABLE_STEAM_API = False
+if sys.maxsize > 2 ** 32:
+    arch = '64'
+else:
+    arch = ''
 
 if os.name == 'nt':
-    DATA_DIR = PACKAGE_PATH
-
-    if arch == 64:
-        REDIST_PATH = os.path.join(SDK_PATH, 'redistributable_bin', 'win64')
-        API_NAME = 'steam_api64'
-    else:
-        REDIST_PATH = os.path.join(SDK_PATH, 'redistributable_bin')
-        API_NAME = 'steam_api'
-
-    EXTRA_PREBUILT = (PACKAGE_PATH, [os.path.join(REDIST_PATH, f'{API_NAME}.dll')])
+    DATA_DIR = os.path.join(sysconfig.get_path('platlib'), 'stlib')
+    REDIST_PATH = 'win' + arch
+    API_NAME = 'steam_api' + arch
 elif os.name == 'posix':
     DATA_DIR = os.path.abspath(os.path.join(os.path.sep, 'opt', 'stlib'))
     API_NAME = 'steam_api'
-
-    if arch == 64:
-        REDIST_PATH = os.path.join(SDK_PATH, 'redistributable_bin', 'linux64')
-    else:
-        REDIST_PATH = os.path.join(SDK_PATH, 'redistributable_bin', 'linux32')
-
-    EXTRA_PREBUILT = (os.path.join(DATA_DIR, 'lib'), [os.path.join(REDIST_PATH, f'lib{API_NAME}.so')])
+    REDIST_PATH = 'linux' + arch if arch else '32'
 else:
     print('Your system is currently not supported.')
     sys.exit(1)
+
+
+class OptionalBuild(build_ext):
+    def run(self):
+        if os.path.exists(HEADERS_PATH):
+            super().run()
+        else:
+            self.warn("build of steam_api C extension has been disabled")
 
 
 def fix_runtime_path() -> Mapping[str, List[str]]:
@@ -76,62 +66,27 @@ steam_api = Extension(
     'stlib.steam_api',
     sources=[os.path.join(SOURCES_PATH, 'steam_api.cpp')],
     include_dirs=[SOURCES_PATH, HEADERS_PATH],
-    library_dirs=[REDIST_PATH],
+    library_dirs=[os.path.join(SDK_PATH, 'redistributable_bin', REDIST_PATH)],
     libraries=[API_NAME],
     extra_compile_args=['-D_CRT_SECURE_NO_WARNINGS'],
     **fix_runtime_path()
 )
 
 classifiers = [
-    'Development Status :: 3 - Alpha',
+    'Development Status :: 5 - Production/Stable',
     'Intended Audience :: Developers',
     'Topic :: Games/Entertainment',
     'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
-    'Programming Language :: Python :: 3.6',
+    'Operating System :: POSIX :: Linux',
+    'Operating System :: Microsoft :: Windows',
+    'Programming Language :: Python :: 3 :: Only',
+    'Programming Language :: Python :: 3.7',
+    'Programming Language :: Python :: 3.8',
+    'Programming Language :: Python :: 3.9',
+    'Programming Language :: Python :: 3.10',
+    'Programming Language :: Python :: 3.11',
+    'Typing :: Typed',
 ]
-
-
-class OptionalBuild(build):
-    build.user_options.append(('disable-steam-api', None, 'disable SteamAPI C Extension'))
-
-    # noinspection PyAttributeOutsideInit
-    def initialize_options(self):
-        build.initialize_options(self)
-        self.disable_steam_api = DISABLE_STEAM_API
-
-    def run(self):
-        global DISABLE_STEAM_API
-        DISABLE_STEAM_API = self.disable_steam_api
-
-        for cmd_name in self.get_sub_commands():
-            if cmd_name == 'build_ext':
-                if DISABLE_STEAM_API:
-                    self.warn('You disable build of SteamAPI C Extension by command line parameters')
-                    continue
-                elif not os.path.isfile(os.path.join(SDK_PATH, 'public', 'steam', 'steam_api.h')):
-                    raise FileNotFoundError(
-                        f'Unable to find a valid Steamworks SDK in {SDK_PATH}\n'
-                        '(Did you want to use --disable-steam-api?)'
-                    )
-
-            self.run_command(cmd_name)
-
-
-class OptionalData(install_data):
-    def run(self):
-        if glob.glob(os.path.join('build', '**', '*.o'), recursive=True):
-            install_data.run(self)
-
-
-class InstallWithoutBuild(install):
-    # noinspection PyAttributeOutsideInit
-    def initialize_options(self):
-        install.initialize_options(self)
-        self.skip_build = True
-
-    def run(self):
-        install.run(self)
-
 
 setup(
     name='stlib',
@@ -140,24 +95,19 @@ setup(
     author='Lara Maia',
     author_email='dev@lara.monster',
     url='http://github.com/ShyPixie/stlib',
-    license='GPL',
+    license='GPLv3',
     classifiers=classifiers,
     keywords='steam valve',
-    packages=['stlib'],
-    package_dir={'stlib': 'src'},
+    packages=find_packages('src'),
+    package_dir={'': 'src'},
+    include_package_data=True,
     ext_modules=[steam_api],
-    data_files=[EXTRA_PREBUILT],
-    requires=['aiohttp',
-              'asyncio',
-              'beautifulsoup4',
-              'rsa',
-              'setuptools',
-              ],
-    python_requires='>=3.6',
+    install_requires=[
+        'aiohttp',
+        'beautifulsoup4',
+        'rsa',
+    ],
+    python_requires='>=3.7',
+    cmdclass={"build_ext": OptionalBuild},
     zip_safe=False,
-    cmdclass={
-        'build': OptionalBuild,
-        'install_data': OptionalData,
-        'install': InstallWithoutBuild,
-    },
 )
