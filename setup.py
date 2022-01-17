@@ -26,7 +26,7 @@ from setuptools.command.build_ext import build_ext
 from typing import List, Mapping
 
 SOURCES_PATH = os.getenv("SOURCES_PATH", os.path.join('src', 'steam_api'))
-SDK_PATH = os.getenv("SDK_PATH", os.path.join(SOURCES_PATH, 'steamworks_sdk'))
+SDK_PATH = os.getenv("SDK_PATH", os.path.join(SOURCES_PATH, 'steamworks_sdk', 'sdk'))
 HEADERS_PATH = os.getenv("HEADERS_PATH", os.path.join(SDK_PATH, 'public'))
 
 if sys.maxsize > 2 ** 32:
