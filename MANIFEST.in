@@ -1,2 +1,3 @@
 include LICENSE.md
 graft src
+prune src/steam_api

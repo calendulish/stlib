@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
-
+import shutil
 import sys
 
 import logging
@@ -38,10 +38,12 @@ if os.name == 'nt':
     DATA_DIR = os.path.join(sysconfig.get_path('platlib'), 'stlib')
     REDIST_PATH = 'win' + arch
     API_NAME = 'steam_api' + arch
+    EXTRA_NAME = API_NAME + '.dll'
 elif os.name == 'posix':
     DATA_DIR = os.path.abspath(os.path.join(os.path.sep, 'opt', 'stlib'))
-    API_NAME = 'steam_api'
     REDIST_PATH = 'linux' + arch if arch else '32'
+    API_NAME = 'steam_api'
+    EXTRA_NAME = 'lib' + API_NAME + '.so'
 else:
     print('Your system is currently not supported.')
     sys.exit(1)
@@ -49,9 +51,19 @@ else:
 
 class OptionalBuild(build_ext):
     def run(self):
+        bin_path = os.path.join(SDK_PATH, 'redistributable_bin')
+
         if os.path.exists(HEADERS_PATH):
+            shutil.copy(
+                os.path.join(bin_path, REDIST_PATH, EXTRA_NAME),
+                os.path.join('src', 'stlib'),
+            )
             super().run()
         else:
+            for file in os.listdir(os.path.join('src', 'stlib')):
+                if file.endswith('.so') or file.endswith('.dll'):
+                    os.remove(file)
+
             self.warn("build of steam_api C extension has been disabled")
 
 
