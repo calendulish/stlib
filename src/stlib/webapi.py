@@ -246,8 +246,14 @@ class SteamWebAPI:
             raise ValueError('Failed to get owned games.')
 
         for game in data['response']['games']:
+            # FIXME: WTF are you doing Valve?
+            if 'img_logo_url' in game:
+                logo_url = game['img_logo_url']
+            else:
+                logo_url = ''
+
             games.append(
-                Game(game['name'], game['appid'], game['playtime_forever'], game['img_icon_url'], game['img_logo_url']),
+                Game(game['name'], game['appid'], game['playtime_forever'], game['img_icon_url'], logo_url),
             )
 
         log.debug(f"{data['response']['game_count']} owned games found.")
