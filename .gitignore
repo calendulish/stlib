@@ -11,7 +11,7 @@ cmake-build-debug
 .coverage
 install_test
 dist
-stlib.egg-info
+*.egg-info
 tests/config.ini
 tests/conftest.ini
 src/doc/_build
