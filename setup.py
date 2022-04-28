@@ -56,14 +56,10 @@ class OptionalBuild(build_ext):
         if os.path.exists(HEADERS_PATH):
             shutil.copy(
                 os.path.join(bin_path, REDIST_PATH, EXTRA_NAME),
-                os.path.join('src', 'stlib'),
+                os.path.join(self.build_lib, 'stlib'),
             )
             super().run()
         else:
-            for file in os.listdir(os.path.join('src', 'stlib')):
-                if file.endswith('.so') or file.endswith('.dll'):
-                    os.remove(file)
-
             self.warn("build of steam_api C extension has been disabled")
 
 
@@ -102,7 +98,7 @@ classifiers = [
 
 setup(
     name='stlib',
-    version='0.14',
+    version='0.14.1',
     description="Async library that provides features related to Steam client and compatible stuffs",
     author='Lara Maia',
     author_email='dev@lara.monster',
