@@ -52,11 +52,13 @@ else:
 class OptionalBuild(build_ext):
     def run(self):
         bin_path = os.path.join(SDK_PATH, 'redistributable_bin')
+        output_dir = os.path.join(self.build_lib, 'stlib')
+        os.makedirs(output_dir, exist_ok=True)
 
         if os.path.exists(HEADERS_PATH):
             shutil.copy(
                 os.path.join(bin_path, REDIST_PATH, EXTRA_NAME),
-                os.path.join(self.build_lib, 'stlib'),
+                output_dir,
             )
             super().run()
         else:
