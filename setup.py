@@ -35,12 +35,10 @@ else:
     arch = ''
 
 if os.name == 'nt':
-    DATA_DIR = os.path.join(sysconfig.get_path('platlib'), 'stlib')
     REDIST_PATH = 'win' + arch
     API_NAME = 'steam_api' + arch
     EXTRA_NAME = API_NAME + '.dll'
 elif os.name == 'posix':
-    DATA_DIR = os.path.abspath(os.path.join(os.path.sep, 'opt', 'stlib'))
     REDIST_PATH = 'linux' + arch if arch else '32'
     API_NAME = 'steam_api'
     EXTRA_NAME = 'lib' + API_NAME + '.so'
@@ -65,13 +63,6 @@ class OptionalBuild(build_ext):
             self.warn("build of steam_api C extension has been disabled")
 
 
-def fix_runtime_path() -> Mapping[str, List[str]]:
-    if os.name == 'posix':
-        return {'runtime_library_dirs': [os.path.join(DATA_DIR, 'lib')]}
-    else:
-        return {}
-
-
 steam_api = Extension(
     'stlib.steam_api',
     sources=[os.path.join(SOURCES_PATH, 'steam_api.cpp')],
@@ -79,7 +70,6 @@ steam_api = Extension(
     library_dirs=[os.path.join(SDK_PATH, 'redistributable_bin', REDIST_PATH)],
     libraries=[API_NAME],
     extra_compile_args=['-D_CRT_SECURE_NO_WARNINGS'],
-    **fix_runtime_path()
 )
 
 classifiers = [

@@ -17,12 +17,22 @@
 #
 
 import os
+import site
 import sys
+from contextlib import suppress
+
+from ctypes import cdll
 
 __all__ = ["steam_api"]
 
 if os.name == 'nt' and sys.version_info.minor > 7:
-    import site
+    for site_packages in site.getsitepackages():
+        os.add_dll_directory(site_packages)
 
-    for path in site.getsitepackages():
-        os.add_dll_directory(path)
+if sys.platform == 'linux':
+    with suppress(OSError):
+        cdll.LoadLibrary(os.path.join(site.getusersitepackages(), 'stlib', 'libsteam_api.so'))
+
+    for site_packages in site.getsitepackages():
+        with suppress(OSError):
+            cdll.LoadLibrary(os.path.join(site_packages, 'stlib', 'libsteam_api.so'))
