@@ -54,17 +54,6 @@ call :install pip
 :: Reset python version
 call %~dp0common.cmd
 
-echo Updating setuptools to latest
-call :install setuptools --ignore-installed
-
-echo Installing dev tools
-call :install git tar unzip
-call :install gcc make
-call :install mypy pylint pytest
-
-echo Installing freezing tools
-call :install cx-freeze pywin32
-
 echo Updating project dependencies
 call :shell python setup.py egg_info
 set requires="src\\%project_name%.egg-info\\requires.txt"
@@ -76,6 +65,14 @@ if exist %requires% (
         call :install %%i
     )
 )
+
+echo Installing dev tools
+call :install git tar unzip
+call :install gcc make
+call :install mypy pylint pytest
+
+echo Installing freezing tools
+call :install cx-freeze pywin32
 
 echo Cleaning...
 del /f /q /s msys2.exe >nul 2>&1 || exit 1
@@ -94,7 +91,7 @@ for %%i in (%*) do (
     set python_packages=!python_packages! %ARCH%-python-%%i
 )
 
-set pacman=pacman -S --needed --noconfirm --overwrite
+set pacman=pacman -S --needed --noconfirm
 set pip=python -m pip install
 %BINPATH%\\sh.exe -c "%pacman% !python_packages! 2>&- || %pacman% !packages! 2>&- || %pacman% %* 2>&- || %pip% %*" || exit 1
 endlocal

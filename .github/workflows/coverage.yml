@@ -14,11 +14,11 @@ jobs:
           curl -o steamworks-sdk.zip -L https://github.com/ShyPixie/Overlays/blob/master/dev-util/steamworks-sdk/files/steamworks_sdk_151.zip?raw=true
           unzip -o steamworks-sdk.zip
           popd
+          pip install aiohttp beautifulsoup4 rsa wheel
+          pip install . -v
           pip install pytest
           pip install pytest-cov
-          pip install build
-          pip install -r requirements.txt
-          pytest --cov=./ --cov-report=xml
+          pytest --cov=stlib --cov-report=xml
       - uses: codecov/codecov-action@v2
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
