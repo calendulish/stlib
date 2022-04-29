@@ -30,7 +30,7 @@ unzip -o steamworks-sdk.zip || exit 1
 popd || exit 1
 
 # build project
-./setup.py -v build || exit 1
+./setup.py -v bdist_wheel || exit 1
 pushd build || exit 1
 mv "lib.mingw_x86_64-$PYTHON_VERSION" "$RELEASE_NAME" || exit 1
 
