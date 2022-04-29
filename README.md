@@ -1,11 +1,12 @@
 stlib
 -----
 
-[![Linux Build Status](https://img.shields.io/travis/ShyPixie/stlib/master.svg?label=Linux%20build)](https://travis-ci.org/ShyPixie/stlib)
-[![Windows Build status](https://img.shields.io/appveyor/ci/ShyPixie/stlib/master.svg?label=Windows%20build)](https://ci.appveyor.com/project/ShyPixie/stlib)
-[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/ShyPixie/stlib/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/ShyPixie/stlib/?branch=master)
-[![GitHub license](https://img.shields.io/badge/license-GPLv3-green.svg)](https://www.gnu.org/licenses/gpl-3.0.html)
-[![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=WVQ5XM935XNLN&item_name=stlib)
+[![windows build status](https://badges.lara.monster/ShyPixie/badge-metadata/stlib-windows-build)](https://github.com/ShyPixie/stlib/actions/workflows/build.yml)
+[![linux build status](https://badges.lara.monster/ShyPixie/badge-metadata/stlib-linux-build)](https://github.com/ShyPixie/stlib/actions/workflows/build.yml)
+[![Coverage](https://codecov.io/gh/ShyPixie/stlib/branch/master/graph/badge.svg?token=DMKFKEUUZP)](https://codecov.io/gh/ShyPixie/stlib)
+[![Quality](https://api.codiga.io/project/33228/score/svg)](https://app.codiga.io/project/33228/dashboard)
+[![GitHub license](https://img.shields.io/badge/license-GPLv3-brightgreen.svg?style=flat)](https://www.gnu.org/licenses/gpl-3.0.html)
+[![Donate](https://img.shields.io/badge/Donate-PayPal-brightgreen.svg?style=flat)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=WVQ5XM935XNLN&item_name=python-template)
 
 Async library that provides features related to Steam client and compatible stuff
 
@@ -56,6 +57,6 @@ The stlib is distributed in the hope that it will be useful, but WITHOUT ANY WAR
 
 You should have received a copy of the GNU General Public License along with this program. If not, see http://www.gnu.org/licenses/.
 
-Lara Maia <dev@lara.monster>
+Lara Maia <dev@lara.monster> 2022
 
 [![Made with](https://img.shields.io/badge/made%20with-girl%20power-f070D0.svg?longCache=true&style=for-the-badge)](https://lara.monster)
