@@ -18,7 +18,7 @@
 
 source "$(dirname "$0")/common.sh"
 
-check_msys
+check_linux
 
 # download steamworks
 pushd src/steam_api/steamworks_sdk || exit 1
@@ -27,9 +27,9 @@ unzip -o steamworks-sdk.zip || exit 1
 popd || exit 1
 
 # build project
-python -m build --sdist --wheel --no-isolation || exit 1
+python -m build --sdist --wheel || exit 1
 pushd build || exit 1
-mv "lib.mingw_x86_64-$PYTHON_VERSION" "$RELEASE_NAME" || exit 1
+mv "lib.linux-x86_64-$PYTHON_VERSION" "$RELEASE_NAME" || exit 1
 
 # zip release
 tar -vvcf "$RELEASE_NAME.zip" "$RELEASE_NAME" || exit 1

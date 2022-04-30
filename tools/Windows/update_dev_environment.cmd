@@ -69,6 +69,7 @@ if exist %requires% (
 echo Installing dev tools
 call :install git tar unzip
 call :install gcc make
+call :install build
 call :install mypy pylint pytest
 
 echo Installing freezing tools

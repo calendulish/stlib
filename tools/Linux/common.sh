@@ -16,23 +16,16 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 
-source "$(dirname "$0")/common.sh"
+check_linux() {
+    if ! grep -q "Linux" <<<"$(uname -s)"; then
+        echo "Unsupported platform"
+        exit 1
+    fi
+}
 
-check_msys
+cd "$(dirname "$0")/../.." || exit 1
 
-# download steamworks
-pushd src/steam_api/steamworks_sdk || exit 1
-curl -o steamworks-sdk.zip -L https://github.com/ShyPixie/Overlays/blob/master/dev-util/steamworks-sdk/files/steamworks_sdk_151.zip?raw=true || exit 1
-unzip -o steamworks-sdk.zip || exit 1
-popd || exit 1
-
-# build project
-python -m build --sdist --wheel --no-isolation || exit 1
-pushd build || exit 1
-mv "lib.mingw_x86_64-$PYTHON_VERSION" "$RELEASE_NAME" || exit 1
-
-# zip release
-tar -vvcf "$RELEASE_NAME.zip" "$RELEASE_NAME" || exit 1
-popd || exit 1
-
-exit 0
+export PYTHON_VERSION RELEASE_NAME APP_VERSION
+PYTHON_VERSION="$(python -c 'import sys;print(sys.implementation.cache_tag)')"
+RELEASE_NAME="$(basename "$PWD")-LIN64-Python-$PYTHON_VERSION"
+APP_VERSION="$(grep version= setup.py | cut -d\' -f2)"
