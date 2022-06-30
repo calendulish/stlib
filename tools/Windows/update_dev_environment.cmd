@@ -55,6 +55,11 @@ call :install pip
 call %~dp0common.cmd
 
 echo Updating project dependencies
+
+:: currently we can't install build dependencies without installing the package
+:: https://github.com/pypa/pip/issues/8049
+call :install setuptools wheel
+
 call :shell python setup.py egg_info
 set requires="src\\%project_name%.egg-info\\requires.txt"
 
