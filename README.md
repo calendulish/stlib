@@ -1,8 +1,8 @@
 stlib
 -----
 
-[![windows build status](https://badges.lara.monster/ShyPixie/badge-metadata/stlib-windows-build)](https://github.com/ShyPixie/stlib/actions/workflows/build.yml)
-[![linux build status](https://badges.lara.monster/ShyPixie/badge-metadata/stlib-linux-build)](https://github.com/ShyPixie/stlib/actions/workflows/build.yml)
+[![windows build status](https://badges.lara.monster/ShyPixie/.github/stlib-windows-build)](https://github.com/ShyPixie/stlib/actions/workflows/build.yml)
+[![linux build status](https://badges.lara.monster/ShyPixie/.github/stlib-linux-build)](https://github.com/ShyPixie/stlib/actions/workflows/build.yml)
 [![Coverage](https://codecov.io/gh/ShyPixie/stlib/branch/master/graph/badge.svg?token=DMKFKEUUZP)](https://codecov.io/gh/ShyPixie/stlib)
 [![Quality](https://api.codiga.io/project/33228/score/svg)](https://app.codiga.io/project/33228/dashboard)
 [![GitHub license](https://img.shields.io/badge/license-GPLv3-brightgreen.svg?style=flat)](https://www.gnu.org/licenses/gpl-3.0.html)
