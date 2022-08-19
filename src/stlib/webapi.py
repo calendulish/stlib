@@ -37,6 +37,14 @@ class Game(NamedTuple):
     logo_id: str
 
 
+class Item(NamedTuple):
+    name: str
+    type: str
+    marketable: int
+    expiration: str
+    actions: List[Dict[str, str]]
+
+
 class Badge(NamedTuple):
     game_name: str
     game_id: int
@@ -265,7 +273,7 @@ class SteamWebAPI:
 
     async def get_session_id(self) -> str:
         async with self.http.get(
-                'https://steamcommunity.com',
+                self.community_url,
                 headers=self.headers,
         ) as response:
             if 'sessionid' in response.cookies:
@@ -409,6 +417,37 @@ class SteamWebAPI:
                 result.append('')
 
         return result
+
+    async def get_inventory(
+            self,
+            steamid: int,
+            appid: int,
+            contextid: int,
+    ):
+        async with self.http.get(f"{self.community_url}/inventory/{steamid}/{appid}/{contextid}") as response:
+            json_data = await response.json()
+
+            if not json_data['success']:
+                raise AttributeError(f"Unable to get inventory details")
+
+        items = []
+        for item in json_data['descriptions']:
+            if 'market_name' in item:
+                name = item['market_name']
+
+                if item['type']:
+                    name += f" - {item['type']}"
+            else:
+                name = item['name']
+
+            type_ = item['type']
+            marketable = item['marketable']
+            expiration = item['item_expiration']
+            actions = item['actions']
+
+            items.append(Item(name, type_, marketable, expiration, actions))
+
+        return items
 
     async def get_confirmations(
             self,
