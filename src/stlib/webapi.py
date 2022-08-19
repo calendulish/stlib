@@ -20,6 +20,7 @@ import asyncio
 import contextlib
 import logging
 import time
+import yarl
 from bs4 import BeautifulSoup
 from typing import Any, Dict, List, NamedTuple, Optional, Union
 
@@ -35,6 +36,15 @@ class Game(NamedTuple):
     playtime: int
     icon_id: str
     logo_id: str
+
+
+class Package(NamedTuple):
+    name: str
+    packageid: int
+    page_image: str
+    small_logo: str
+    apps: List[int]
+    discount: int
 
 
 class Item(NamedTuple):
@@ -92,6 +102,7 @@ class SteamWebAPI:
             self,
             *,
             api_url: str = 'https://api.steampowered.com',
+            store_url: str = 'https://store.steampowered.com',
             mobileconf_url: str = 'https://steamcommunity.com/mobileconf',
             economy_url: str = 'https://steamcommunity.com/economy',
             community_url: str = 'https://steamcommunity.com',
@@ -100,6 +111,7 @@ class SteamWebAPI:
             key: str = '',
     ) -> None:
         self.api_url = api_url
+        self.store_url = store_url
         self.mobileconf_url = mobileconf_url
         self.economy_url = economy_url
         self.community_url = community_url
@@ -157,9 +169,11 @@ class SteamWebAPI:
             self,
             interface: str,
             method: str,
-            version: int,
+            version: int = 1,
             params: Optional[Dict[str, str]] = None,
             data: Optional[Dict[str, str]] = None,
+            internals: bool = False,
+            encoded: bool = False,
     ) -> Dict[str, Any]:
         if not params:
             params = {}
@@ -169,15 +183,27 @@ class SteamWebAPI:
 
         http_method = 'POST' if data else 'GET'
 
+        if internals:
+            url = f'{self.store_url}/{interface}/{method}'
+        else:
+            url = f'{self.api_url}/{interface}/{method}/v{version}/'
+
         kwargs: Dict[str, Any] = {
             'method': http_method,
-            'url': f'{self.api_url}/{interface}/{method}/v{version}/',
+            'url': url,
             'params': params,
             'data': data,
             'headers': self.headers,
         }
 
         log.debug("Requesting %s:%s via %s with %s:%s", interface, method, http_method, params, data)
+
+        if encoded:
+            if params:
+                raw_params = '&'.join(f'{key}={value}' for key, value in params.items())
+                kwargs['url'] = yarl.URL(url+'?'+raw_params, encoded=True)
+
+            del kwargs['params']
 
         try_again = True
 
@@ -229,6 +255,31 @@ class SteamWebAPI:
         nickname = str(data['response']['players'][0]['personaname'])
         log.debug("nickname found: %s (from %s)", nickname, steamid)
         return nickname
+
+    # Despite this apparently accepts comma-separated parameters, isn't really working.
+    # For now let's make a call to each id. #FIXME
+    async def get_package_details(self, packageids: List[int]) -> List[Package]:
+        assert isinstance(packageids, List), "packageids must be a list"
+        assert all([isinstance(id, int) for id in packageids]), "each packageid must be a number"
+
+        packages = []
+
+        for packageid in map(str, packageids):
+            params = {'packageids': packageid}
+            data = await self._get_data('api', 'packagedetails', params=params, internals=True)
+
+            if not data[packageid]['success']:
+                raise ValueError(f'Failed to get details for package {packageid}')
+
+            name = data[packageid]['data']['name']
+            page_image = data[packageid]['data']['page_image']
+            small_logo = data[packageid]['data']['small_logo']
+            apps = [app['id'] for app in data[packageid]['data']['apps']]
+            discount = data[packageid]['data']['price']['discount_percent']
+
+            packages.append(Package(name, packageid, page_image, small_logo, apps, discount))
+
+        return packages
 
     async def get_owned_games(
             self,
