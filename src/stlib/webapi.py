@@ -269,7 +269,8 @@ class SteamWebAPI:
             data = await self._get_data('api', 'packagedetails', params=params, internals=True)
 
             if not data[packageid]['success']:
-                raise ValueError(f'Failed to get details for package {packageid}')
+                log.error("Failed to get details for package %s", packageid)
+                continue
 
             name = data[packageid]['data']['name']
             page_image = data[packageid]['data']['page_image']
