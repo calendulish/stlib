@@ -22,7 +22,7 @@ import logging
 import time
 import yarl
 from bs4 import BeautifulSoup
-from typing import Any, Dict, List, NamedTuple, Optional, Union
+from typing import Any, Dict, List, NamedTuple, Optional, Union, Tuple
 
 from . import universe, login
 
@@ -256,11 +256,47 @@ class SteamWebAPI:
         log.debug("nickname found: %s (from %s)", nickname, steamid)
         return nickname
 
+    async def get_games_prices(self, appids: List[int], discounted: bool = False) -> List[Tuple[int, float]]:
+        assert isinstance(appids, List), "appids must be a list"
+        assert all([isinstance(id_, int) for id_ in appids]), "each appid must be a number"
+
+        prices = []
+
+        params = {
+            'appids': ','.join([str(id_) for id_ in appids]),
+            'filters': 'price_overview',
+        }
+
+        data = await self._get_data('api', 'appdetails', params=params, internals=True)
+
+        for appid in map(str, appids):
+            if not data[appid]['success']:
+                log.error("Failed to get details for app %s", appid)
+                continue
+
+            price_raw = data[appid]['data']['price_overview']['initial_formatted']
+
+            if discounted or not price_raw:
+                price_raw = data[appid]['data']['price_overview']['final_formatted']
+
+            price = ''
+            for char in price_raw:
+                if char in ['.', ',']:
+                    price += char.replace(',', '.')
+                    continue
+
+                if char.isdigit():
+                    price += char
+
+            prices.append((int(appid), float(price)))
+
+        return prices
+
     # Despite this apparently accepts comma-separated parameters, isn't really working.
     # For now let's make a call to each id. #FIXME
     async def get_package_details(self, packageids: List[int]) -> List[Package]:
         assert isinstance(packageids, List), "packageids must be a list"
-        assert all([isinstance(id, int) for id in packageids]), "each packageid must be a number"
+        assert all([isinstance(id_, int) for id_ in packageids]), "each packageid must be a number"
 
         packages = []
 
@@ -278,7 +314,7 @@ class SteamWebAPI:
             apps = [app['id'] for app in data[packageid]['data']['apps']]
             discount = data[packageid]['data']['price']['discount_percent']
 
-            packages.append(Package(name, packageid, page_image, small_logo, apps, discount))
+            packages.append(Package(name, int(packageid), page_image, small_logo, apps, discount))
 
         return packages
 
