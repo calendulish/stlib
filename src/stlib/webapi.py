@@ -518,12 +518,25 @@ class SteamWebAPI:
             steamid: int,
             appid: int,
             contextid: int,
+            count: int = 5000,
     ):
-        async with self.http.get(f"{self.community_url}/inventory/{steamid}/{appid}/{contextid}") as response:
-            json_data = await response.json()
+        params = {'l': 'english', 'count': count}
 
-            if not json_data['success']:
-                raise AttributeError(f"Unable to get inventory details")
+        while True:
+            async with self.http.get(
+                    f"{self.community_url}/inventory/{steamid}/{appid}/{contextid}",
+                    params=params,
+            ) as response:
+                json_data = await response.json()
+
+                if not json_data['success']:
+                    raise AttributeError(f"Unable to get inventory details")
+
+                if 'last_assetid' in json_data:
+                    params['start_assetid'] = json_data['last_assetid']
+                    await asyncio.sleep(.5)
+                else:
+                    break
 
         items = []
         for item in json_data['descriptions']:
