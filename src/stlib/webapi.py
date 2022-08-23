@@ -51,6 +51,13 @@ class Item(NamedTuple):
     name: str
     type: str
     marketable: int
+    tradable: int
+    commodity: int
+    appid: int
+    classid: int
+    instanceid: int
+    icon_url: str
+    icon_url_large: str
     expiration: str
     actions: List[Dict[str, str]]
 
@@ -201,7 +208,7 @@ class SteamWebAPI:
         if encoded:
             if params:
                 raw_params = '&'.join(f'{key}={value}' for key, value in params.items())
-                kwargs['url'] = yarl.URL(url+'?'+raw_params, encoded=True)
+                kwargs['url'] = yarl.URL(url + '?' + raw_params, encoded=True)
 
             del kwargs['params']
 
@@ -528,12 +535,22 @@ class SteamWebAPI:
             else:
                 name = item['name']
 
-            type_ = item['type']
-            marketable = item['marketable']
-            expiration = item['item_expiration']
-            actions = item['actions']
+            kwargs = {
+                'name': name,
+                'type': item['type'],
+                'marketable': item['marketable'],
+                'tradable': item['tradable'],
+                'commodity': item['commodity'],
+                'appid': item['appid'],
+                'classid': item['classid'],
+                'instanceid': item['instanceid'],
+                'icon_url': item['icon_url'],
+                'icon_url_large': item['icon_url_large'],
+                'expiration': item['item_expiration'],
+                'actions': item['actions'],
+            }
 
-            items.append(Item(name, type_, marketable, expiration, actions))
+            items.append(Item(**kwargs))
 
         return items
 
