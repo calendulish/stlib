@@ -56,6 +56,7 @@ class Item(NamedTuple):
     appid: int
     classid: int
     instanceid: int
+    assetid: int
     icon_url: str
     icon_url_large: str
     expiration: str
@@ -539,7 +540,7 @@ class SteamWebAPI:
                     break
 
         items = []
-        for item in json_data['descriptions']:
+        for index, item in enumerate(json_data['descriptions']):
             if 'market_name' in item:
                 name = item['market_name']
 
@@ -557,6 +558,7 @@ class SteamWebAPI:
                 'appid': item['appid'],
                 'classid': item['classid'],
                 'instanceid': item['instanceid'],
+                'assetid': json_data['assets'][index]['assetid'],
                 'icon_url': item['icon_url'],
                 'icon_url_large': item['icon_url_large'],
                 'expiration': item['item_expiration'],
