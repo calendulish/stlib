@@ -146,13 +146,13 @@ class SteamWebAPI:
     async def _new_mobileconf_query(
             server_time: int,
             deviceid: str,
-            steamid: int,
+            steamid: universe.SteamId,
             identity_secret: str,
             tag: str,
     ) -> Dict[str, Any]:
         params = {
             'p': deviceid,
-            'a': steamid,
+            'a': steamid.id64,
             'k': universe.generate_time_hash(server_time, tag, identity_secret),
             't': server_time,
             'm': 'android',
@@ -236,33 +236,33 @@ class SteamWebAPI:
         log.debug("server time found: %s", data['servertime'])
         return int(data['servertime'])
 
-    async def get_profile_url(self, steamid: int) -> str:
-        data = await self._get_data('ISteamUser', 'GetPlayerSummaries', 2, {'steamids': str(steamid)})
+    async def get_profile_url(self, steamid: universe.SteamId) -> str:
+        data = await self._get_data('ISteamUser', 'GetPlayerSummaries', 2, {'steamids': str(steamid.id64)})
 
         if not data['response']['players']:
             raise ValueError('Failed to get profile url.')
 
         profile_url = str(data['response']['players'][0]['profileurl'])
-        log.debug("profile url found: %s (from %s)", profile_url, steamid)
+        log.debug("profile url found: %s (from %s)", profile_url, steamid.id_string)
         return profile_url
 
-    async def get_steamid(self, profile_url: str) -> int:
+    async def get_steamid(self, profile_url: str) -> universe.SteamId:
         data = await self._get_data('ISteamUser', 'ResolveVanityURL', 1, {'vanityurl': profile_url.split('/')[4]})
 
         if data['response']['success'] != 1:
             raise ValueError('Failed to get user id.')
 
         log.debug("steamid found: %s (from %s)", data['response']['steamid'], profile_url)
-        return int(data['response']['steamid'])
+        return universe.generate_steamid(data['response']['steamid'])
 
-    async def get_nickname(self, steamid: int) -> str:
-        data = await self._get_data('ISteamUser', 'GetPlayerSummaries', 2, {'steamids': str(steamid)})
+    async def get_nickname(self, steamid: universe.SteamId) -> str:
+        data = await self._get_data('ISteamUser', 'GetPlayerSummaries', 2, {'steamids': str(steamid.id64)})
 
         if not data['response']['players']:
             raise ValueError('Failed to get nickname.')
 
         nickname = str(data['response']['players'][0]['personaname'])
-        log.debug("nickname found: %s (from %s)", nickname, steamid)
+        log.debug("nickname found: %s (from %s)", nickname, steamid.id_string)
         return nickname
 
     async def get_games_prices(self, appids: List[int], discounted: bool = False) -> List[Tuple[int, float]]:
@@ -329,12 +329,12 @@ class SteamWebAPI:
 
     async def get_owned_games(
             self,
-            steamid: int,
+            steamid: universe.SteamId,
             *,
             appids_filter: Optional[List[int]] = None,
     ) -> Union[Game, List[Game]]:
         params = {
-            'steamid': str(steamid),
+            'steamid': str(steamid.id64),
             'include_appinfo': "1",
             'skip_unvetted_apps': "0",
         }
@@ -384,11 +384,11 @@ class SteamWebAPI:
 
                 raise KeyError
 
-    async def is_logged_in(self, steamid: int) -> bool:
+    async def is_logged_in(self, steamid: universe.SteamId) -> bool:
         try:
             profile_url = await self.get_profile_url(steamid)
         except ValueError:
-            log.error("the steamid %s is invalid", steamid)
+            log.error("the steamid %s is invalid", steamid.id_string)
             return False
 
         async with self.http.get(
@@ -399,7 +399,7 @@ class SteamWebAPI:
             log.debug("login status code: %s", response.status)
 
             if 'profile could not be found' in await response.text():
-                log.error("profile %s doesn't exist", steamid)
+                log.error("profile %s doesn't exist", steamid.id_string)
                 return False
 
             if response.status == 200:
@@ -517,8 +517,7 @@ class SteamWebAPI:
 
     async def send_trade_offer(
             self,
-            steamid: int,
-            partnerid: int,
+            steamid: universe.SteamId,
             token: str,
             contextid: int,
             me: List[Tuple[int, int, int]],
@@ -562,7 +561,7 @@ class SteamWebAPI:
         data = {
             'sessionid': await self.get_session_id(),
             'serverid': 1,
-            'partner': str(steamid),
+            'partner': steamid.id64,
             'tradeoffermessage': '',
             'json_tradeoffer': json.dumps(offer),
             'captcha': None,  # TODO
@@ -575,7 +574,7 @@ class SteamWebAPI:
                 data=data,
                 headers={
                     **self.headers,
-                    'referer': f'{self.community_url}/tradeoffer/new/?partner={str(partnerid)}&token={token}',
+                    'referer': f'{self.community_url}/tradeoffer/new/?partner={steamid.id3}&token={token}',
                 },
         ) as response:
             json_data = await response.json()
@@ -587,7 +586,7 @@ class SteamWebAPI:
 
     async def get_inventory(
             self,
-            steamid: int,
+            steamid: universe.SteamId,
             appid: int,
             contextid: int,
             count: int = 5000,
@@ -596,7 +595,7 @@ class SteamWebAPI:
 
         while True:
             async with self.http.get(
-                    f"{self.community_url}/inventory/{steamid}/{appid}/{contextid}",
+                    f"{self.community_url}/inventory/{steamid.id64}/{appid}/{contextid}",
                     params=params,
             ) as response:
                 json_data = await response.json()
@@ -643,7 +642,7 @@ class SteamWebAPI:
     async def get_confirmations(
             self,
             identity_secret: str,
-            steamid: int,
+            steamid: universe.SteamId,
             deviceid: str,
             time_offset: int = 0,
     ) -> List[Confirmation]:
@@ -744,7 +743,7 @@ class SteamWebAPI:
     async def finalize_confirmation(
             self,
             identity_secret: str,
-            steamid: int,
+            steamid: universe.SteamId,
             deviceid: str,
             trade_id: int,
             trade_key: int,
@@ -764,7 +763,7 @@ class SteamWebAPI:
             assert isinstance(json_data, dict), "Json data from ajaxop is not a dict"
             return json_data
 
-    async def update_badge_drops(self, badge: Badge, steamid: int) -> Badge:
+    async def update_badge_drops(self, badge: Badge, steamid: universe.SteamId) -> Badge:
         params = {'l': 'english'}
         profile_url = await self.get_profile_url(steamid)
 
@@ -788,7 +787,7 @@ class SteamWebAPI:
 
         return badge._replace(cards=cards)
 
-    async def get_badges(self, steamid: int, show_no_drops: bool = False) -> List[Badge]:
+    async def get_badges(self, steamid: universe.SteamId, show_no_drops: bool = False) -> List[Badge]:
         badges = []
         params = {'l': 'english'}
         profile_url = await self.get_profile_url(steamid)
