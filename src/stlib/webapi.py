@@ -18,6 +18,7 @@
 import aiohttp
 import asyncio
 import contextlib
+import json
 import logging
 import time
 import yarl
@@ -514,13 +515,83 @@ class SteamWebAPI:
 
         return result
 
+    async def send_trade_offer(
+            self,
+            steamid: int,
+            partnerid: int,
+            token: str,
+            contextid: int,
+            me: List[Tuple[int, int, int]],
+            them: List[Tuple[int, int, int]],
+    ) -> Dict[str, Any]:
+        me_assets = []
+
+        for item in me:
+            me_assets.append({
+                'appid': item[0],
+                'contextid': str(contextid),
+                'amount': item[2],
+                'assetid': str(item[1]),
+            })
+
+        them_assets = []
+
+        for item in them:
+            them_assets.append({
+                'appid': item[0],
+                'contextid': str(contextid),
+                'amount': item[2],
+                'assetid': str(item[1]),
+            })
+
+        offer = {
+            'newversion': True,
+            'version': len(me_assets) + len(them_assets) + 1,
+            'me': {
+                'assets': me_assets,
+                'currency': [],
+                'ready': False,
+            },
+            'them': {
+                'assets': them_assets,
+                'currency': [],
+                'ready': False,
+            }
+        }
+
+        data = {
+            'sessionid': await self.get_session_id(),
+            'serverid': 1,
+            'partner': str(steamid),
+            'tradeoffermessage': '',
+            'json_tradeoffer': json.dumps(offer),
+            'captcha': None,  # TODO
+            'trade_offer_create_params': json.dumps({'trade_offer_access_token': token}),
+            'tradeofferid_countered': '',
+        }
+
+        async with self.http.post(
+                f"{self.community_url}/tradeoffer/new/send",
+                data=data,
+                headers={
+                    **self.headers,
+                    'referer': f'{self.community_url}/tradeoffer/new/?partner={str(partnerid)}&token={token}',
+                },
+        ) as response:
+            json_data = await response.json()
+
+            if response.status == 401:
+                raise ValueError('Not logged in')
+
+        return json_data
+
     async def get_inventory(
             self,
             steamid: int,
             appid: int,
             contextid: int,
             count: int = 5000,
-    ):
+    ) -> List[Item]:
         params = {'l': 'english', 'count': count}
 
         while True:
