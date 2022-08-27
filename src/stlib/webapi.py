@@ -143,7 +143,7 @@ class SteamWebAPI:
         return self._http_session
 
     @staticmethod
-    async def _new_query(
+    async def _new_mobileconf_query(
             server_time: int,
             deviceid: str,
             steamid: int,
@@ -648,7 +648,7 @@ class SteamWebAPI:
             time_offset: int = 0,
     ) -> List[Confirmation]:
         server_time = int(time.time()) - time_offset
-        params = await self._new_query(server_time, deviceid, steamid, identity_secret, 'conf')
+        params = await self._new_mobileconf_query(server_time, deviceid, steamid, identity_secret, 'conf')
 
         async with self.http.get(
                 f'{self.mobileconf_url}/conf',
@@ -667,7 +667,7 @@ class SteamWebAPI:
             # confirmations loop (steam server) can be slow
             server_time = int(time.time()) - time_offset
 
-            details_params = await self._new_query(
+            details_params = await self._new_mobileconf_query(
                 server_time,
                 deviceid,
                 steamid,
@@ -753,7 +753,7 @@ class SteamWebAPI:
     ) -> Dict[str, Any]:
         extra_params = {'cid': trade_id, 'ck': trade_key, 'op': action}
         server_time = int(time.time()) - time_offset
-        params = await self._new_query(server_time, deviceid, steamid, identity_secret, 'conf')
+        params = await self._new_mobileconf_query(server_time, deviceid, steamid, identity_secret, 'conf')
 
         async with self.http.get(
                 f'{self.mobileconf_url}/ajaxop',
