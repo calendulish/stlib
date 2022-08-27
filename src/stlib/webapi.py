@@ -15,9 +15,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
+
 import aiohttp
 import asyncio
 import contextlib
+import http
 import json
 import logging
 import time
@@ -383,6 +385,15 @@ class SteamWebAPI:
                         return raw_value[:-2]
 
                 raise KeyError
+
+    def restore_login(self, steamid: universe.SteamId, token: str, token_secure: str) -> None:
+        cookies_dict = {
+            'steamLogin': f'{steamid.id64}%7C%7C{token}',
+            'steamLoginSecure': f'{steamid.id64}%7C%7C{token_secure}',
+        }
+
+        cookies = http.cookies.SimpleCookie(cookies_dict)
+        self.http.cookie_jar.update_cookies(cookies)
 
     async def is_logged_in(self, steamid: universe.SteamId) -> bool:
         try:
