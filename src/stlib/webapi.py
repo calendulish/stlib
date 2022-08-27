@@ -577,7 +577,6 @@ class SteamWebAPI:
             'json_tradeoffer': json.dumps(offer),
             'captcha': None,  # TODO
             'trade_offer_create_params': json.dumps({'trade_offer_access_token': token}),
-            'tradeofferid_countered': '',
         }
 
         async with self.http.post(
