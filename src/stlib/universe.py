@@ -83,6 +83,11 @@ def generate_otp_code(msg: bytes, key: bytes) -> int:
     return int.from_bytes(code, byteorder='big') & 0x7FFFFFFF
 
 
+def generate_otp_seed(shared_secret: Union[str, bytes]) -> str:
+    key = base64.b64decode(shared_secret)
+    return base64.b32encode(key)
+
+
 # noinspection PyUnboundLocalVariable
 def generate_steamid(steamid: Union[str, int]) -> SteamId:
     if isinstance(steamid, str):
