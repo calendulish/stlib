@@ -49,6 +49,31 @@ class SteamKey(NamedTuple):
     timestamp: int
 
 
+class SteamId(NamedTuple):
+    type: int
+    id: int
+
+    @classmethod
+    def id_base(cls) -> int:
+        return 76561197960265728
+
+    @property
+    def id3(self) -> int:
+        return (self.id + self.type) * 2 - self.type
+
+    @property
+    def id64(self) -> int:
+        return self.id_base() + (self.id * 2) + self.type
+
+    @property
+    def id_string(self) -> str:
+        return f"STEAM_0:{self.type}:{self.id}"
+
+    @property
+    def id3_string(self) -> str:
+        return f"[U:1:{self.id3}]"
+
+
 def generate_otp_code(msg: bytes, key: bytes) -> int:
     auth = hmac.new(key, msg, hashlib.sha1)
     digest = auth.digest()
@@ -56,6 +81,30 @@ def generate_otp_code(msg: bytes, key: bytes) -> int:
     code = digest[start:start + 4]
 
     return int.from_bytes(code, byteorder='big') & 0x7FFFFFFF
+
+
+# noinspection PyUnboundLocalVariable
+def generate_steamid(steamid: Union[str, int]) -> SteamId:
+    if isinstance(steamid, str):
+        steamid_parts = steamid.strip('[]').split(':')
+
+        if steamid_parts[0][:5] == 'STEAM':
+            type_ = steamid_parts[1]
+            id_ = steamid_parts[2]
+        elif steamid_parts[0][0] == 'U':
+            type_ = 0 if int(steamid_parts[2]) % 2 == 0 else 1
+            id_ = (int(steamid_parts[2]) - type_) / 2
+        elif steamid.isdigit() and len(steamid) == 17:
+            steamid = int(steamid)
+        else:
+            raise ValueError('Invalid steamid')
+
+    if isinstance(steamid, int):
+        offset = steamid - SteamId.id_base()
+        type_ = 0 if offset % 2 == 0 else 1
+        id_ = (offset - type_) / 2
+
+    return SteamId(type_, int(id_))
 
 
 def generate_steam_code(server_time: int, shared_secret: Union[str, bytes]) -> str:
