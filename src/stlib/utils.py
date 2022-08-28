@@ -58,7 +58,7 @@ class Base:
     def http(self) -> aiohttp.ClientSession:
         """returns the default http session"""
         if not self._http_session:
-            log.debug("Creating a new http session")
+            log.debug("Creating a new un-cached http session")
             self._http_session = aiohttp.ClientSession(raise_for_status=True)
 
         return self._http_session
@@ -66,32 +66,40 @@ class Base:
     @classmethod
     def get_session(cls, session_index: int, **kwargs) -> 'Base':
         """
-        Get an instance of module by session index.
-        If session doesn't exists it will create a new session.
+        Get an instance of module with `http_session` from cache at `session_index`.
+
+        If session doesn't exist in cache, it will create a new session.
+        If session exist in cache, it will reuse session from cache.
+
         :param session_index: session number
-        :return: instance of module at given index
+        :return: instance of module
         """
+        if 'http_session' not in _session_cache:
+            _session_cache['http_session'] = []
+
+        session_count = len(_session_cache['http_session'])
+
+        if 'http_session' not in kwargs:
+            if session_count > session_index:
+                log.info("Using existent http session at index %s for %s", session_index, cls.__name__)
+                kwargs['http_session'] = _session_cache['http_session'][session_index]
+            else:
+                log.debug("Creating a new http session at index %s for %s", session_index, cls.__name__)
+                kwargs['http_session'] = aiohttp.ClientSession(raise_for_status=True)
+
+                if session_count < session_index:
+                    log.error("Session index is invalid. Session will be created at index %s", session_count)
+
+                _session_cache['http_session'].insert(session_index, kwargs['http_session'])
+
         if cls.__name__ not in _session_cache:
-            _session_cache[cls.__name__] = []
+            log.debug("Creating a new %s session", cls.__name__)
+            _session_cache[cls.__name__] = super().__new__(cls)
 
-        session_count = len(_session_cache[cls.__name__])
+        log.debug("Initializing instance for %s", cls.__name__)
+        _session_cache[cls.__name__].__init__(**kwargs)
 
-        if session_count <= session_index:
-            log.debug("Creating a new %s session at index %s", cls.__name__, session_index)
-            instance = super().__new__(cls)
-
-            log.debug("Initializing instance %s", instance)
-            instance.__init__(**kwargs)
-
-            if session_count < session_index:
-                log.error("Session index is invalid. Session will be created at index %s", session_count)
-
-            _session_cache[cls.__name__].insert(session_index, instance)
-        else:
-            log.info("Using existent %s session at index %s", cls.__name__, session_index)
-            instance = _session_cache[cls.__name__][session_index]
-
-        return instance
+        return _session_cache[cls.__name__]
 
     @staticmethod
     def get_json_from_js(javascript: BeautifulSoup) -> Dict[str, Any]:
