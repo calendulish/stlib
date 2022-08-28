@@ -44,12 +44,12 @@ class SteamAPIError(Exception):
 
 
 class SteamGameServer:
-    def __init__(self, ip: int = 0x0100007f, game_port: int = 27016,
-                 game_id: int = 480) -> None:
-        log.debug('Set SteamAppId to %s', game_id)
-        os.environ["SteamAppId"] = str(game_id)
+    def __init__(self, ip: int = 0x0100007f, port: int = 27016,
+                 appid: int = 480) -> None:
+        log.debug('Set SteamAppId to %s', appid)
+        os.environ["SteamAppId"] = str(appid)
 
-        result = steam_api.server_init(ip, game_port)
+        result = steam_api.server_init(ip, port)
         log.debug('server init returns %s', result)
 
         if result is False:
@@ -72,9 +72,9 @@ class SteamGameServer:
 
 
 class SteamApiExecutor(ProcessPoolExecutor):
-    def __init__(self, game_id: int = 480, loop: Optional[Any] = None) -> None:
+    def __init__(self, appid: int = 480, loop: Optional[Any] = None) -> None:
         super().__init__()
-        self.game_id = game_id
+        self.appid = appid
         self.loop = loop if loop else asyncio.get_event_loop()
 
     async def __aenter__(self) -> Any:
@@ -88,8 +88,8 @@ class SteamApiExecutor(ProcessPoolExecutor):
         await self.shutdown()
 
     async def init(self) -> None:
-        log.debug("Set SteamAppId to %s", self.game_id)
-        os.environ["SteamAppId"] = str(self.game_id)
+        log.debug("Set SteamAppId to %s", self.appid)
+        os.environ["SteamAppId"] = str(self.appid)
         result = await self.loop.run_in_executor(self, steam_api.init)
 
         log.debug("SteamAPI init returns %s", result)

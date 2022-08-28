@@ -19,12 +19,11 @@ import http
 import json
 import logging
 import time
-from typing import Any, Dict, Optional, NamedTuple
+from typing import Any, Dict, NamedTuple
 
-import aiohttp
 import rsa
 
-from . import universe
+from . import universe, utils
 
 log = logging.getLogger(__name__)
 session_list = []
@@ -67,39 +66,40 @@ class TwoFactorCodeError(LoginError):
 
 # Don't instantiate this class directly!
 # Use get_session to support multiple sessions!
-class Login:
+class Login(utils.Base):
     def __init__(
             self,
-            username: str,
-            password: str,
             *,
             login_url: str = 'https://steamcommunity.com/login',
             mobile_login_url: str = 'https://steamcommunity.com/mobilelogin',
             steamguard_url: str = 'https://steamcommunity.com/steamguard',
-            headers: Optional[Dict[str, str]] = None,
-            http_session: Optional[aiohttp.ClientSession] = None,
+            **kwargs,
     ) -> None:
-        self.username = username
-        self.__password = password
+        super().__init__(**kwargs)
+        self._username = None
+        self.__password = None
         self.login_url = login_url
         self.mobile_login_url = mobile_login_url
         self.steamguard_url = steamguard_url
-        self._headers = headers
-        self._http_session = http_session
 
     @property
-    def headers(self) -> Dict[str, str]:
-        if not self._headers:
-            self._headers = {'User-Agent': 'Unknown/0.0.0'}
+    def username(self) -> str:
+        if not self._username:
+            raise AttributeError('Username is required to login')
 
-        return self._headers
+        return self._username
+
+    @username.setter
+    def username(self, username: str) -> None:
+        self._username = username
 
     @property
-    def http(self) -> aiohttp.ClientSession:
-        if not self._http_session:
-            self._http_session = aiohttp.ClientSession(raise_for_status=True)
+    def password(self) -> None:
+        raise PermissionError('Passwords are protected')
 
-        return self._http_session
+    @password.setter
+    def password(self, __password: str) -> None:
+        self.__password = __password
 
     async def _new_login_data(
             self,
@@ -110,6 +110,10 @@ class Login:
             mobile_login: bool = False,
     ) -> Dict[str, Any]:
         steam_key = await self.get_steam_key(self.username)
+
+        if not self.__password:
+            raise AttributeError('Password is required to login')
+
         encrypted_password = universe.encrypt_password(steam_key, self.__password)
 
         data = {
@@ -131,12 +135,8 @@ class Login:
         return data
 
     async def get_steam_key(self, username: str) -> universe.SteamKey:
-        async with self.http.get(
-                f'{self.login_url}/getrsakey/',
-                params={'username': username},
-                headers=self.headers,
-        ) as response:
-            json_data = await response.json()
+        params = {'username': username}
+        json_data = await self.request_json(f'{self.login_url}/getrsakey/', params=params)
 
         if json_data['success']:
             public_mod = int(json_data['publickey_mod'], 16)
@@ -148,14 +148,11 @@ class Login:
         return universe.SteamKey(rsa.PublicKey(public_mod, public_exp), timestamp)
 
     async def get_captcha(self, gid: int) -> bytes:
-        async with self.http.get(
-                f'{self.login_url}/rendercaptcha/',
-                params={'gid': gid},
-                headers=self.headers,
-        ) as response:
-            data = await response.read()
-            assert isinstance(data, bytes), "rendercaptcha response is not bytes"
-            return data
+        params = {'gid': str(gid)}
+        response = await self.request(f'{self.login_url}/rendercaptcha/', params=params)
+        data = await response.read()
+        assert isinstance(data, bytes), "rendercaptcha response is not bytes"
+        return data
 
     async def has_phone(self, sessionid: str) -> bool:
         data = {
@@ -163,13 +160,7 @@ class Login:
             'sessionid': sessionid,
         }
 
-        async with self.http.post(
-                f'{self.steamguard_url}/phoneajax',
-                data=data,
-                headers=self.headers,
-        ) as response:
-            json_data = await response.json()
-            assert isinstance(json_data, dict), "phoneajax is not a dict"
+        json_data = await self.request_json(f'{self.steamguard_url}/phoneajax', data=data)
 
         if not json_data['success']:
             if 'error_text' in json_data:
@@ -214,54 +205,39 @@ class Login:
         else:
             login_url = self.login_url
 
-        async with self.http.post(
-                f'{login_url}/dologin',
-                data=data,
-                headers=self.headers,
-        ) as response:
-            json_data = await response.json()
-            assert isinstance(json_data, dict), "Json data from dologin is not a dict"
+        json_data = await self.request_json(f'{login_url}/dologin', data=data)
 
-            if json_data['success']:
-                oauth_data = {}
+        if json_data['success']:
+            oauth_data = {}
 
-                if mobile_login:
-                    oauth_data = json.loads(json_data.pop('oauth'))
+            if mobile_login:
+                oauth_data = json.loads(json_data.pop('oauth'))
 
-                return LoginData(json_data, oauth_data)
+            return LoginData(json_data, oauth_data)
 
-            if 'message' in json_data and 'too many login failures' in json_data['message']:
-                raise LoginBlockedError("Your network is blocked. Please, try again later")
-            elif 'emailauth_needed' in json_data and json_data['emailauth_needed']:
-                raise MailCodeError("Mail code requested")
-            elif 'requires_twofactor' in json_data and json_data['requires_twofactor']:
-                raise TwoFactorCodeError("Authenticator code requested")
-            elif 'captcha_needed' in json_data and json_data['captcha_needed']:
-                if captcha_text and captcha_gid:
-                    if 'message' in json_data and not 'verify your humanity' in json_data['message']:
-                        raise LoginError(json_data['message'])
+        if 'message' in json_data and 'too many login failures' in json_data['message']:
+            raise LoginBlockedError("Your network is blocked. Please, try again later")
+        elif 'emailauth_needed' in json_data and json_data['emailauth_needed']:
+            raise MailCodeError("Mail code requested")
+        elif 'requires_twofactor' in json_data and json_data['requires_twofactor']:
+            raise TwoFactorCodeError("Authenticator code requested")
+        elif 'captcha_needed' in json_data and json_data['captcha_needed']:
+            if captcha_text and captcha_gid:
+                if 'message' in json_data and not 'verify your humanity' in json_data['message']:
+                    raise LoginError(json_data['message'])
 
-                captcha = await self.get_captcha(json_data['captcha_gid'])
-                raise CaptchaError(json_data['captcha_gid'], captcha, "Captcha code requested")
-            elif mobile_login and 'oauth' not in json_data:
-                raise LoginError(f"Unable to log-in on mobile session: {json_data['message']}")
-            else:
-                raise LoginError(f"Unable to log-in: {json_data['message']}")
+            captcha = await self.get_captcha(json_data['captcha_gid'])
+            raise CaptchaError(json_data['captcha_gid'], captcha, "Captcha code requested")
+        elif mobile_login and 'oauth' not in json_data:
+            raise LoginError(f"Unable to log-in on mobile session: {json_data['message']}")
+        else:
+            raise LoginError(f"Unable to log-in: {json_data['message']}")
 
+    def restore_login(self, steamid: universe.SteamId, token: str, token_secure: str) -> None:
+        cookies_dict = {
+            'steamLogin': f'{steamid.id64}%7C%7C{token}',
+            'steamLoginSecure': f'{steamid.id64}%7C%7C{token_secure}',
+        }
 
-def get_session(session_number: int, username: str, password: str, **kwargs) -> Login:
-    if len(session_list) <= session_number:
-        log.debug(f"Creating a new login session at index {session_number}")
-        session = Login(username, password, **kwargs)
-
-        if len(session_list) < session_number:
-            log.error(f"Session number is invalid. Session will be created at index {len(session_list)}")
-
-        session_list.insert(session_number, session)
-    else:
-        log.info(f"Using existent login session at index {session_number}")
-        session = session_list[session_number]
-        session.username = username
-        session.__password = password
-
-    return session
+        cookies = http.cookies.SimpleCookie(cookies_dict)
+        self.http.cookie_jar.update_cookies(cookies)

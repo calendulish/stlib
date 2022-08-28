@@ -20,7 +20,7 @@ import base64
 import hashlib
 import hmac
 import logging
-from typing import Optional, Union, NamedTuple
+from typing import Union, NamedTuple
 
 import rsa
 
@@ -72,6 +72,9 @@ class SteamId(NamedTuple):
     @property
     def id3_string(self) -> str:
         return f"[U:1:{self.id3}]"
+
+    def profile_url(self) -> str:
+        return f'https://steamcommunity.com/profiles/{self.id64}'
 
 
 def generate_otp_code(msg: bytes, key: bytes) -> int:
@@ -125,15 +128,8 @@ def generate_steam_code(server_time: int, shared_secret: Union[str, bytes]) -> s
     return ''.join(auth_code)
 
 
-def generate_device_id(identity_secret: Optional[str] = None, token: Optional[str] = None) -> str:
-    if identity_secret:
-        data = identity_secret.encode()
-    elif token:
-        data = token.encode()
-    else:
-        raise AttributeError("You must provide at least one argument")
-
-    digest = hashlib.sha1(data).hexdigest()
+def generate_device_id(base: str) -> str:
+    digest = hashlib.sha1(base).hexdigest()
     device_id = ['android:']
 
     for start, end in ([0, 8], [8, 12], [12, 16], [16, 20], [20, 32]):
