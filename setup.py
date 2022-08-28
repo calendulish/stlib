@@ -15,15 +15,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
+import os
 import shutil
 import sys
 
-import logging
-import os
-import sysconfig
 from setuptools import Extension, setup, find_packages
 from setuptools.command.build_ext import build_ext
-from typing import List, Mapping
 
 SOURCES_PATH = os.getenv("SOURCES_PATH", os.path.join('src', 'steam_api'))
 SDK_PATH = os.getenv("SDK_PATH", os.path.join(SOURCES_PATH, 'steamworks_sdk', 'sdk'))

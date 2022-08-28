@@ -31,13 +31,13 @@ __STEAM_ALPHABET = ['2', '3', '4', '5', '6', '7', '8', '9',
                     'M', 'N', 'P', 'Q', 'R', 'T', 'V', 'W',
                     'X', 'Y']
 
-_STEAM_UNIVERSE = {
+STEAM_UNIVERSE = {
     'public': 'DE45CD61',
     'private': '7DC60112',
     'alpha': 'E77327FA',
 }
 
-_TOKEN_TYPE = {
+TOKEN_TYPE = {
     'none': 0,
     'mobileapp': 1,
     'thirdparty': 2,
@@ -110,7 +110,7 @@ def generate_otp_seed(shared_secret: Union[str, bytes]) -> str:
     :return: seed
     """
     key = base64.b64decode(shared_secret)
-    return base64.b32encode(key)
+    return base64.b32encode(key).decode()
 
 
 # noinspection PyUnboundLocalVariable

@@ -94,7 +94,7 @@ class SteamWebAPI(utils.Base):
             'steamid': oauth_data['steamid'],
             'access_token': oauth_data['oauth_token'],
             'authenticator_time': current_time,
-            'authenticator_type': universe._TOKEN_TYPE[token_type],
+            'authenticator_type': universe.TOKEN_TYPE[token_type],
         }
 
         return params

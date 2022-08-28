@@ -146,7 +146,7 @@ class Login(utils.Base):
         }
 
         if mobile_login:
-            data['oauth_client_id'] = universe._STEAM_UNIVERSE['public']
+            data['oauth_client_id'] = universe.STEAM_UNIVERSE['public']
 
         return data
 
@@ -264,7 +264,7 @@ class Login(utils.Base):
             raise TwoFactorCodeError("Authenticator code requested")
         elif 'captcha_needed' in json_data and json_data['captcha_needed']:
             if captcha_text and captcha_gid:
-                if 'message' in json_data and not 'verify your humanity' in json_data['message']:
+                if 'message' in json_data and 'verify your humanity' not in json_data['message']:
                     raise LoginError(json_data['message'])
 
             captcha = await self.get_captcha(json_data['captcha_gid'])
