@@ -29,12 +29,19 @@ log = logging.getLogger(__name__)
 
 class Game(NamedTuple):
     name: str
+    """Name"""
     appid: int
+    """App ID"""
     playtime_forever: int
+    """Total playtime for game in all platforms"""
     img_icon_url: str
+    """Icon image"""
     has_dlc: bool
+    """True if game has dlc"""
     has_market: bool
+    """True if game has market items"""
     has_workshop: bool
+    """True if game has workshop"""
 
 
 class PhoneNotRegistered(Exception):
@@ -57,8 +64,6 @@ class SMSCodeError(ValueError):
     pass
 
 
-# Don't instantiate this class directly!
-# Use get_session to support multiple sessions!
 class SteamWebAPI(utils.Base):
     def __init__(
             self,
@@ -67,6 +72,16 @@ class SteamWebAPI(utils.Base):
             api_key: str = '',
             **kwargs,
     ) -> None:
+        """
+        Main class to access steam web api methods
+
+        Example:
+
+            ```
+            webapi = SteamWebAPI.get_session(0)
+            owned_games = await webapi.get_owned_games(steamid)
+            ```
+        """
         super().__init__(**kwargs)
         self.api_url = api_url
         self.api_key = api_key
@@ -85,11 +100,17 @@ class SteamWebAPI(utils.Base):
         return params
 
     async def get_server_time(self) -> int:
+        """Get server time"""
         json_data = await self.request_json(f'{self.api_url}/ISteamWebAPIUtil/GetServerInfo/v1')
         log.debug("server time found: %s", json_data['servertime'])
         return int(json_data['servertime'])
 
     async def get_custom_profile_url(self, steamid: universe.SteamId) -> str:
+        """
+        Get custom profile url
+        :param steamid: `SteamId`
+        :return: custom profile url as string
+        """
         params = {'steamids': str(steamid.id64)}
         json_data = await self.request_json(f'{self.api_url}/ISteamUser/GetPlayerSummaries/v2', params)
 
@@ -101,6 +122,11 @@ class SteamWebAPI(utils.Base):
         return profile_url
 
     async def get_steamid(self, profile_url: str) -> universe.SteamId:
+        """
+        Get `SteamId` from profile url
+        :param profile_url: Steam profile url
+        :return: `SteamId`
+        """
         params = {'vanityurl': profile_url.split('/')[4]}
         json_data = await self.request_json(f'{self.api_url}/ISteamUser/ResolveVanityURL/v1', params)
 
@@ -111,6 +137,11 @@ class SteamWebAPI(utils.Base):
         return universe.generate_steamid(json_data['response']['steamid'])
 
     async def get_personaname(self, steamid: universe.SteamId) -> str:
+        """
+        Get persona name from `SteamId`
+        :param steamid: `SteamId`
+        :return: Persona name as string
+        """
         params = {'steamids': str(steamid.id64)}
         json_data = await self.request_json(f'{self.api_url}/ISteamUser/GetPlayerSummaries/v2', params)
 
@@ -127,6 +158,12 @@ class SteamWebAPI(utils.Base):
             *,
             appids_filter: Optional[List[int]] = None,
     ) -> List[Game]:
+        """
+        Get a list of owned games
+        :param steamid: `SteamId`
+        :param appids_filter: List of appids to look up
+        :return: List of `Game`
+        """
         params = {
             'steamid': str(steamid.id64),
             'include_appinfo': "1",
@@ -165,6 +202,12 @@ class SteamWebAPI(utils.Base):
             login_data: login.LoginData,
             phone_id: int = 1,
     ) -> login.LoginData:
+        """
+        Initialize process to add a new authenticator to account
+        :param login_data: Full account login data
+        :param phone_id: Index of phone number
+        :return: Updated account login data
+        """
         data = await self._new_mobile_query(login_data.oauth)
         data['device_identifier'] = universe.generate_device_id(login_data.auth['shared_secret'])
         data['sms_phone_id'] = phone_id
@@ -188,6 +231,12 @@ class SteamWebAPI(utils.Base):
             email_type: int = 2,
             time_offset: int = 0,
     ) -> bool:
+        """
+        Finalize process to add a new authenticator to account
+        :param login_data: Full account login data
+        :param sms_code: OTP received by SMS
+        :return: True if success
+        """
         data = await self._new_mobile_query(login_data.oauth)
         server_time = int(time.time()) - time_offset
         data['authenticator_code'] = universe.generate_steam_code(server_time, login_data.auth['shared_secret'])
@@ -217,6 +266,12 @@ class SteamWebAPI(utils.Base):
             revocation_code: str,
             scheme: int = 2,
     ) -> bool:
+        """
+        Remove authenticator from account
+        :param login_data: Full account login data
+        :param revocation_code: Steam auth revocation code
+        :return: True if success
+        """
         data = await self._new_mobile_query(login_data.oauth)
         data['revocation_code'] = revocation_code
         data['steamguard_scheme'] = scheme

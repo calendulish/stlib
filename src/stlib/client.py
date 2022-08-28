@@ -15,6 +15,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
+
+"""
+`client` interface is used to interact directly with SteamWorks SDK
+it's an optional module and can be disabled when building stlib.
+"""
+
 import asyncio
 import logging
 import os
@@ -44,6 +50,16 @@ class SteamAPIError(Exception):
 
 
 class SteamGameServer:
+    """
+    Create and run a steam game server.
+
+    Example:
+
+    ```
+        with SteamGameServer() as server:
+            server_time = server.get_server_time()
+    ```
+    """
     def __init__(self, ip: int = 0x0100007f, port: int = 27016,
                  appid: int = 480) -> None:
         log.debug('Set SteamAppId to %s', appid)
@@ -72,7 +88,22 @@ class SteamGameServer:
 
 
 class SteamApiExecutor(ProcessPoolExecutor):
+    """
+    Create a isolated steam app process.
+
+    Example:
+
+    ```
+        async with SteamApiExecutor() as executor:
+            steam_user = executor.submit(steam_api.SteamUser).result()
+            steamid = executor.submit(steam_user.get_steam_id).result()
+    ```
+    """
     def __init__(self, appid: int = 480, loop: Optional[Any] = None) -> None:
+        """
+        :param appid: owned steam appid.
+        :param loop: current event loop.
+        """
         super().__init__()
         self.appid = appid
         self.loop = loop if loop else asyncio.get_event_loop()
@@ -88,6 +119,9 @@ class SteamApiExecutor(ProcessPoolExecutor):
         await self.shutdown()
 
     async def init(self) -> None:
+        """
+        Initialize steam app process and populate steam_api pointers.
+        """
         log.debug("Set SteamAppId to %s", self.appid)
         os.environ["SteamAppId"] = str(self.appid)
         result = await self.loop.run_in_executor(self, steam_api.init)
@@ -98,10 +132,13 @@ class SteamApiExecutor(ProcessPoolExecutor):
             raise SteamAPIError("Unable to initialize SteamAPI (Invalid game id?)")
 
     async def soft_shutdown(self) -> None:
+        """
+        Request steam_api to shutdown and clean-up resources associated with steam app.
+        """
         log.debug("Soft Shutdown SteamAPI")
         await self.loop.run_in_executor(self, steam_api.shutdown)
 
-    async def shutdown(self, wait: bool = True) -> None:
+    async def shutdown(self, wait: bool = True, **kwargs) -> None:
         log.debug("Shutdown SteamAPI")
         await self.loop.run_in_executor(self, steam_api.shutdown)
         super().shutdown(wait)

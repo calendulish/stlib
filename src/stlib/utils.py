@@ -28,6 +28,10 @@ _session_cache = {}
 
 
 class Base:
+    """
+    You should not instantiate this class directly!
+    See `get_session`
+    """
     def __new__(cls) -> None:
         raise SyntaxError(
             "Don't instantiate this class directly! "
@@ -44,6 +48,7 @@ class Base:
 
     @property
     def headers(self) -> Dict[str, str]:
+        """returns the default headers to send with all http requests"""
         if not self._headers:
             self._headers = {'User-Agent': 'Unknown/0.0.0'}
 
@@ -51,6 +56,7 @@ class Base:
 
     @property
     def http(self) -> aiohttp.ClientSession:
+        """returns the default http session"""
         if not self._http_session:
             log.debug("Creating a new http session")
             self._http_session = aiohttp.ClientSession(raise_for_status=True)
@@ -59,6 +65,12 @@ class Base:
 
     @classmethod
     def get_session(cls, session_index: int) -> 'Base':
+        """
+        Get an instance of module by session index.
+        If session doesn't exists it will create a new session.
+        :param session_index: session number
+        :return: instance of module at given index
+        """
         if cls.__name__ not in _session_cache:
             _session_cache[cls.__name__] = []
 
@@ -80,6 +92,11 @@ class Base:
 
     @staticmethod
     def get_json_from_js(javascript: BeautifulSoup) -> Dict[str, Any]:
+        """
+        converts javascript data to json data
+        :param javascript: javascript parsed with data. Usually contents of a ''<script>''  tag
+        :return: json data as Dict
+        """
         json_data = {}
         for line in str(javascript).split('\t+'):
             if "BuildHover" in line:
@@ -95,9 +112,11 @@ class Base:
 
     @staticmethod
     async def get_html(response: aiohttp.ClientResponse) -> BeautifulSoup:
+        """get html parsed from response"""
         return BeautifulSoup(await response.text(), 'html.parser')
 
     async def request_json(self, *args, **kwargs) -> Dict[str, Any]:
+        """make a new http request and returns json data"""
         response = await self.request(*args, **kwargs)
         return await response.json()
 
@@ -107,11 +126,19 @@ class Base:
             script_index: int = 0,
             **kwargs,
     ) -> Dict[str, Any]:
+        """
+        make a new http request and returns json data from javascript at given index
+        :param args: request args
+        :param script_index: index of script at html page
+        :param kwargs: request kwargs
+        :return: json_data as Dict
+        """
         html = await self.request_html(*args, **kwargs)
         javascript = html.find_all('script')[script_index]
         return self.get_json_from_js(javascript)
 
     async def request_html(self, *args, **kwargs) -> BeautifulSoup:
+        """make a new http request and returns html"""
         response = await self.request(*args, **kwargs)
         return await self.get_html(response)
 
@@ -124,6 +151,12 @@ class Base:
             auto_recovery: bool = True,
             **kwargs,
     ) -> aiohttp.ClientResponse:
+        """
+        Make a new http request
+        :param auto_recovery: if defined and http request fail, it will try again
+        :param kwargs: extra kwargs passed directly to http request
+        :return: http response
+        """
         if not params:
             params = {}
 

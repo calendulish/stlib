@@ -31,33 +31,55 @@ session_list = []
 
 class Item(NamedTuple):
     name: str
+    """Item name"""
     type: str
+    """Item type"""
     marketable: int
+    """True if marketable"""
     tradable: int
+    """True if tradable"""
     commodity: int
+    """True if commodity"""
     appid: int
+    """App ID"""
     classid: int
+    """Class ID"""
     instanceid: int
+    """Instance ID"""
     assetid: int
+    """Asset ID"""
     icon_url: str
+    """Icon url"""
     icon_url_large: str
+    """Large icon url"""
     expiration: str
+    """Expiration"""
     actions: List[Dict[str, str]]
+    """List with custom actions for `Item`"""
 
 
 class Confirmation(NamedTuple):
     mode: str
+    """Confirmation mode"""
     id: int
+    """Confirmation ID"""
     key: int
+    """Confirmation key"""
     give: List[str]
+    """List of items to give"""
     to: str
+    """Trade destination"""
     receive: List[str]
+    """List of items to receive"""
 
 
 class Badge(NamedTuple):
     name: str
+    """Name"""
     appid: int
+    """App ID"""
     cards: int
+    """Cards remaining to drop"""
 
 
 class BadgeError(AttributeError):
@@ -73,6 +95,16 @@ class Community(utils.Base):
             mobileconf_url: str = 'https://steamcommunity.com/mobileconf',
             **kwargs,
     ) -> None:
+        """
+        Main class to access community api methods
+
+        Example:
+
+            ```
+            community = Community.get_session(0)
+            item_name = await community.get_item_name(appid, classid)
+            ```
+        """
         super().__init__(**kwargs)
         self.community_url = community_url
         self.economy_url = economy_url
@@ -98,6 +130,7 @@ class Community(utils.Base):
         return params
 
     async def get_steam_session_id(self) -> str:
+        """Get steam session id"""
         async with self.request(self.community_url) as response:
             if 'sessionid' in response.cookies:
                 return str(response.cookies['sessionid'].value)
@@ -117,6 +150,14 @@ class Community(utils.Base):
             contextid: int,
             count: int = 5000,
     ) -> List[Item]:
+        """
+        Get inventory
+        :param steamid: `SteamId`
+        :param appid: App ID to filter
+        :param contextid:  Context ID to filter
+        :param count: Max item count per page
+        :return: List of `Item`
+        """
         params = {'l': 'english', 'count': count}
 
         while True:
@@ -165,6 +206,12 @@ class Community(utils.Base):
         return items
 
     async def get_badges(self, steamid: universe.SteamId, show_no_drops: bool = False) -> List[Badge]:
+        """
+        Get badges
+        :param steamid: `SteamId`
+        :param show_no_drops: If true get badges with no drops too
+        :return: List of `Badge`
+        """
         badges = []
         params = {'l': 'english'}
         html = await self.request_html(f"{steamid.profile_url}/badges/", params=params)
@@ -219,6 +266,7 @@ class Community(utils.Base):
             appid: str,
             classid: str,
     ) -> str:
+        """Get item name from app ID"""
         params = {'content_only': 1}
 
         json_data = await self.request_json_from_js(
@@ -246,6 +294,13 @@ class Community(utils.Base):
             deviceid: str,
             time_offset: int = 0,
     ) -> List[Confirmation]:
+        """
+        Get confirmations for logged user
+        :param identity_secret: User identity secret
+        :param steamid: `SteamId`
+        :param deviceid: Device ID
+        :return: List of `Confirmation`
+        """
         server_time = int(time.time()) - time_offset
         params = await self._new_mobileconf_query(server_time, deviceid, steamid, identity_secret, 'conf')
 
@@ -349,6 +404,12 @@ class Community(utils.Base):
         return confirmations
 
     async def get_card_drops_remaining(self, steamid: universe.SteamId, appid: int) -> int:
+        """
+        Get card drops remaining for `appid`
+        :param steamid: `SteamId`
+        :param appid: App ID
+        :return: Card drop count
+        """
         params = {'l': 'english'}
 
         html = await self.request_html(f"{steamid.profile_url}/gamecards/{appid}", params=params)
@@ -374,6 +435,15 @@ class Community(utils.Base):
             me: List[Tuple[int, int, int]],
             them: List[Tuple[int, int, int]],
     ) -> Dict[str, Any]:
+        """
+        Send a trade offer
+        :param steamid: `SteamId`
+        :param token: Partner token
+        :param contextid: Context ID
+        :param me: List of my items to trade
+        :param them: List of them items to trade
+        :return: Json data
+        """
         me_assets = []
 
         for item in me:
@@ -433,6 +503,16 @@ class Community(utils.Base):
             action: str,
             time_offset: int = 0,
     ) -> Dict[str, Any]:
+        """
+        Send confirmation aprovals/refuses
+        :param identity_secret: Steam user identity secret
+        :param steamid: `SteamId`
+        :param deviceid: device ID
+        :param trade_id: trade ID
+        :param trade_key: trade key
+        :param action: Action to taken from [allow, cancel]
+        :return: Json data
+        """
         extra_params = {'cid': trade_id, 'ck': trade_key, 'op': action}
         server_time = int(time.time()) - time_offset
         params = await self._new_mobileconf_query(server_time, deviceid, steamid, identity_secret, 'conf')

@@ -46,38 +46,55 @@ _TOKEN_TYPE = {
 
 class SteamKey(NamedTuple):
     key: rsa.PublicKey
+    """Steam key"""
     timestamp: int
+    """Timestamp"""
 
 
 class SteamId(NamedTuple):
+    """Conversible steam ID"""
     type: int
+    """Account type"""
     id: int
+    """Account ID"""
 
     @classmethod
     def id_base(cls) -> int:
+        """Base ID used to generate steam ID"""
         return 76561197960265728
 
     @property
     def id3(self) -> int:
+        """Steam ID3"""
         return (self.id + self.type) * 2 - self.type
 
     @property
     def id64(self) -> int:
+        """Steam ID64"""
         return self.id_base() + (self.id * 2) + self.type
 
     @property
     def id_string(self) -> str:
+        """Steam ID as string"""
         return f"STEAM_0:{self.type}:{self.id}"
 
     @property
     def id3_string(self) -> str:
+        """Steam ID3 as string"""
         return f"[U:1:{self.id3}]"
 
     def profile_url(self) -> str:
+        """Profile url"""
         return f'https://steamcommunity.com/profiles/{self.id64}'
 
 
 def generate_otp_code(msg: bytes, key: bytes) -> int:
+    """
+    Generate OTP code
+    :param msg: offset
+    :param key: seed
+    :return: OTP
+    """
     auth = hmac.new(key, msg, hashlib.sha1)
     digest = auth.digest()
     start = digest[19] & 0xF
@@ -87,12 +104,22 @@ def generate_otp_code(msg: bytes, key: bytes) -> int:
 
 
 def generate_otp_seed(shared_secret: Union[str, bytes]) -> str:
+    """
+    Generate OTP seed from user shared secret
+    :param shared_secret: User shared secret
+    :return: seed
+    """
     key = base64.b64decode(shared_secret)
     return base64.b32encode(key)
 
 
 # noinspection PyUnboundLocalVariable
 def generate_steamid(steamid: Union[str, int]) -> SteamId:
+    """
+    Generate `SteamId` from any steam ID string or number
+    :param steamid: Any steam ID format as string or number
+    :return: `SteamId`
+    """
     if isinstance(steamid, str):
         steamid_parts = steamid.strip('[]').split(':')
 
@@ -116,6 +143,12 @@ def generate_steamid(steamid: Union[str, int]) -> SteamId:
 
 
 def generate_steam_code(server_time: int, shared_secret: Union[str, bytes]) -> str:
+    """
+    Generate steam code
+    :param server_time: Server Time
+    :param shared_secret: User shared secret
+    :return: Steam OTP
+    """
     msg = int(server_time / 30).to_bytes(8, 'big')
     key = base64.b64decode(shared_secret)
     auth_code_raw = generate_otp_code(msg, key)
@@ -129,6 +162,11 @@ def generate_steam_code(server_time: int, shared_secret: Union[str, bytes]) -> s
 
 
 def generate_device_id(base: str) -> str:
+    """
+    Generate device ID from base string
+    :param base: Base string
+    :return: Device ID
+    """
     digest = hashlib.sha1(base).hexdigest()
     device_id = ['android:']
 
@@ -141,6 +179,7 @@ def generate_device_id(base: str) -> str:
 
 
 def generate_time_hash(server_time: int, tag: str, secret: str) -> str:
+    """Generate steam time hash"""
     key = base64.b64decode(secret)
     msg = server_time.to_bytes(8, 'big') + tag.encode()
     auth = hmac.new(key, msg, hashlib.sha1)
@@ -150,6 +189,12 @@ def generate_time_hash(server_time: int, tag: str, secret: str) -> str:
 
 
 def encrypt_password(steam_key: SteamKey, password: str) -> bytes:
+    """
+    Encrypt user password
+    :param steam_key: `SteamKey`
+    :param password: Raw user password
+    :return: Encrypted password
+    """
     encrypted_password = rsa.encrypt(password.encode(), steam_key.key)
 
     return base64.b64encode(encrypted_password)

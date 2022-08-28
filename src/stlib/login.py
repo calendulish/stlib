@@ -31,7 +31,9 @@ session_list = []
 
 class LoginData(NamedTuple):
     auth: Dict[str, Any]
+    """Auth data"""
     oauth: Dict[str, Any]
+    """OAuth data"""
 
 
 class LoginError(ValueError):
@@ -75,6 +77,18 @@ class Login(utils.Base):
             steamguard_url: str = 'https://steamcommunity.com/steamguard',
             **kwargs,
     ) -> None:
+        """
+        Main login class used to login a user on steam session
+
+        Example:
+
+            ```
+            login_session = Login.get_session(0)
+            login_session.username = 'SteamUserName'
+            login_session.password = 'SteamPassword'
+            await login_session.do_login()
+            ```
+        """
         super().__init__(**kwargs)
         self._username = None
         self.__password = None
@@ -84,6 +98,7 @@ class Login(utils.Base):
 
     @property
     def username(self) -> str:
+        """Steam username"""
         if not self._username:
             raise AttributeError('Username is required to login')
 
@@ -95,6 +110,7 @@ class Login(utils.Base):
 
     @property
     def password(self) -> None:
+        """Protected steam password"""
         raise PermissionError('Passwords are protected')
 
     @password.setter
@@ -135,6 +151,11 @@ class Login(utils.Base):
         return data
 
     async def get_steam_key(self, username: str) -> universe.SteamKey:
+        """
+        Get `SteamKey`
+        :param username: Steam username as string
+        :return: `SteamKey`
+        """
         params = {'username': username}
         json_data = await self.request_json(f'{self.login_url}/getrsakey/', params=params)
 
@@ -148,6 +169,11 @@ class Login(utils.Base):
         return universe.SteamKey(rsa.PublicKey(public_mod, public_exp), timestamp)
 
     async def get_captcha(self, gid: int) -> bytes:
+        """
+        Get captcha image
+        :param gid: Captcha GID
+        :return: Image
+        """
         params = {'gid': str(gid)}
         response = await self.request(f'{self.login_url}/rendercaptcha/', params=params)
         data = await response.read()
@@ -155,6 +181,11 @@ class Login(utils.Base):
         return data
 
     async def has_phone(self, sessionid: str) -> bool:
+        """
+        Check if user has a phone registered on steam account
+        :param sessionid: steam session id
+        :return: True if success
+        """
         data = {
             'op': "has_phone",
             'sessionid': sessionid,
@@ -185,6 +216,16 @@ class Login(utils.Base):
             time_offset: int = 0,
             authenticator_code: str = '',
     ) -> LoginData:
+        """
+        Login an user on Steam
+        :param shared_secret: User shared secret
+        :param emailauth: OTP received by email
+        :param captcha_gid: gid of received captcha
+        :param captcha_text: text of received captcha
+        :param mobile_login: True to request mobile session instead desktop one
+        :param authenticator_code: OTP from steam authenticator
+        :return: Updated `LoginData`
+        """
         if shared_secret:
             server_time = int(time.time()) - time_offset
             authenticator_code = universe.generate_steam_code(server_time, shared_secret)
@@ -234,6 +275,12 @@ class Login(utils.Base):
             raise LoginError(f"Unable to log-in: {json_data['message']}")
 
     def restore_login(self, steamid: universe.SteamId, token: str, token_secure: str) -> None:
+        """
+        Restore a previous saved session
+        :param steamid: `SteamId`
+        :param token: Login token code
+        :param token_secure: Login token secure code
+        """
         cookies_dict = {
             'steamLogin': f'{steamid.id64}%7C%7C{token}',
             'steamLoginSecure': f'{steamid.id64}%7C%7C{token_secure}',

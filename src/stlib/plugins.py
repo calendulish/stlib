@@ -144,9 +144,19 @@ def _plugin_manager(
 
 @_plugin_manager
 def has_plugin(plugin_name: str) -> bool:
+    """
+    Check if plugin is available by name
+    :param plugin_name: Plugin name to look up
+    :return: True if available
+    """
     return manager.has_plugin(plugin_name)
 
 
 @_plugin_manager
 def get_plugin(plugin_name: str) -> Any:
+    """
+    Get plugin from plugin name
+    :param plugin_name: Plugin name to look up
+    :return: `_Plugin`
+    """
     return manager.get_plugin(plugin_name)

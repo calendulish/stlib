@@ -26,34 +26,60 @@ log = logging.getLogger(__name__)
 
 class Package(NamedTuple):
     name: str
+    """Package name"""
     packageid: int
+    """Package ID"""
     page_image: str
+    """Page image"""
     small_logo: str
+    """Small logo"""
     apps: List[int]
+    """List of appids associated with current Package"""
     platforms: Dict[str, bool]
+    """List of platforms supported from [windows, mac, linux]"""
     release_date: str
+    """Release date"""
     coming_soon: bool
+    """True if isn't released yet"""
     discount_percent: int
+    """Discount percent if on sale"""
     price: float
+    """Current price"""
 
 
 class Game(NamedTuple):
     name: str
+    """App name"""
     appid: int
+    """App ID"""
     type: str
+    """App type from [game, dlc, demo, advertising, mod, video]"""
     dlcs: List[int]
+    """List of available dlcs for current game"""
     packages: List[int]
+    """List of available packages for current game"""
     is_free: int
+    """True if it's a free game"""
     developers: List[str]
+    """List of developers"""
     publishers: List[str]
+    """List of publishers"""
     platforms: Dict[str, bool]
+    """List of platforms supported from [windows, mac, linux]"""
     header_image: str
+    """Header image"""
     background: str
+    """Background image"""
     release_date: str
+    """Release date"""
     coming_soon: bool
+    """True if isn't released yet"""
     score: int
+    """metacritic score"""
     discount_percent: int
+    """Discount percent if on sale"""
     price: float
+    """Current price"""
 
 
 class Internals(utils.Base):
@@ -63,12 +89,23 @@ class Internals(utils.Base):
             store_url: str = 'https://store.steampowered.com',
             **kwargs,
     ) -> None:
+        """
+        Main class to access steam web api internals
+
+        Example:
+
+            ```
+            internals = Internals.get_session(0)
+            game = await internals.get_game(480)
+            ```
+        """
         super().__init__(**kwargs)
         self.store_url = store_url
 
     # Despite this apparently accepts comma-separated parameters
     # actualy isn't working without price_overview filter
     async def get_game(self, appid: int) -> Game:
+        """Get game details. See `Game`"""
         appid = str(appid)
         params = {'appids': appid}
         json_data = await self.request_json(f'{self.store_url}/api/appdetails', params=params)
@@ -102,6 +139,7 @@ class Internals(utils.Base):
 
     # Despite this apparently accepts comma-separated parameters, actually isn't working
     async def get_package(self, packageid: int) -> Package:
+        """Get package details. See `Package`"""
         packageid = str(packageid)
         params = {'packageids': packageid}
         json_data = await self.request_json(f'{self.store_url}/api/packagedetails', params=params)
@@ -127,6 +165,11 @@ class Internals(utils.Base):
         return Package(**package_params)
 
     async def get_prices(self, appids: List[int]) -> Dict[int, Tuple[float, int]]:
+        """
+        Get current prices for appids
+        :param appids: list of appids
+        :return: {appid: (price, discount)}
+        """
         assert isinstance(appids, List), "appids must be a list"
         assert all([isinstance(id_, int) for id_ in appids]), "each appid must be a number"
 
