@@ -17,7 +17,7 @@
 #
 
 import logging
-from typing import List, NamedTuple, Dict
+from typing import List, NamedTuple, Dict, Tuple
 
 from . import utils
 
@@ -126,7 +126,7 @@ class Internals(utils.Base):
 
         return Package(**package_params)
 
-    async def get_prices(self, appids: List[int]) -> Dict[int, List[float, int]]:
+    async def get_prices(self, appids: List[int]) -> Dict[int, Tuple[float, int]]:
         assert isinstance(appids, List), "appids must be a list"
         assert all([isinstance(id_, int) for id_ in appids]), "each appid must be a number"
 
@@ -143,6 +143,6 @@ class Internals(utils.Base):
             discount_percent = json_data[appid]['data']['price_overview']['discount_percent']
             price_raw = json_data[appid]['data']['price_overview']['initial']
             price = float(f"{str(price_raw)[:-2]}.{str(price_raw)[-2:]}")
-            prices[int(appid)] = [price, discount_percent]
+            prices[int(appid)] = (price, discount_percent)
 
         return prices
