@@ -28,8 +28,7 @@ from typing import Tuple, Dict, Optional, Callable, Any, List, Union
 from . import webapi
 
 log = logging.getLogger(__name__)
-manager: Optional['Manager'] = None
-default_search_paths: Tuple[str, ...]
+manager: Optional['_Manager'] = None
 
 if hasattr(sys, 'frozen') or os.name == 'nt':
     default_search_paths = (
@@ -59,17 +58,17 @@ class PluginLoaderError(PluginError):
     pass
 
 
-class Plugin:
+class _Plugin:
     def __init__(self, headers: Optional[Dict[str, str]] = None) -> None:
         self._headers = headers
         self._session_index = 0
 
     def __init_subclass__(cls, **kwargs) -> None:
         super().__init__(cls, **kwargs)
-        Manager.plugins[cls.__module__] = [None, cls.__name__]
+        _Manager.plugins[cls.__module__] = [None, cls.__name__]
 
     def __getattr__(self, item: str) -> Any:
-        module = Manager.plugins[self.__module__][0]
+        module = _Manager.plugins[self.__module__][0]
 
         if hasattr(module, item):
             return getattr(module, item)
@@ -92,7 +91,7 @@ class Plugin:
         self._session_index = index
 
 
-class Manager:
+class _Manager:
     plugins: Dict[str, List[Union[Optional[ModuleType], str]]] = {}
 
     def __init__(self, module_search_paths: Tuple[str, ...] = default_search_paths) -> None:
@@ -128,7 +127,7 @@ class Manager:
         return plugin(*args, **kwargs)
 
 
-def plugin_manager(
+def _plugin_manager(
         function: Callable[..., Any],
         plugin_search_paths: Tuple[str, ...] = default_search_paths,
 ) -> Callable[..., Any]:
@@ -136,18 +135,18 @@ def plugin_manager(
 
     if not manager:
         log.debug("Creating a new plugin manager")
-        manager = Manager(plugin_search_paths)
+        manager = _Manager(plugin_search_paths)
     else:
         log.debug(f"Using existent plugin manager")
 
     return function
 
 
-@plugin_manager
+@_plugin_manager
 def has_plugin(plugin_name: str) -> bool:
     return manager.has_plugin(plugin_name)
 
 
-@plugin_manager
+@_plugin_manager
 def get_plugin(plugin_name: str) -> Any:
     return manager.get_plugin(plugin_name)

@@ -15,3 +15,5 @@ dist
 tests/config.ini
 tests/conftest.ini
 src/doc/_build
+html
+wheelhouse
