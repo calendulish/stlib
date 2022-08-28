@@ -64,7 +64,7 @@ class Base:
         return self._http_session
 
     @classmethod
-    def get_session(cls, session_index: int) -> 'Base':
+    def get_session(cls, session_index: int, **kwargs) -> 'Base':
         """
         Get an instance of module by session index.
         If session doesn't exists it will create a new session.
@@ -79,6 +79,9 @@ class Base:
         if session_count <= session_index:
             log.debug("Creating a new %s session at index %s", cls.__name__, session_index)
             instance = super().__new__(cls)
+
+            log.debug("Initializing instance %s", instance)
+            instance.__init__(**kwargs)
 
             if session_count < session_index:
                 log.error("Session index is invalid. Session will be created at index %s", session_count)
