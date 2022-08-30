@@ -75,22 +75,16 @@ class Base:
         :return: instance of module
         """
         if 'http_session' not in _session_cache:
-            _session_cache['http_session'] = []
-
-        session_count = len(_session_cache['http_session'])
+            _session_cache['http_session'] = {}
 
         if 'http_session' not in kwargs:
-            if session_count > session_index:
+            if session_index in _session_cache['http_session']:
                 log.info("Using existent http session at index %s for %s", session_index, cls.__name__)
                 kwargs['http_session'] = _session_cache['http_session'][session_index]
             else:
                 log.debug("Creating a new http session at index %s for %s", session_index, cls.__name__)
                 kwargs['http_session'] = aiohttp.ClientSession(raise_for_status=True)
-
-                if session_count < session_index:
-                    log.error("Session index is invalid. Session will be created at index %s", session_count)
-
-                _session_cache['http_session'].insert(session_index, kwargs['http_session'])
+                _session_cache['http_session'][session_index] = kwargs['http_session']
 
         if cls.__name__ not in _session_cache:
             log.debug("Creating a new %s session", cls.__name__)
