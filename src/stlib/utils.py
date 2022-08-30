@@ -32,6 +32,7 @@ class Base:
     You should not instantiate this class directly!
     See `get_session`
     """
+
     def __new__(cls) -> None:
         raise SyntaxError(
             "Don't instantiate this class directly! "
@@ -64,36 +65,74 @@ class Base:
         return self._http_session
 
     @classmethod
-    def get_session(cls, session_index: int, **kwargs) -> 'Base':
+    async def new_session(cls, session_index: int, **kwargs) -> 'Base':
         """
-        Get an instance of module with `http_session` from cache at `session_index`.
+        Create an instance of module at given `session_index`.
+        If a previous instance exists in cache at same index, it will returns IndexError.
+        The instance will be associated with a http session at same index.
+        If a http session is not present in cache, it'll create a new one.
+        If there's a 'http_session' present in kwargs, it will be used instead.
 
-        If session doesn't exist in cache, it will create a new session.
-        If session exist in cache, it will reuse session from cache.
+        :param session_index: Session number
+        :param kwargs: Instance parameters
+        :return: Instance of module
+        """
+        if cls.__name__ not in _session_cache:
+            log.debug("Creating a new cache object at %s for %s", session_index, cls.__name__)
+            _session_cache[cls.__name__] = {}
 
+        if 'http_session' not in _session_cache:
+            log.debug("Creating a new http cache object at %s for %s", session_index, cls.__name__)
+            _session_cache['http_session'] = {}
+
+        if 'http_session' in kwargs:
+            log.info("Using existent http session at kwargs for %s", cls.__name__)
+            _session_cache['http_session'][session_index] = kwargs['http_session']
+        else:
+            if session_index in _session_cache['http_session']:
+                log.info(f"Reusing http session at index %s for %s", session_index, cls.__name__)
+                kwargs['http_session'] = _session_cache['http_session'][session_index]
+            else:
+                log.info("Creating a new http session at index %s for %s", session_index, cls.__name__)
+                kwargs['http_session'] = aiohttp.ClientSession(raise_for_status=True)
+
+        if session_index in _session_cache[cls.__name__]:
+            raise IndexError(f"There's already a {cls.__name__} session at index {session_index}")
+        else:
+            log.info("Creating a new %s session at %s", cls.__name__, session_index)
+            _session_cache[cls.__name__][session_index] = super().__new__(cls)
+            log.debug("Initializing instance for %s", cls.__name__)
+            _session_cache[cls.__name__][session_index].__init__(**kwargs)
+
+        return _session_cache[cls.__name__][session_index]
+
+    @classmethod
+    async def destroy_session(cls, session_index: int, no_fail: bool = False) -> None:
+        """
+        Destroy an instance of module at `session_index` and remove from cache.
+        :param session_index: Session number
+        :param no_fail: suppress errors if there is no session at given index
+        """
+        if cls.__name__ in _session_cache and session_index in _session_cache[cls.__name__]:
+            del _session_cache[cls.__name__][session_index]
+            await _session_cache['http_session'][session_index].close()
+            del _session_cache['http_session'][session_index]
+        else:
+            if not no_fail:
+                raise IndexError(f"There's no session at {session_index}")
+
+    @classmethod
+    async def get_session(cls, session_index: int) -> 'Base':
+        """
+        Get an instance of module from cache at `session_index`.
+        If session isn't present in cache, it will returns IndexError
         :param session_index: session number
         :return: instance of module
         """
-        if 'http_session' not in _session_cache:
-            _session_cache['http_session'] = {}
+        if cls.__name__ not in _session_cache or session_index not in _session_cache[cls.__name__]:
+            raise IndexError(f"There's no session for {cls.__name__} at {session_index}")
 
-        if 'http_session' not in kwargs:
-            if session_index in _session_cache['http_session']:
-                log.info("Using existent http session at index %s for %s", session_index, cls.__name__)
-                kwargs['http_session'] = _session_cache['http_session'][session_index]
-            else:
-                log.debug("Creating a new http session at index %s for %s", session_index, cls.__name__)
-                kwargs['http_session'] = aiohttp.ClientSession(raise_for_status=True)
-                _session_cache['http_session'][session_index] = kwargs['http_session']
-
-        if cls.__name__ not in _session_cache:
-            log.debug("Creating a new %s session", cls.__name__)
-            _session_cache[cls.__name__] = super().__new__(cls)
-
-        log.debug("Initializing instance for %s", cls.__name__)
-        _session_cache[cls.__name__].__init__(**kwargs)
-
-        return _session_cache[cls.__name__]
+        return _session_cache[cls.__name__][session_index]
 
     @staticmethod
     def get_json_from_js(javascript: BeautifulSoup) -> Dict[str, Any]:
