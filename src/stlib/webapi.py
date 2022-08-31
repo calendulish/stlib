@@ -87,12 +87,16 @@ class SteamWebAPI(utils.Base):
         self.api_key = api_key
 
     @staticmethod
-    async def _new_mobile_query(oauth_data: Dict[str, Any], token_type: str = 'mobileapp') -> Dict[str, Any]:
+    async def _new_mobile_query(
+            steamid: universe.SteamId,
+            oauth_token: str,
+            token_type: str = 'mobileapp',
+    ) -> Dict[str, Any]:
         current_time = int(time.time())
 
         params = {
-            'steamid': oauth_data['steamid'],
-            'access_token': oauth_data['oauth_token'],
+            'steamid': steamid.id64,
+            'access_token': oauth_token,
             'authenticator_time': current_time,
             'authenticator_type': universe.TOKEN_TYPE[token_type],
         }
@@ -199,17 +203,19 @@ class SteamWebAPI(utils.Base):
 
     async def new_authenticator(
             self,
-            login_data: login.LoginData,
+            steamid: universe.SteamId,
+            oauth_token: str,
             phone_id: int = 1,
     ) -> login.LoginData:
         """
         Initialize process to add a new authenticator to account
-        :param login_data: Full account login data
+        :param steamid: `SteamId`
+        :param oauth_token: user oauth token
         :param phone_id: Index of phone number
         :return: Updated account login data
         """
-        data = await self._new_mobile_query(login_data.oauth)
-        data['device_identifier'] = universe.generate_device_id(login_data.auth['shared_secret'])
+        data = await self._new_mobile_query(steamid, oauth_token)
+        data['device_identifier'] = universe.generate_device_id(oauth_token)
         data['sms_phone_id'] = phone_id
 
         json_data = await self.request_json(f'{self.api_url}/ITwoFactorService/AddAuthenticator/v1', data=data)
@@ -222,23 +228,25 @@ class SteamWebAPI(utils.Base):
         elif response['status'] != 1:
             raise NotImplementedError(f"add_authenticator is returning status {response['status']}")
 
-        return login_data._replace(auth=response)
+        return login.LoginData(auth=response)
 
     async def add_authenticator(
             self,
-            login_data: login.LoginData,
+            oauth_token: str,
+            shared_secret: str,
             sms_code: str,
             email_type: int = 2,
     ) -> bool:
         """
         Finalize process to add a new authenticator to account
-        :param login_data: Full account login data
+        :param oauth_token: user oauth token
+        :param shared_secret: user shared secret
         :param sms_code: OTP received by SMS
         :return: True if success
         """
-        data = await self._new_mobile_query(login_data.oauth)
+        data = await self._new_mobile_query(oauth_token)
         server_time = await self.get_server_time()
-        data['authenticator_code'] = universe.generate_steam_code(server_time, login_data.auth['shared_secret'])
+        data['authenticator_code'] = universe.generate_steam_code(server_time, shared_secret)
         data['activation_code'] = sms_code
         json_data = await self.request_json(f'{self.api_url}/ITwoFactorService/FinalizeAddAuthenticator/v1', data=data)
 
