@@ -229,14 +229,8 @@ class Community(utils.Base):
 
         for page in range(1, pages):
             params['p'] = page
-
-            async with self.http.get(
-                    f"{steamid.profile_url}/badges/",
-                    params=params,
-                    headers=self.headers,
-            ) as response:
-                html = await self.get_html(response)
-                badges_raw += html.find_all('div', class_='badge_title_row')
+            html = await self.request_html(f"{steamid.profile_url}/badges/", params=params)
+            badges_raw += html.find_all('div', class_='badge_title_row')
 
         for badge_raw in badges_raw:
             title = badge_raw.find('div', class_='badge_title')
