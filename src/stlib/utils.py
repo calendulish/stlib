@@ -122,7 +122,7 @@ class Base:
                 raise IndexError(f"There's no session at {session_index}")
 
     @classmethod
-    async def get_session(cls, session_index: int) -> 'Base':
+    def get_session(cls, session_index: int) -> 'Base':
         """
         Get an instance of module from cache at `session_index`.
         If session isn't present in cache, it will returns IndexError
