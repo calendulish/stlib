@@ -125,8 +125,8 @@ class Internals(utils.Base):
             'packages': json_data[appid]['data']['packages'],
             'platforms': json_data[appid]['data']['platforms'],
             'score': json_data[appid]['data']['metacritic']['score'],
-            'release_date': json_data[appid]['data']['release_data']['date'],
-            'coming_soon': json_data[appid]['data']['release_data']['coming_soon'],
+            'release_date': json_data[appid]['data']['release_date']['date'],
+            'coming_soon': json_data[appid]['data']['release_date']['coming_soon'],
             'background': json_data[appid]['data']['background'],
         }
 
@@ -153,8 +153,8 @@ class Internals(utils.Base):
             'small_logo': json_data[packageid]['data']['small_logo'],
             'apps': [app['id'] for app in json_data[packageid]['data']['apps']],
             'platforms': json_data[packageid]['data']['platforms'],
-            'release_date': json_data[packageid]['data']['release_data']['date'],
-            'coming_soon': json_data[packageid]['data']['release_data']['coming_soon'],
+            'release_date': json_data[packageid]['data']['release_date']['date'],
+            'coming_soon': json_data[packageid]['data']['release_date']['coming_soon'],
         }
 
         if 'price' in json_data[packageid]['data']:
