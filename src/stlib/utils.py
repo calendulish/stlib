@@ -17,14 +17,29 @@
 #
 import asyncio
 import contextlib
+import http.cookies
+import json
 import logging
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, NamedTuple
 
 import aiohttp
 from bs4 import BeautifulSoup
 
 log = logging.getLogger(__name__)
 _session_cache = {}
+
+
+class Response(NamedTuple):
+    status: int
+    """Status code"""
+    info: aiohttp.RequestInfo
+    """Request Info"""
+    cookies: http.cookies.SimpleCookie
+    """Cookies"""
+    content: str
+    """Content as string"""
+    content_type: str
+    """Content type"""
 
 
 class Base:
@@ -155,14 +170,20 @@ class Base:
         return json_data
 
     @staticmethod
-    async def get_html(response: aiohttp.ClientResponse) -> BeautifulSoup:
-        """get html parsed from response"""
-        return BeautifulSoup(await response.text(), 'html.parser')
+    async def get_html(response: Response) -> BeautifulSoup:
+        """
+        get html parsed from response
+        It's a convenient helper for `request`
+        """
+        return BeautifulSoup(response.content, 'html.parser')
 
     async def request_json(self, *args, **kwargs) -> Dict[str, Any]:
-        """make a new http request and returns json data"""
+        """
+        make a new http request and returns json data
+        It's a convenient helper for `request`
+        """
         response = await self.request(*args, **kwargs)
-        return await response.json()
+        return json.loads(response.content)
 
     async def request_json_from_js(
             self,
@@ -172,6 +193,7 @@ class Base:
     ) -> Dict[str, Any]:
         """
         make a new http request and returns json data from javascript at given index
+        It's a convenient helper for `request`
         :param args: request args
         :param script_index: index of script at html page
         :param kwargs: request kwargs
@@ -182,7 +204,10 @@ class Base:
         return self.get_json_from_js(javascript)
 
     async def request_html(self, *args, **kwargs) -> BeautifulSoup:
-        """make a new http request and returns html"""
+        """
+        make a new http request and returns html
+        It's a convenient helper for `request`
+        """
         response = await self.request(*args, **kwargs)
         return await self.get_html(response)
 
@@ -194,12 +219,16 @@ class Base:
             headers: Optional[Dict[str, str]] = None,
             auto_recovery: bool = True,
             **kwargs,
-    ) -> aiohttp.ClientResponse:
+    ) -> Response:
         """
         Make a new http request
-        :param auto_recovery: if defined and http request fail, it will try again
-        :param kwargs: extra kwargs passed directly to http request
-        :return: http response
+        :param url: URL to request
+        :param params: Http parameters
+        :param data: Form data
+        :param headers: Http headers
+        :param auto_recovery: If defined and http request fail, it will try again
+        :param kwargs: Extra kwargs passed directly to http request
+        :return: `Request`
         """
         if not params:
             params = {}
@@ -223,7 +252,13 @@ class Base:
         for _ in range(3):
             try:
                 async with self.http.request(**request_params) as response:
-                    return response
+                    return Response(
+                        response.status,
+                        response.request_info,
+                        response.cookies,
+                        await response.text(),
+                        response.content_type,
+                    )
             except aiohttp.ClientResponseError as exception:
                 log.debug("Response error %s", exception.status)
 

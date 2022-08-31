@@ -90,6 +90,7 @@ class BadgeError(AttributeError):
 class Community(utils.Base):
     def __init__(
             self,
+            *,
             community_url: str = 'https://steamcommunity.com',
             economy_url: str = 'https://steamcommunity.com/economy',
             mobileconf_url: str = 'https://steamcommunity.com/mobileconf',
@@ -139,7 +140,7 @@ class Community(utils.Base):
             if 'sessionid' in response.cookies:
                 return str(response.cookies['sessionid'].value)
             else:
-                html = await response.text()
+                html = response.content
                 for line in html.splitlines():
                     if 'g_sessionID' in line:
                         _, raw_value = line.split('= "')
