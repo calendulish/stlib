@@ -171,6 +171,7 @@ class SteamWebAPI(utils.Base):
         params = {
             'steamid': str(steamid.id64),
             'include_appinfo': "1",
+            'include_extended_appinfo': "1",
             'skip_unvetted_apps': "0",
             'key': self.api_key,
         }
@@ -196,7 +197,7 @@ class SteamWebAPI(utils.Base):
                 'has_workshop': game['has_workshop'],
             }
 
-            games.append(**game_params)
+            games.append(Game(**game_params))
 
         log.debug(f"{json_data['response']['game_count']} owned games found.")
 
