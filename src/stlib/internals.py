@@ -148,6 +148,7 @@ class Internals(utils.Base):
             raise ValueError("Failed to get details for package %s", packageid)
 
         package_params = {
+            'packageid': packageid,
             'name': json_data[packageid]['data']['name'],
             'page_image': json_data[packageid]['data']['page_image'],
             'small_logo': json_data[packageid]['data']['small_logo'],
