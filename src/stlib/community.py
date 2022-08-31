@@ -93,6 +93,7 @@ class Community(utils.Base):
             community_url: str = 'https://steamcommunity.com',
             economy_url: str = 'https://steamcommunity.com/economy',
             mobileconf_url: str = 'https://steamcommunity.com/mobileconf',
+            api_url: str = 'https://api.steampowered.com',
             **kwargs,
     ) -> None:
         """
@@ -109,15 +110,18 @@ class Community(utils.Base):
         self.community_url = community_url
         self.economy_url = economy_url
         self.mobileconf_url = mobileconf_url
+        self.api_url = api_url
 
-    @staticmethod
     async def _new_mobileconf_query(
-            server_time: int,
+            self,
             deviceid: str,
             steamid: universe.SteamId,
             identity_secret: str,
             tag: str,
     ) -> Dict[str, Any]:
+        json_data = await self.request_json(f'{self.api_url}/ISteamWebAPIUtil/GetServerInfo/v1')
+        server_time = json_data['servertime']
+
         params = {
             'p': deviceid,
             'a': steamid.id64,
@@ -292,7 +296,6 @@ class Community(utils.Base):
             identity_secret: str,
             steamid: universe.SteamId,
             deviceid: str,
-            time_offset: int = 0,
     ) -> List[Confirmation]:
         """
         Get confirmations for logged user
@@ -301,8 +304,7 @@ class Community(utils.Base):
         :param deviceid: Device ID
         :return: List of `Confirmation`
         """
-        server_time = int(time.time()) - time_offset
-        params = await self._new_mobileconf_query(server_time, deviceid, steamid, identity_secret, 'conf')
+        params = await self._new_mobileconf_query(deviceid, steamid, identity_secret, 'conf')
 
         response = await self.request(
             f'{self.mobileconf_url}/conf',
@@ -318,12 +320,7 @@ class Community(utils.Base):
 
         confirmations = []
         for confirmation in html.find_all('div', class_='mobileconf_list_entry'):
-            # server_time is defined again here because
-            # confirmations loop (steam server) can be slow
-            server_time = int(time.time()) - time_offset
-
             details_params = await self._new_mobileconf_query(
-                server_time,
                 deviceid,
                 steamid,
                 identity_secret,
@@ -501,7 +498,6 @@ class Community(utils.Base):
             trade_id: int,
             trade_key: int,
             action: str,
-            time_offset: int = 0,
     ) -> Dict[str, Any]:
         """
         Send confirmation aprovals/refuses
@@ -514,7 +510,6 @@ class Community(utils.Base):
         :return: Json data
         """
         extra_params = {'cid': trade_id, 'ck': trade_key, 'op': action}
-        server_time = int(time.time()) - time_offset
-        params = await self._new_mobileconf_query(server_time, deviceid, steamid, identity_secret, 'conf')
+        params = await self._new_mobileconf_query(deviceid, steamid, identity_secret, 'conf')
         json_data = await self.request_json(f'{self.mobileconf_url}/ajaxop', params={**params, **extra_params})
         return json_data

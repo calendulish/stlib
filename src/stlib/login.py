@@ -75,6 +75,7 @@ class Login(utils.Base):
             login_url: str = 'https://steamcommunity.com/login',
             mobile_login_url: str = 'https://steamcommunity.com/mobilelogin',
             steamguard_url: str = 'https://steamcommunity.com/steamguard',
+            api_url: str = 'https://api.steampowered.com',
             **kwargs,
     ) -> None:
         """
@@ -95,6 +96,7 @@ class Login(utils.Base):
         self.login_url = login_url
         self.mobile_login_url = mobile_login_url
         self.steamguard_url = steamguard_url
+        self.api_url = api_url
 
     @property
     def username(self) -> str:
@@ -213,7 +215,6 @@ class Login(utils.Base):
             captcha_gid: int = -1,
             captcha_text: str = '',
             mobile_login: bool = False,
-            time_offset: int = 0,
             authenticator_code: str = '',
     ) -> LoginData:
         """
@@ -227,7 +228,8 @@ class Login(utils.Base):
         :return: Updated `LoginData`
         """
         if shared_secret:
-            server_time = int(time.time()) - time_offset
+            json_data = await self.request_json(f'{self.api_url}/ISteamWebAPIUtil/GetServerInfo/v1')
+            server_time = json_data['servertime']
             authenticator_code = universe.generate_steam_code(server_time, shared_secret)
         else:
             if authenticator_code:

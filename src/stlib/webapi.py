@@ -229,7 +229,6 @@ class SteamWebAPI(utils.Base):
             login_data: login.LoginData,
             sms_code: str,
             email_type: int = 2,
-            time_offset: int = 0,
     ) -> bool:
         """
         Finalize process to add a new authenticator to account
@@ -238,7 +237,7 @@ class SteamWebAPI(utils.Base):
         :return: True if success
         """
         data = await self._new_mobile_query(login_data.oauth)
-        server_time = int(time.time()) - time_offset
+        server_time = await self.get_server_time()
         data['authenticator_code'] = universe.generate_steam_code(server_time, login_data.auth['shared_secret'])
         data['activation_code'] = sms_code
         json_data = await self.request_json(f'{self.api_url}/ITwoFactorService/FinalizeAddAuthenticator/v1', data=data)
