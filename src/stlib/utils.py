@@ -262,6 +262,9 @@ class Base:
             except aiohttp.ClientResponseError as exception:
                 log.debug("Response error %s", exception.status)
 
+                if 400 <= exception.status <= 499:
+                    raise exception from None
+
                 if auto_recovery:
                     log.debug("Auto recovering in 5 seconds")
                     await asyncio.sleep(5)
