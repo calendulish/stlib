@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
-import http
+import http.cookies
 import json
 import logging
 import time
@@ -244,7 +244,7 @@ class Login(utils.Base):
             cookies = http.cookies.SimpleCookie()
             cookies['mobileClientVersion'] = '0 (2.3.1)'
             cookies['mobileClient'] = "android"
-            self.http.cookie_jar.update_cookies(cookies)
+            self.update_cookies(cookies)
         else:
             login_url = self.login_url
 
@@ -294,10 +294,7 @@ class Login(utils.Base):
         :param token: Login token code
         :param token_secure: Login token secure code
         """
-        cookies_dict = {
-            'steamLogin': f'{steamid.id64}%7C%7C{token}',
-            'steamLoginSecure': f'{steamid.id64}%7C%7C{token_secure}',
-        }
-
-        cookies = http.cookies.SimpleCookie(cookies_dict)
-        self.http.cookie_jar.update_cookies(cookies)
+        cookies = http.cookies.SimpleCookie()
+        cookies['steamLogin'] = f'{steamid.id64}%7C%7C{token}'
+        cookies['steamLoginSecure'] = f'{steamid.id64}%7C%7C{token_secure}'
+        self.update_cookies(cookies)

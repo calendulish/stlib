@@ -70,14 +70,9 @@ class Base:
 
         return self._headers
 
-    @property
-    def http(self) -> aiohttp.ClientSession:
-        """returns the default http session"""
-        if not self._http_session:
-            log.debug("Creating a new un-cached http session")
-            self._http_session = aiohttp.ClientSession(raise_for_status=True)
-
-        return self._http_session
+    def update_cookies(self, cookies: http.cookies.SimpleCookie) -> None:
+        """Update cookies for the current http session"""
+        self._http_session.cookie_jar.update_cookies(cookies)
 
     @classmethod
     async def new_session(cls, session_index: int, **kwargs) -> 'Base':
@@ -251,7 +246,7 @@ class Base:
 
         for _ in range(3):
             try:
-                async with self.http.request(**request_params) as response:
+                async with self._http_session.request(**request_params) as response:
                     return Response(
                         response.status,
                         response.request_info,
