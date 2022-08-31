@@ -115,7 +115,7 @@ class SteamWebAPI(utils.Base):
         :param steamid: `SteamId`
         :return: custom profile url as string
         """
-        params = {'steamids': str(steamid.id64)}
+        params = {'steamids': str(steamid.id64), 'key': self.api_key}
         json_data = await self.request_json(f'{self.api_url}/ISteamUser/GetPlayerSummaries/v2', params)
 
         if not json_data['response']['players']:
@@ -131,7 +131,7 @@ class SteamWebAPI(utils.Base):
         :param profile_url: Steam profile url
         :return: `SteamId`
         """
-        params = {'vanityurl': profile_url.split('/')[4]}
+        params = {'vanityurl': profile_url.split('/')[4], 'key': self.api_key}
         json_data = await self.request_json(f'{self.api_url}/ISteamUser/ResolveVanityURL/v1', params)
 
         if json_data['response']['success'] != 1:
@@ -146,7 +146,7 @@ class SteamWebAPI(utils.Base):
         :param steamid: `SteamId`
         :return: Persona name as string
         """
-        params = {'steamids': str(steamid.id64)}
+        params = {'steamids': str(steamid.id64), 'key': self.api_key}
         json_data = await self.request_json(f'{self.api_url}/ISteamUser/GetPlayerSummaries/v2', params)
 
         if not json_data['response']['players']:
@@ -172,6 +172,7 @@ class SteamWebAPI(utils.Base):
             'steamid': str(steamid.id64),
             'include_appinfo': "1",
             'skip_unvetted_apps': "0",
+            'key': self.api_key,
         }
 
         if appids_filter:
