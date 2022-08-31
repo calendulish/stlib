@@ -83,6 +83,7 @@ class SteamId(NamedTuple):
         """Steam ID3 as string"""
         return f"[U:1:{self.id3}]"
 
+    @property
     def profile_url(self) -> str:
         """Profile url"""
         return f'https://steamcommunity.com/profiles/{self.id64}'
