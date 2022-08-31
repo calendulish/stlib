@@ -125,19 +125,19 @@ class SteamWebAPI(utils.Base):
         log.debug("profile url found: %s (from %s)", profile_url, steamid.id_string)
         return profile_url
 
-    async def get_steamid(self, profile_url: str) -> universe.SteamId:
+    async def get_steamid(self, custom_profile_url: str) -> universe.SteamId:
         """
         Get `SteamId` from profile url
-        :param profile_url: Steam profile url
+        :param custom_profile_url: Steam profile url
         :return: `SteamId`
         """
-        params = {'vanityurl': profile_url.split('/')[4], 'key': self.api_key}
+        params = {'vanityurl': custom_profile_url.split('/')[4], 'key': self.api_key}
         json_data = await self.request_json(f'{self.api_url}/ISteamUser/ResolveVanityURL/v1', params)
 
         if json_data['response']['success'] != 1:
             raise ValueError('Failed to get user id.')
 
-        log.debug("steamid found: %s (from %s)", json_data['response']['steamid'], profile_url)
+        log.debug("steamid found: %s (from %s)", json_data['response']['steamid'], custom_profile_url)
         return universe.generate_steamid(json_data['response']['steamid'])
 
     async def get_personaname(self, steamid: universe.SteamId) -> str:
