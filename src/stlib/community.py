@@ -136,17 +136,18 @@ class Community(utils.Base):
 
     async def get_steam_session_id(self) -> str:
         """Get steam session id"""
-        async with self.request(self.community_url) as response:
-            if 'sessionid' in response.cookies:
-                return str(response.cookies['sessionid'].value)
-            else:
-                html = response.content
-                for line in html.splitlines():
-                    if 'g_sessionID' in line:
-                        _, raw_value = line.split('= "')
-                        return raw_value[:-2]
+        response = await self.request(self.community_url)
 
-                raise KeyError
+        if 'sessionid' in response.cookies:
+            return str(response.cookies['sessionid'].value)
+        else:
+            html = response.content
+            for line in html.splitlines():
+                if 'g_sessionID' in line:
+                    _, raw_value = line.split('= "')
+                    return raw_value[:-2]
+
+            raise KeyError
 
     async def get_inventory(
             self,
