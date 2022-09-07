@@ -18,7 +18,6 @@
 import asyncio
 import json
 import logging
-import time
 from typing import List, Tuple, Any, Dict, NamedTuple
 
 from bs4 import BeautifulSoup
@@ -87,6 +86,17 @@ class Badge(NamedTuple):
 class BadgeError(AttributeError):
     """Raised when can`t find stats for the badge"""
     pass
+
+
+class InventoryEmptyError(ValueError):
+    """Raised when inventory is empty"""
+
+    def __init__(self, steamid: universe.SteamId, appid: int, contextid: int, message: str) -> None:
+        super().__init__(message)
+
+        self.steamid = steamid
+        self.appid = appid
+        self.contextid = contextid
 
 
 class Community(utils.Base):
@@ -176,6 +186,9 @@ class Community(utils.Base):
 
             if not json_data['success']:
                 raise AttributeError(f"Unable to get inventory details")
+
+            if json_data['total_inventory_count'] == 0:
+                raise InventoryEmptyError(steamid, appid, contextid, f"Inventory is empty")
 
             if 'last_assetid' in json_data:
                 params['start_assetid'] = json_data['last_assetid']
