@@ -34,6 +34,8 @@ class Item(NamedTuple):
     """Item name"""
     type: str
     """Item type"""
+    amount: int
+    """Item amount"""
     marketable: int
     """True if marketable"""
     tradable: int
@@ -194,6 +196,7 @@ class Community(utils.Base):
             kwargs = {
                 'name': name,
                 'type': item['type'],
+                'amount': json_data['assets'][index]['amount'],
                 'marketable': item['marketable'],
                 'tradable': item['tradable'],
                 'commodity': item['commodity'],
