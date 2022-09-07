@@ -297,12 +297,15 @@ class Community(utils.Base):
         )
 
         if json_data:
-            if 'market_name' in json_data:
-                item_name = f"{json_data['market_name']} ({json_data['type']})"
+            if 'market_name' in json_data and json_data['market_name']:
+                item_name = f"{json_data['market_name']}"
                 log.debug("Using `market_name' for %s:%s (%s)", appid, classid, item_name)
             else:
                 item_name = json_data['name']
                 log.debug("Using `name' for %s:%s (%s)", appid, classid, item_name)
+
+            if 'type' in json_data and json_data['type']:
+                item_name += f" ({json_data['type']})"
         else:
             log.debug("Unable to find human readable name for %s:%s", appid, classid)
             item_name = ''
@@ -390,7 +393,7 @@ class Community(utils.Base):
                 javascript = html.find_all("script")[2]
                 json_data = self.get_json_from_js(javascript)
 
-                if 'market_name' in json_data:
+                if 'market_name' in json_data and json_data['market_name']:
                     give = [json_data['market_name']]
 
                     if json_data['type']:
