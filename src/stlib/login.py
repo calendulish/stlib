@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
+import asyncio
 import http.cookies
 import json
 import logging
@@ -97,6 +98,7 @@ class Login(utils.Base):
         self.mobile_login_url = mobile_login_url
         self.steamguard_url = steamguard_url
         self.api_url = api_url
+        self.login_trial = 2
 
     @property
     def username(self) -> str:
@@ -227,6 +229,8 @@ class Login(utils.Base):
         :param authenticator_code: OTP from steam authenticator
         :return: Updated `LoginData`
         """
+        _original_fargs = locals().pop('self')
+
         if shared_secret:
             json_data = await self.request_json(f'{self.api_url}/ISteamWebAPIUtil/GetServerInfo/v1')
             server_time = json_data['servertime']
@@ -263,6 +267,12 @@ class Login(utils.Base):
         elif 'emailauth_needed' in json_data and json_data['emailauth_needed']:
             raise MailCodeError("Mail code requested")
         elif 'requires_twofactor' in json_data and json_data['requires_twofactor']:
+            if self.login_trial > 0:
+                self.login_trial -= 1
+                await asyncio.sleep(3)
+                login_data = await self.do_login(*_original_fargs)
+                return login_data
+
             raise TwoFactorCodeError("Authenticator code requested")
         elif 'captcha_needed' in json_data and json_data['captcha_needed']:
             if captcha_text and captcha_gid:
