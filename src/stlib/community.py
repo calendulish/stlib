@@ -349,19 +349,19 @@ class Community(utils.Base):
             key = confirmation['data-key']
             type_ = confirmation['data-type']
 
-            json_data = await self.request_json(f"{self.mobileconf_url}/details/{confid}", params=details_params)
-
-            if not json_data['success']:
-                raise AttributeError(f"Unable to get details for confirmation {confid}")
-
-            html = BeautifulSoup(json_data["html"], 'html.parser')
-
             log.debug(
                 "Getting human readable information from %s as type %s (%s)",
                 confid,
                 type_,
                 "Market" if type_ == '3' else 'Trade Item',
             )
+
+            json_data = await self.request_json(f"{self.mobileconf_url}/details/{confid}", params=details_params)
+
+            if not json_data['success']:
+                raise AttributeError(f"Unable to get details for confirmation {confid}")
+
+            html = BeautifulSoup(json_data["html"], 'html.parser')
 
             if type_ == "1" or type_ == "2":
                 to = html.find('span', class_="trade_partner_headline_sub").get_text()
