@@ -60,12 +60,18 @@ class Item(NamedTuple):
 
 
 class Confirmation(NamedTuple):
-    mode: str
-    """Confirmation mode"""
-    id: int
-    """Confirmation ID"""
+    mode_accept: str
+    """Confirmation mode for accept action"""
+    mode_cancel: str
+    """Confirmation mode for cancel action"""
+    confid: int
+    """Configuration ID"""
+    creatorid: int
+    """Creator ID"""
     key: int
     """Confirmation key"""
+    type: int
+    """Confirmation type"""
     give: List[str]
     """List of items to give"""
     to: str
@@ -340,21 +346,24 @@ class Community(utils.Base):
             )
 
             confid = confirmation['data-confid']
+            key = confirmation['data-key']
+            type_ = confirmation['data-type']
+
             json_data = await self.request_json(f"{self.mobileconf_url}/details/{confid}", params=details_params)
 
             if not json_data['success']:
-                raise AttributeError(f"Unable to get details for confirmation {confirmation['data-confid']}")
+                raise AttributeError(f"Unable to get details for confirmation {confid}")
 
             html = BeautifulSoup(json_data["html"], 'html.parser')
 
             log.debug(
                 "Getting human readable information from %s as type %s (%s)",
-                confirmation['data-confid'],
-                confirmation['data-type'],
-                "Market" if confirmation['data-type'] == '3' else 'Trade Item',
+                confid,
+                type_,
+                "Market" if type_ == '3' else 'Trade Item',
             )
 
-            if confirmation['data-type'] == "1" or confirmation['data-type'] == "2":
+            if type_ == "1" or type_ == "2":
                 to = html.find('span', class_="trade_partner_headline_sub").get_text()
 
                 item_list = html.find_all('div', class_="tradeoffer_item_list")
@@ -371,7 +380,7 @@ class Community(utils.Base):
                     name = await self.get_item_name(appid, classid)
                     receive.append(name)
 
-            elif confirmation['data-type'] == "3":
+            elif type_ == "3":
                 to = "Market"
 
                 listing_prices = html.find('div', class_="mobileconf_listing_prices")
@@ -388,24 +397,27 @@ class Community(utils.Base):
                         give[0] += f" - {json_data['type']}"
                 else:
                     give = [json_data['type']]
-            elif confirmation['data-type'] == '5':
+            elif type_ == '5':
                 to = "Steam"
                 give = ["Change phone number"]
                 receive = ["Phone number has not been entered yet"]
-            elif confirmation['data-type'] == '6':
+            elif type_ == '6':
                 to = "Steam"
                 give = ["Make changes to your account"]
                 receive = [f"Number to match: {html.find_all('div')[3].text.strip()}"]
             else:
                 to = "NotImplemented"
-                give = [f"{confirmation['data-confid']}"]
-                receive = [f"{confirmation['data-key']}"]
+                give = [f"{confid}"]
+                receive = [f"{key}"]
 
             confirmations.append(
                 Confirmation(
                     confirmation['data-accept'],
-                    int(confirmation['data-confid']),
-                    int(confirmation['data-key']),
+                    confirmation['data-cancel'],
+                    int(confid),
+                    int(confirmation['data-creator']),
+                    int(key),
+                    int(type_),
                     give, to, receive,
                 )
             )
