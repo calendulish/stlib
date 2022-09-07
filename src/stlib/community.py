@@ -387,8 +387,9 @@ class Community(utils.Base):
                 to = "Market"
 
                 listing_prices = html.find('div', class_="mobileconf_listing_prices")
-                prices = [str(item.next_sibling).strip() for item in listing_prices.find_all("br")]
-                receive = ["{} ({})".format(*prices)]
+                final_price = listing_prices.find(text=lambda element: 'You receive' in element.text).next.next.strip()
+                sell_price = listing_prices.find(text=lambda element: 'Buyer pays' in element.text).next.next.strip()
+                receive = ["{} ({})".format(final_price, sell_price)]
 
                 javascript = html.find_all("script")[2]
                 json_data = self.get_json_from_js(javascript)
