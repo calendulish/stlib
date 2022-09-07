@@ -541,3 +541,28 @@ class Community(utils.Base):
         params = await self._new_mobileconf_query(deviceid, steamid, identity_secret, 'conf')
         json_data = await self.request_json(f'{self.mobileconf_url}/ajaxop', params={**params, **extra_params})
         return json_data
+
+    async def revoke_api_key(self) -> None:
+        data = {'sessionid': await self.get_steam_session_id()}
+        await self.request(f'{self.community_url}/dev/revokekey', data=data)
+
+    async def register_api_key(self, domain: str = 'stlib') -> None:
+        data = {
+            'domain': domain,
+            'agreeToTerms': 'agreed',
+            'sessionid': await self.get_steam_session_id(),
+            'Submit': 'Register',
+        }
+
+        await self.request(f'{self.community_url}/dev/registerkey', data=data)
+
+    async def get_api_key(self) -> Tuple[str, str]:
+        html = await self.request_html(f'{self.community_url}/dev/apikey')
+        contents = html.find('div', id="bodyContents_ex")
+
+        if 'Register' in contents.find('h2').text:
+            raise AttributeError('No api key registered')
+
+        key = contents.find('p').text[5:]
+        domain = contents.find_all('p')[1].text[13:]
+        return key, domain
