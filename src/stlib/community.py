@@ -401,6 +401,11 @@ class Community(utils.Base):
                         give[0] += f" - {json_data['type']}"
                 else:
                     give = [json_data['type']]
+
+                quantity = listing_prices.find(text=lambda element: 'Quantity' in element.text)
+
+                if quantity:
+                    give[0] = f'{quantity.next.next.strip()} {give[0]}'
             elif type_ == '5':
                 to = "Steam"
                 give = ["Change phone number"]
