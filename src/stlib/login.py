@@ -229,7 +229,8 @@ class Login(utils.Base):
         :param authenticator_code: OTP from steam authenticator
         :return: Updated `LoginData`
         """
-        _original_fargs = locals().pop('self')
+        _original_fargs = locals().copy()
+        _original_fargs.pop('self')
 
         if shared_secret:
             json_data = await self.request_json(f'{self.api_url}/ISteamWebAPIUtil/GetServerInfo/v1')
@@ -270,7 +271,7 @@ class Login(utils.Base):
             if self.login_trial > 0:
                 self.login_trial -= 1
                 await asyncio.sleep(3)
-                login_data = await self.do_login(*_original_fargs)
+                login_data = await self.do_login(**_original_fargs)
                 return login_data
 
             raise TwoFactorCodeError("Authenticator code requested")
