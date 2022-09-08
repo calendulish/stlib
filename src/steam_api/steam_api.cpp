@@ -75,9 +75,27 @@ static PyObject *init(PyObject *self, PyObject *args) {
         return NULL;
     }
 
-    bool result = SteamAPI_Init();
+    if(!SteamAPI_Init()) {
+        PyErr_SetString(PyExc_AttributeError, "Failed to initialize SteamAPI");
+        return NULL;
+    }
 
-    return PyBool_FromLong(result);
+    if (!SteamUser()->BLoggedOn()) {
+        PyErr_SetString(PyExc_AttributeError, "User isn't logged in");
+        return NULL;
+    }
+
+    if (!SteamInput()->Init(false)) {
+        PyErr_SetString(PyExc_AttributeError, "Failed to initialize SteamInput");
+        return NULL;
+    }
+
+	char rgchCWD[1024];
+	if (!_getcwd(rgchCWD, sizeof(rgchCWD))) {
+		strcpy( rgchCWD, "." );
+	}
+
+    return PyBool_FromLong(1);
 }
 
 static PyMethodDef steam_api_methods[] = {
