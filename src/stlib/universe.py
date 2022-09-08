@@ -168,7 +168,7 @@ def generate_device_id(base: str) -> str:
     :param base: Base string
     :return: Device ID
     """
-    digest = hashlib.sha1(base).hexdigest()
+    digest = hashlib.sha1(base.encode()).hexdigest()
     device_id = ['android:']
 
     for start, end in ([0, 8], [8, 12], [12, 16], [16, 20], [20, 32]):
