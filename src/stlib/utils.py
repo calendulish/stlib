@@ -20,7 +20,7 @@ import contextlib
 import http.cookies
 import json
 import logging
-from typing import Dict, Any, Optional, NamedTuple
+from typing import Dict, Any, Optional, NamedTuple, Union
 
 import aiohttp
 from bs4 import BeautifulSoup
@@ -36,7 +36,7 @@ class Response(NamedTuple):
     """Request Info"""
     cookies: http.cookies.SimpleCookie
     """Cookies"""
-    content: str
+    content: Union[str, bytes]
     """Content as string"""
     content_type: str
     """Content type"""
@@ -213,6 +213,7 @@ class Base:
             data: Optional[Dict[str, str]] = None,
             headers: Optional[Dict[str, str]] = None,
             auto_recovery: bool = True,
+            raw_data: bool = False,
             **kwargs,
     ) -> Response:
         """
@@ -222,6 +223,7 @@ class Base:
         :param data: Form data
         :param headers: Http headers
         :param auto_recovery: If defined and http request fail, it will try again
+        :param raw_data: If defined it will return raw data instead text
         :param kwargs: Extra kwargs passed directly to http request
         :return: `Request`
         """
@@ -251,7 +253,7 @@ class Base:
                         response.status,
                         response.request_info,
                         response.cookies,
-                        await response.text(),
+                        await response.read() if raw_data else await response.text(),
                         response.content_type,
                     )
             except aiohttp.ClientResponseError as exception:

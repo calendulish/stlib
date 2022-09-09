@@ -179,10 +179,9 @@ class Login(utils.Base):
         :return: Image
         """
         params = {'gid': str(gid)}
-        response = await self.request(f'{self.login_url}/rendercaptcha/', params=params)
-        data = await response.read()
-        assert isinstance(data, bytes), "rendercaptcha response is not bytes"
-        return data
+        response = await self.request(f'{self.login_url}/rendercaptcha/', params=params, raw_data=True)
+        assert isinstance(response.content, bytes), "rendercaptcha response is not bytes"
+        return response.content
 
     async def has_phone(self, sessionid: str) -> bool:
         """

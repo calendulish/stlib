@@ -60,6 +60,7 @@ class SteamGameServer:
             server_time = server.get_server_time()
     ```
     """
+
     def __init__(self, ip: int = 0x0100007f, port: int = 27016,
                  appid: int = 480) -> None:
         log.debug('Set SteamAppId to %s', appid)
@@ -99,6 +100,7 @@ class SteamApiExecutor(ProcessPoolExecutor):
             steamid = executor.submit(steam_user.get_steam_id).result()
     ```
     """
+
     def __init__(self, appid: int = 480, loop: Optional[Any] = None) -> None:
         """
         :param appid: owned steam appid.
@@ -138,7 +140,12 @@ class SteamApiExecutor(ProcessPoolExecutor):
         log.debug("Soft Shutdown SteamAPI")
         await self.loop.run_in_executor(self, steam_api.shutdown)
 
-    async def shutdown(self, wait: bool = True, **kwargs) -> None:
+    async def shutdown(self, wait: bool = True, **_kwargs) -> None:
+        """
+        Request steam_api to shutdown, close executor processes, clean-up resources
+        :param wait: Block if True
+        :return:
+        """
         log.debug("Shutdown SteamAPI")
         await self.loop.run_in_executor(self, steam_api.shutdown)
         super().shutdown(wait)

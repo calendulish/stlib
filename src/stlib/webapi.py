@@ -230,10 +230,11 @@ class SteamWebAPI(utils.Base):
         elif response['status'] != 1:
             raise NotImplementedError(f"add_authenticator is returning status {response['status']}")
 
-        return login.LoginData(auth=response)
+        return login.LoginData(auth=response, oauth={})
 
     async def add_authenticator(
             self,
+            steamid: universe.SteamId,
             oauth_token: str,
             shared_secret: str,
             sms_code: str,
@@ -241,12 +242,14 @@ class SteamWebAPI(utils.Base):
     ) -> bool:
         """
         Finalize process to add a new authenticator to account
-        :param oauth_token: user oauth token
-        :param shared_secret: user shared secret
+        :param steamid: User SteamID
+        :param oauth_token: User oauth token
+        :param shared_secret: User shared secret
         :param sms_code: OTP received by SMS
+        :param email_type: Email type
         :return: True if success
         """
-        data = await self._new_mobile_query(oauth_token)
+        data = await self._new_mobile_query(steamid, oauth_token)
         server_time = await self.get_server_time()
         data['authenticator_code'] = universe.generate_steam_code(server_time, shared_secret)
         data['activation_code'] = sms_code
@@ -271,17 +274,20 @@ class SteamWebAPI(utils.Base):
 
     async def remove_authenticator(
             self,
-            login_data: login.LoginData,
+            steamid: universe.SteamId,
+            oauth_token: str,
             revocation_code: str,
             scheme: int = 2,
     ) -> bool:
         """
         Remove authenticator from account
-        :param login_data: Full account login data
+        :param steamid: User SteamID
+        :param oauth_token: User oauth token
         :param revocation_code: Steam auth revocation code
+        :param scheme: Steam scheme
         :return: True if success
         """
-        data = await self._new_mobile_query(login_data.oauth)
+        data = await self._new_mobile_query(steamid, oauth_token)
         data['revocation_code'] = revocation_code
         data['steamguard_scheme'] = scheme
 

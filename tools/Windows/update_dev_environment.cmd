@@ -75,7 +75,8 @@ echo Installing dev tools
 call :install git tar unzip
 call :install gcc make
 call :install build
-call :install mypy pylint pytest
+call :install mypy pylint pytest pytest-asyncio
+call :install pdoc
 
 echo Installing freezing tools
 call :install cx-freeze pywin32

@@ -25,8 +25,6 @@ import sys
 from types import ModuleType
 from typing import Tuple, Dict, Optional, Callable, Any, List, Union
 
-from . import webapi
-
 log = logging.getLogger(__name__)
 manager: Optional['_Manager'] = None
 
@@ -81,14 +79,6 @@ class _Plugin:
             self._headers = self.session.headers
 
         return self._headers
-
-    @property
-    def session(self) -> webapi.SteamWebAPI:
-        return webapi.get_session(self._session_index)
-
-    @session.setter
-    def session(self, index: int) -> None:
-        self._session_index = index
 
 
 class _Manager:
