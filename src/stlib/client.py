@@ -26,7 +26,7 @@ import logging
 import os
 from concurrent.futures.process import ProcessPoolExecutor
 from types import TracebackType
-from typing import Any, Optional, Type
+from typing import Any, Optional, Type, Coroutine
 
 try:
     from stlib import steam_api  # type: ignore
@@ -140,7 +140,8 @@ class SteamApiExecutor(ProcessPoolExecutor):
         log.debug("Soft Shutdown SteamAPI")
         await self.loop.run_in_executor(self, steam_api.shutdown)
 
-    async def shutdown(self, wait: bool = True, **_kwargs) -> None:
+    # noinspection PyMethodOverriding
+    async def shutdown(self, wait: bool = True) -> None:  # type: ignore
         """
         Request steam_api to shutdown, close executor processes, clean-up resources
         :param wait: Block if True

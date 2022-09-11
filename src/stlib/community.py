@@ -18,14 +18,13 @@
 import asyncio
 import json
 import logging
-from typing import List, Tuple, Any, Dict, NamedTuple
+from typing import List, Tuple, Any, Dict, NamedTuple, Union
 
 from bs4 import BeautifulSoup
 
 from stlib import universe, login, utils
 
 log = logging.getLogger(__name__)
-session_list = []
 
 
 class Item(NamedTuple):
@@ -113,7 +112,7 @@ class Community(utils.Base):
             economy_url: str = 'https://steamcommunity.com/economy',
             mobileconf_url: str = 'https://steamcommunity.com/mobileconf',
             api_url: str = 'https://api.steampowered.com',
-            **kwargs,
+            **kwargs: Any,
     ) -> None:
         """
         Main class to access community api methods
@@ -162,6 +161,7 @@ class Community(utils.Base):
             html = response.content
             for line in html.splitlines():
                 if 'g_sessionID' in line:
+                    assert isinstance(line, str), "line was wrong type (bytes?)"
                     _, raw_value = line.split('= "')
                     return raw_value[:-2]
 
@@ -241,7 +241,7 @@ class Community(utils.Base):
         :return: List of `Badge`
         """
         badges = []
-        params = {'l': 'english'}
+        params: Dict[str, Union[str, int]] = {'l': 'english'}
         html = await self.request_html(f"{steamid.profile_url}/badges/", params=params)
         badges_raw = html.find_all('div', class_='badge_title_row')
 

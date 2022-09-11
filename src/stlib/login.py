@@ -20,14 +20,13 @@ import http.cookies
 import json
 import logging
 import time
-from typing import Any, Dict, NamedTuple
+from typing import Any, Dict, NamedTuple, Optional
 
 import rsa
 
 from . import universe, utils
 
 log = logging.getLogger(__name__)
-session_list = []
 
 
 class LoginData(NamedTuple):
@@ -77,7 +76,7 @@ class Login(utils.Base):
             mobile_login_url: str = 'https://steamcommunity.com/mobilelogin',
             steamguard_url: str = 'https://steamcommunity.com/steamguard',
             api_url: str = 'https://api.steampowered.com',
-            **kwargs,
+            **kwargs: Any,
     ) -> None:
         """
         Main login class used to login a user on steam session
@@ -92,8 +91,8 @@ class Login(utils.Base):
             ```
         """
         super().__init__(**kwargs)
-        self._username = None
-        self.__password = None
+        self._username: Optional[str] = None
+        self.__password: Optional[str] = None
         self.login_url = login_url
         self.mobile_login_url = mobile_login_url
         self.steamguard_url = steamguard_url
@@ -245,7 +244,7 @@ class Login(utils.Base):
 
         if mobile_login:
             login_url = self.mobile_login_url
-            cookies = http.cookies.SimpleCookie()
+            cookies: http.cookies.SimpleCookie[str] = http.cookies.SimpleCookie()
             cookies['mobileClientVersion'] = '0 (2.3.1)'
             cookies['mobileClient'] = "android"
             self.update_cookies(cookies)
@@ -304,7 +303,7 @@ class Login(utils.Base):
         :param token: Login token code
         :param token_secure: Login token secure code
         """
-        cookies = http.cookies.SimpleCookie()
+        cookies: http.cookies.SimpleCookie[str] = http.cookies.SimpleCookie()
         cookies['steamLogin'] = f'{steamid.id64}%7C%7C{token}'
         cookies['steamLoginSecure'] = f'{steamid.id64}%7C%7C{token_secure}'
         self.update_cookies(cookies)

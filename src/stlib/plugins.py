@@ -27,6 +27,7 @@ from typing import Tuple, Dict, Optional, Callable, Any, List, Union
 
 log = logging.getLogger(__name__)
 manager: Optional['_Manager'] = None
+default_search_paths: Tuple[str, ...]
 
 if hasattr(sys, 'frozen') or os.name == 'nt':
     default_search_paths = (
@@ -61,7 +62,7 @@ class _Plugin:
         self._headers = headers
         self._session_index = 0
 
-    def __init_subclass__(cls, **kwargs) -> None:
+    def __init_subclass__(cls, **kwargs: Any) -> None:
         super().__init__(cls, **kwargs)
         _Manager.plugins[cls.__module__] = [None, cls.__name__]
 
@@ -78,6 +79,7 @@ class _Plugin:
         if not self._headers:
             self._headers = self.session.headers
 
+        assert isinstance(self._headers, dict)
         return self._headers
 
 
@@ -96,6 +98,7 @@ class _Manager:
                 module_name = os.path.basename(full_path).split('.')[0]
                 log.debug(f"{module_name} found at {full_path}")
                 plugin_spec = importlib.util.spec_from_file_location(module_name, full_path)
+                assert isinstance(plugin_spec, importlib.machinery.ModuleSpec), "No module spec?"
                 module_ = importlib.util.module_from_spec(plugin_spec)
 
                 try:
@@ -112,8 +115,12 @@ class _Manager:
         else:
             return False
 
-    def get_plugin(self, plugin_name: str, *args, **kwargs) -> Any:
-        plugin = getattr(self.plugins[plugin_name][0], self.plugins[plugin_name][1])
+    def get_plugin(self, plugin_name: str, *args: Any, **kwargs: Any) -> Any:
+        _module = self.plugins[plugin_name][0]
+        _name = self.plugins[plugin_name][1]
+        assert isinstance(_module, ModuleType), "Wrong module type"
+        assert isinstance(_name, str), "Wrong module name"
+        plugin = getattr(_module, _name)
         return plugin(*args, **kwargs)
 
 
@@ -139,6 +146,7 @@ def has_plugin(plugin_name: str) -> bool:
     :param plugin_name: Plugin name to look up
     :return: True if available
     """
+    assert isinstance(manager, _Manager), "Plugin manager not initialized"
     return manager.has_plugin(plugin_name)
 
 
@@ -149,4 +157,5 @@ def get_plugin(plugin_name: str) -> Any:
     :param plugin_name: Plugin name to look up
     :return: `_Plugin`
     """
+    assert isinstance(manager, _Manager), "Plugin manager not initialized"
     return manager.get_plugin(plugin_name)

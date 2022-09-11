@@ -125,11 +125,11 @@ def generate_steamid(steamid: Union[str, int]) -> SteamId:
         steamid_parts = steamid.strip('[]').split(':')
 
         if steamid_parts[0][:5] == 'STEAM':
-            type_ = steamid_parts[1]
-            id_ = steamid_parts[2]
+            type_ = int(steamid_parts[1])
+            id_ = int(steamid_parts[2])
         elif steamid_parts[0][0] == 'U':
             type_ = 0 if int(steamid_parts[2]) % 2 == 0 else 1
-            id_ = (int(steamid_parts[2]) - type_) / 2
+            id_ = int((int(steamid_parts[2]) - type_) / 2)
         elif steamid.isdigit() and len(steamid) == 17:
             steamid = int(steamid)
         else:
@@ -138,9 +138,9 @@ def generate_steamid(steamid: Union[str, int]) -> SteamId:
     if isinstance(steamid, int):
         offset = steamid - SteamId.id_base()
         type_ = 0 if offset % 2 == 0 else 1
-        id_ = (offset - type_) / 2
+        id_ = int((offset - type_) / 2)
 
-    return SteamId(type_, int(id_))
+    return SteamId(type_, id_)
 
 
 def generate_steam_code(server_time: int, shared_secret: Union[str, bytes]) -> str:

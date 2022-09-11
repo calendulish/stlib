@@ -70,7 +70,7 @@ class SteamWebAPI(utils.Base):
             *,
             api_url: str = 'https://api.steampowered.com',
             api_key: str = '',
-            **kwargs,
+            **kwargs: Any,
     ) -> None:
         """
         Main class to access steam web api methods
@@ -116,7 +116,7 @@ class SteamWebAPI(utils.Base):
         :return: custom profile url as string
         """
         params = {'steamids': str(steamid.id64), 'key': self.api_key}
-        json_data = await self.request_json(f'{self.api_url}/ISteamUser/GetPlayerSummaries/v2', params)
+        json_data = await self.request_json(f'{self.api_url}/ISteamUser/GetPlayerSummaries/v2', params=params)
 
         if not json_data['response']['players']:
             raise ValueError('Failed to get profile url.')
@@ -132,7 +132,7 @@ class SteamWebAPI(utils.Base):
         :return: `SteamId`
         """
         params = {'vanityurl': custom_profile_url.split('/')[4], 'key': self.api_key}
-        json_data = await self.request_json(f'{self.api_url}/ISteamUser/ResolveVanityURL/v1', params)
+        json_data = await self.request_json(f'{self.api_url}/ISteamUser/ResolveVanityURL/v1', params=params)
 
         if json_data['response']['success'] != 1:
             raise ValueError('Failed to get user id.')
@@ -147,7 +147,7 @@ class SteamWebAPI(utils.Base):
         :return: Persona name as string
         """
         params = {'steamids': str(steamid.id64), 'key': self.api_key}
-        json_data = await self.request_json(f'{self.api_url}/ISteamUser/GetPlayerSummaries/v2', params)
+        json_data = await self.request_json(f'{self.api_url}/ISteamUser/GetPlayerSummaries/v2', params=params)
 
         if not json_data['response']['players']:
             raise ValueError('Failed to get personaname.')
@@ -180,7 +180,7 @@ class SteamWebAPI(utils.Base):
             for index, appid in enumerate(appids_filter):
                 params[f"appids_filter[{index}]"] = str(appid)
 
-        json_data = await self.request_json(f'{self.api_url}/IPlayerService/GetOwnedGames/v1', params)
+        json_data = await self.request_json(f'{self.api_url}/IPlayerService/GetOwnedGames/v1', params=params)
         games = []
 
         if 'games' not in json_data['response']:

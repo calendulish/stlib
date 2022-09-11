@@ -17,7 +17,7 @@
 #
 
 import logging
-from typing import List, NamedTuple, Dict, Tuple
+from typing import List, NamedTuple, Dict, Tuple, Any
 
 from . import utils
 
@@ -87,7 +87,7 @@ class Internals(utils.Base):
             self,
             *,
             store_url: str = 'https://store.steampowered.com',
-            **kwargs,
+            **kwargs: Any,
     ) -> None:
         """
         Main class to access steam web api internals
@@ -106,33 +106,33 @@ class Internals(utils.Base):
     # actualy isn't working without price_overview filter
     async def get_game(self, appid: int) -> Game:
         """Get game details. See `Game`"""
-        appid = str(appid)
-        params = {'appids': appid}
+        appid_string = str(appid)
+        params = {'appids': appid_string}
         json_data = await self.request_json(f'{self.store_url}/api/appdetails', params=params)
 
-        if not json_data[appid]['success']:
-            raise ValueError("Failed to get details for app %s", appid)
+        if not json_data[appid_string]['success']:
+            raise ValueError("Failed to get details for app %s", appid_string)
 
         game_params = {
-            'name': json_data[appid]['data']['name'],
-            'type': json_data[appid]['data']['type'],
-            'appid': json_data[appid]['data']['steam_appid'],
-            'is_free': json_data[appid]['data']['is_free'],
-            'dlc': json_data[appid]['data']['dlc'],
-            'header_image': json_data[appid]['data']['header_image'],
-            'developers': json_data[appid]['data']['developers'],
-            'publishers': json_data[appid]['data']['publishers'],
-            'packages': json_data[appid]['data']['packages'],
-            'platforms': json_data[appid]['data']['platforms'],
-            'score': json_data[appid]['data']['metacritic']['score'],
-            'release_date': json_data[appid]['data']['release_date']['date'],
-            'coming_soon': json_data[appid]['data']['release_date']['coming_soon'],
-            'background': json_data[appid]['data']['background'],
+            'name': json_data[appid_string]['data']['name'],
+            'type': json_data[appid_string]['data']['type'],
+            'appid': json_data[appid_string]['data']['steam_appid'],
+            'is_free': json_data[appid_string]['data']['is_free'],
+            'dlc': json_data[appid_string]['data']['dlc'],
+            'header_image': json_data[appid_string]['data']['header_image'],
+            'developers': json_data[appid_string]['data']['developers'],
+            'publishers': json_data[appid_string]['data']['publishers'],
+            'packages': json_data[appid_string]['data']['packages'],
+            'platforms': json_data[appid_string]['data']['platforms'],
+            'score': json_data[appid_string]['data']['metacritic']['score'],
+            'release_date': json_data[appid_string]['data']['release_date']['date'],
+            'coming_soon': json_data[appid_string]['data']['release_date']['coming_soon'],
+            'background': json_data[appid_string]['data']['background'],
         }
 
-        if 'price_overview' in json_data[appid]['data']:
-            game_params['discount_percent'] = json_data[appid]['data']['price_overview']['discount_percent']
-            price_raw = json_data[appid]['data']['price_overview']['initial']
+        if 'price_overview' in json_data[appid_string]['data']:
+            game_params['discount_percent'] = json_data[appid_string]['data']['price_overview']['discount_percent']
+            price_raw = json_data[appid_string]['data']['price_overview']['initial']
             game_params['price'] = float(f"{str(price_raw)[:-2]}.{str(price_raw)[-2:]}")
 
         return Game(**game_params)
@@ -140,27 +140,27 @@ class Internals(utils.Base):
     # Despite this apparently accepts comma-separated parameters, actually isn't working
     async def get_package(self, packageid: int) -> Package:
         """Get package details. See `Package`"""
-        packageid = str(packageid)
-        params = {'packageids': packageid}
+        packageid_string = str(packageid)
+        params = {'packageids': packageid_string}
         json_data = await self.request_json(f'{self.store_url}/api/packagedetails', params=params)
 
-        if not json_data[packageid]['success']:
-            raise ValueError("Failed to get details for package %s", packageid)
+        if not json_data[packageid_string]['success']:
+            raise ValueError("Failed to get details for package %s", packageid_string)
 
         package_params = {
-            'packageid': packageid,
-            'name': json_data[packageid]['data']['name'],
-            'page_image': json_data[packageid]['data']['page_image'],
-            'small_logo': json_data[packageid]['data']['small_logo'],
-            'apps': [app['id'] for app in json_data[packageid]['data']['apps']],
-            'platforms': json_data[packageid]['data']['platforms'],
-            'release_date': json_data[packageid]['data']['release_date']['date'],
-            'coming_soon': json_data[packageid]['data']['release_date']['coming_soon'],
+            'packageid': packageid_string,
+            'name': json_data[packageid_string]['data']['name'],
+            'page_image': json_data[packageid_string]['data']['page_image'],
+            'small_logo': json_data[str(packageid)]['data']['small_logo'],
+            'apps': [app['id'] for app in json_data[packageid_string]['data']['apps']],
+            'platforms': json_data[packageid_string]['data']['platforms'],
+            'release_date': json_data[packageid_string]['data']['release_date']['date'],
+            'coming_soon': json_data[packageid_string]['data']['release_date']['coming_soon'],
         }
 
-        if 'price' in json_data[packageid]['data']:
-            package_params['discount_percent'] = json_data[packageid]['data']['price']['discount_percent']
-            price_raw = json_data[packageid]['data']['price']['initial']
+        if 'price' in json_data[packageid_string]['data']:
+            package_params['discount_percent'] = json_data[packageid_string]['data']['price']['discount_percent']
+            price_raw = json_data[packageid_string]['data']['price']['initial']
             package_params['price'] = float(f"{str(price_raw)[:-2]}.{str(price_raw)[-2:]}")
 
         return Package(**package_params)
@@ -174,12 +174,12 @@ class Internals(utils.Base):
         assert isinstance(appids, List), "appids must be a list"
         assert all([isinstance(id_, int) for id_ in appids]), "each appid must be a number"
 
-        appids = map(str, appids)
-        params = {'appids': ','.join(appids), 'filters': 'price_overview'}
+        appids_string = map(str, appids)
+        params = {'appids': ','.join(appids_string), 'filters': 'price_overview'}
         json_data = await self.request_json(f'{self.store_url}/api/appdetails', params=params)
 
         prices = {}
-        for appid in appids:
+        for appid in appids_string:
             if not json_data[appid]['success']:
                 log.error("Failed to get details for app %s", appid)
                 continue

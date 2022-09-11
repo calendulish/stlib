@@ -26,7 +26,7 @@ import aiohttp
 from bs4 import BeautifulSoup
 
 log = logging.getLogger(__name__)
-_session_cache = {}
+_session_cache: Dict[str, Dict[int, Union['Base', aiohttp.ClientSession]]] = {}
 
 
 class Response(NamedTuple):
@@ -34,7 +34,7 @@ class Response(NamedTuple):
     """Status code"""
     info: aiohttp.RequestInfo
     """Request Info"""
-    cookies: http.cookies.SimpleCookie
+    cookies: http.cookies.SimpleCookie[Any]
     """Cookies"""
     content: Union[str, bytes]
     """Content as string"""
@@ -48,7 +48,7 @@ class Base:
     See `get_session`
     """
 
-    def __new__(cls) -> None:
+    def __new__(cls) -> None:  # type: ignore
         raise SyntaxError(
             "Don't instantiate this class directly! "
             "Use get_session(<index>) to support multiple sessions."
@@ -70,12 +70,20 @@ class Base:
 
         return self._headers
 
-    def update_cookies(self, cookies: http.cookies.SimpleCookie) -> None:
+    @property
+    def http_session(self) -> aiohttp.ClientSession:
+        """Returns the default http session"""
+        if not self._http_session:
+            raise AttributeError("There's no http session")
+
+        return self._http_session
+
+    def update_cookies(self, cookies: http.cookies.SimpleCookie[Any]) -> None:
         """Update cookies for the current http session"""
-        self._http_session.cookie_jar.update_cookies(cookies)
+        self.http_session.cookie_jar.update_cookies(cookies)
 
     @classmethod
-    async def new_session(cls, session_index: int, **kwargs) -> 'Base':
+    async def new_session(cls, session_index: int, **kwargs: Any) -> 'Base':
         """
         Create an instance of module at given `session_index`.
         If a previous instance exists in cache at same index, it will returns IndexError.
@@ -112,9 +120,11 @@ class Base:
             log.info("Creating a new %s session at %s", cls.__name__, session_index)
             _session_cache[cls.__name__][session_index] = super().__new__(cls)
             log.debug("Initializing instance for %s", cls.__name__)
-            _session_cache[cls.__name__][session_index].__init__(**kwargs)
+            _session_cache[cls.__name__][session_index].__init__(**kwargs)  # type: ignore
 
-        return _session_cache[cls.__name__][session_index]
+        session = _session_cache[cls.__name__][session_index]
+        assert isinstance(session, Base), "Wrong session type"
+        return session
 
     @classmethod
     async def destroy_session(cls, session_index: int, no_fail: bool = False) -> None:
@@ -125,8 +135,10 @@ class Base:
         """
         if cls.__name__ in _session_cache and session_index in _session_cache[cls.__name__]:
             del _session_cache[cls.__name__][session_index]
-            await _session_cache['http_session'][session_index].close()
-            del _session_cache['http_session'][session_index]
+            http_session = _session_cache['http_session'][session_index]
+            assert isinstance(http_session, aiohttp.ClientSession), "Wrong http session type"
+            await http_session.close()
+            del http_session
         else:
             if not no_fail:
                 raise IndexError(f"There's no session at {session_index}")
@@ -142,7 +154,9 @@ class Base:
         if cls.__name__ not in _session_cache or session_index not in _session_cache[cls.__name__]:
             raise IndexError(f"There's no session for {cls.__name__} at {session_index}")
 
-        return _session_cache[cls.__name__][session_index]
+        session = _session_cache[cls.__name__][session_index]
+        assert isinstance(session, Base), "Wrong session type"
+        return session
 
     @staticmethod
     def get_json_from_js(javascript: BeautifulSoup) -> Dict[str, Any]:
@@ -172,19 +186,22 @@ class Base:
         """
         return BeautifulSoup(response.content, 'html.parser')
 
-    async def request_json(self, *args, **kwargs) -> Dict[str, Any]:
+    async def request_json(self, *args: str, **kwargs: Any) -> Dict[str, Any]:
         """
         make a new http request and returns json data
         It's a convenient helper for `request`
         """
         response = await self.request(*args, **kwargs)
-        return json.loads(response.content)
+        json_data = json.loads(response.content)
+
+        assert isinstance(json_data, dict)
+        return json_data
 
     async def request_json_from_js(
             self,
-            *args,
+            *args: str,
             script_index: int = 0,
-            **kwargs,
+            **kwargs: Any,
     ) -> Dict[str, Any]:
         """
         make a new http request and returns json data from javascript at given index
@@ -198,7 +215,7 @@ class Base:
         javascript = html.find_all('script')[script_index]
         return self.get_json_from_js(javascript)
 
-    async def request_html(self, *args, **kwargs) -> BeautifulSoup:
+    async def request_html(self, *args: str, **kwargs: Any) -> BeautifulSoup:
         """
         make a new http request and returns html
         It's a convenient helper for `request`
@@ -209,12 +226,13 @@ class Base:
     async def request(
             self,
             url: str,
+            *,
             params: Optional[Dict[str, str]] = None,
             data: Optional[Dict[str, str]] = None,
             headers: Optional[Dict[str, str]] = None,
             auto_recovery: bool = True,
             raw_data: bool = False,
-            **kwargs,
+            **kwargs: Any,
     ) -> Response:
         """
         Make a new http request
@@ -248,14 +266,15 @@ class Base:
 
         for _ in range(3):
             try:
-                async with self._http_session.request(**request_params) as response:
-                    return Response(
+                async with self.http_session.request(**request_params) as response:
+                    result = Response(
                         response.status,
                         response.request_info,
                         response.cookies,
                         await response.read() if raw_data else await response.text(),
                         response.content_type,
                     )
+                    break
             except aiohttp.ClientResponseError as exception:
                 log.debug("Response error %s", exception.status)
 
@@ -268,3 +287,5 @@ class Base:
                     continue
                 else:
                     raise exception from None
+
+        return result

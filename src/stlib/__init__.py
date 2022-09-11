@@ -82,7 +82,7 @@ from ctypes import cdll
 # noinspection PyUnresolvedReferences
 __all__ = ["steam_api"]
 
-if os.name == 'nt' and sys.version_info.minor > 7:
+if sys.platform == 'win32' and sys.version_info > (3, 7):
     for site_packages in site.getsitepackages():
         os.add_dll_directory(site_packages)
 
