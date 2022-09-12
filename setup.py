@@ -21,10 +21,11 @@ import sys
 
 from setuptools import Extension, setup, find_packages
 from setuptools.command.build_ext import build_ext
+from pathlib import Path
 
-SOURCES_PATH = os.getenv("SOURCES_PATH", os.path.join('src', 'steam_api'))
-SDK_PATH = os.getenv("SDK_PATH", os.path.join(SOURCES_PATH, 'steamworks_sdk', 'sdk'))
-HEADERS_PATH = os.getenv("HEADERS_PATH", os.path.join(SDK_PATH, 'public'))
+SOURCES_PATH = Path(os.getenv("SOURCES_PATH", Path('src', 'steamworks')))
+SDK_PATH = Path(os.getenv("SDK_PATH", Path(SOURCES_PATH, 'sdk')))
+HEADERS_PATH = Path(os.getenv("HEADERS_PATH", Path(SDK_PATH, 'public')))
 
 if sys.maxsize > 2 ** 32:
     arch = '64'
@@ -46,13 +47,13 @@ else:
 
 class OptionalBuild(build_ext):
     def run(self):
-        bin_path = os.path.join(SDK_PATH, 'redistributable_bin')
-        output_dir = os.path.join(self.build_lib, 'stlib')
-        os.makedirs(output_dir, exist_ok=True)
+        bin_path = SDK_PATH / 'redistributable_bin'
+        output_dir = Path(self.build_lib) / 'stlib'
+        output_dir.mkdir(parents=True, exist_ok=True)
 
-        if os.path.exists(HEADERS_PATH):
+        if HEADERS_PATH.exists():
             shutil.copy(
-                os.path.join(bin_path, REDIST_PATH, EXTRA_NAME),
+                bin_path / REDIST_PATH / EXTRA_NAME,
                 output_dir,
             )
             super().run()
@@ -60,11 +61,16 @@ class OptionalBuild(build_ext):
             self.warn("build of steam_api C extension has been disabled")
 
 
-steam_api = Extension(
-    'stlib.steam_api',
-    sources=[os.path.join(SOURCES_PATH, 'steam_api.cpp')],
+all_sources = []
+for file in SOURCES_PATH.iterdir():
+    if file.suffix == ".cpp":
+        all_sources.append(str(file))
+
+steamworks = Extension(
+    'stlib.steamworks',
+    sources=all_sources,
     include_dirs=[SOURCES_PATH, HEADERS_PATH],
-    library_dirs=[os.path.join(SDK_PATH, 'redistributable_bin', REDIST_PATH)],
+    library_dirs=[str(SDK_PATH / 'redistributable_bin' / REDIST_PATH)],
     libraries=[API_NAME],
     extra_compile_args=['-D_CRT_SECURE_NO_WARNINGS'],
 )
@@ -98,13 +104,13 @@ setup(
     packages=find_packages('src'),
     package_dir={'': 'src'},
     include_package_data=True,
-    ext_modules=[steam_api],
+    ext_modules=[steamworks],
     install_requires=[
         'aiohttp',
         'beautifulsoup4',
         'rsa',
     ],
     python_requires='>=3.7',
-    cmdclass={"build_ext": OptionalBuild},
+    cmdclass={"build_ext": OptionalBuild},  # type: ignore
     zip_safe=False,
 )

@@ -17,20 +17,20 @@ stlib now supports plugins!
 ---------------------------
 See more at: [stlib-plugins](https://github.com/ShyPixie/stlib-plugins)
 
-Dependencies to build SteamAPI C Extension (Optional)
+Dependencies to build SteamWorks Python Extension (Optional)
 -----------------------------------------------------
 
-WARNING: SteamAPI C Extension is incomplete, but it's easy to implement. if you need a feature that is not present,
+WARNING: SteamWorks Python Extension is incomplete, but it's easy to implement. if you need a feature that is not present,
 send a pull request or open an issue.
 
-- Python and headers >= 3.6
+- Python and headers >= 3.8
 - Microsoft Visual C++ compiler (MSVC) or GNU Compiler (GCC)
 - Steamworks SDK >= v1.51
 
 Dependencies to run
 -------------------
 
-- Python >= 3.6
+- Python >= 3.8
 - asyncio
 - beautifulsoup4
 - rsa
