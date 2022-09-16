@@ -16,23 +16,23 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 
-import asyncio
-import sys
-from typing import Generator
+
+import inspect
+import time
+from typing import Optional
 
 import pytest
+from tests import MANUAL_TESTING
 
 
-@pytest.fixture()
-def event_loop() -> Generator[asyncio.AbstractEventLoop, None, None]:
-    if sys.platform == "win32":
-        loop = asyncio.ProactorEventLoop()
-        asyncio.set_event_loop(loop)
-    else:
-        loop = asyncio.get_event_loop()
+@pytest.fixture(scope="session", autouse=True)
+def debug(msg: Optional[str] = None, wait_for: int = 5) -> None:
+    if MANUAL_TESTING is True:
+        current_frame = inspect.currentframe()
+        outer_frame = inspect.getouterframes(current_frame, 2)
 
-    try:
-        yield loop
-    finally:
-        loop.run_until_complete(asyncio.sleep(3))  # see https://github.com/aio-libs/aiohttp/issues/1925
-        loop.close()
+        if msg:
+            print(f'   -> {outer_frame[1][3]}:{msg}')
+            time.sleep(wait_for)
+        else:
+            print('\n')
