@@ -67,7 +67,7 @@ class SteamGameServer:
 
     def __exit__(self,
                  exception_type: Optional[Type[BaseException]],
-                 exception_value: Optional[Exception],
+                 exception_value: Optional[BaseException],
                  traceback: Optional[TracebackType]) -> None:
         log.debug('Closing SteamGameServer')
         self.game_server.shutdown()
@@ -103,7 +103,7 @@ class SteamAPIExecutor(ProcessPoolExecutor):
 
     def __exit__(self,
                  exception_type: Optional[Type[BaseException]],
-                 exception_value: Optional[Exception],
+                 exception_value: Optional[BaseException],
                  traceback: Optional[TracebackType]) -> None:
         log.debug('Closing SteamAPI')
         self.shutdown()
