@@ -25,7 +25,7 @@ send a pull request or open an issue.
 
 - Python and headers >= 3.9
 - Microsoft Visual C++ compiler (MSVC) or GNU Compiler (GCC)
-- Steamworks SDK >= v1.51
+- Steamworks SDK >= v1.55
 
 Dependencies to run
 -------------------
