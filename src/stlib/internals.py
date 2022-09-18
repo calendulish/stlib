@@ -16,6 +16,10 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 
+"""
+`internals` interface is used to access the undocumented SteamAPI methods
+"""
+
 import logging
 from typing import List, NamedTuple, Dict, Tuple, Any
 

@@ -195,21 +195,127 @@ static PyObject *is_steam_running_on_steam_deck(PyObject *self, PyObject *args)
 }
 
 static PyMethodDef SteamApiMethods[] = {
-    {"shutdown", steam_api_shutdown, METH_NOARGS, NULL},
-    {"restart_app_if_necessary", restart_app_if_necessary, METH_VARARGS, NULL},
-    {"is_steam_running", is_steam_running, METH_NOARGS, NULL},
-    {"get_seconds_since_app_active", get_seconds_since_app_active, METH_NOARGS, NULL},
-    {"get_seconds_since_computer_active", get_seconds_since_computer_active, METH_NOARGS, NULL},
-    {"get_connected_universe", get_connected_universe, METH_NOARGS, NULL},
-    {"get_server_real_time", get_server_real_time, METH_NOARGS, NULL},
-    {"get_ip_country", get_ip_country, METH_NOARGS, NULL},
-    {"get_current_battery_power", get_current_battery_power, METH_NOARGS, NULL},
-    {"get_appid", get_appid, METH_NOARGS, NULL},
-    {"get_ipc_call_count", get_ipc_call_count, METH_NOARGS, NULL},
-    {"is_steam_running_in_vr", is_steam_running_in_vr, METH_NOARGS, NULL},
-    {"is_steam_in_big_picture_mode", is_steam_in_big_picture_mode, METH_NOARGS, NULL},
-    {"is_steam_china_launcher", is_steam_china_launcher, METH_NOARGS, NULL},
-    {"is_steam_running_on_steam_deck", is_steam_running_on_steam_deck, METH_NOARGS, NULL},
+    {
+        "shutdown",
+        steam_api_shutdown,
+        METH_NOARGS,
+        PyDoc_STR("shutdown()\n--\n\n"
+                  "Shuts down the Steamworks API, releases pointers and frees memory.\n"
+                  ":return: `None`"),
+    },
+    {
+        "restart_app_if_necessary",
+        restart_app_if_necessary,
+        METH_VARARGS,
+        PyDoc_STR("restart_app_if_necessary(appid)\n--\n\n"
+                  "Checks if your executable was launched through Steam and relaunches it through Steam if it wasn't.\n"
+                  ":param appid: `int`\n"
+                  ":return: `bool`"),
+    },
+    {
+        "is_steam_running",
+        is_steam_running,
+        METH_NOARGS,
+        PyDoc_STR("is_steam_running()\n--\n\n"
+                  "Checks if Steam is running.\n"
+                  ":return: `bool`"),
+    },
+    {
+        "get_seconds_since_app_active",
+        get_seconds_since_app_active,
+        METH_NOARGS,
+        PyDoc_STR("get_seconds_since_app_active()\n--\n\n"
+                  "Returns the number of seconds since the application was active.\n"
+                  ":return: `int`"),
+    },
+    {
+        "get_seconds_since_computer_active",
+        get_seconds_since_computer_active,
+        METH_NOARGS,
+        PyDoc_STR("get_seconds_since_computer_active()\n--\n\n"
+                  "Returns the number of seconds since the user last moved the mouse.\n"
+                  ":return: `int`"),
+    },
+    {
+        "get_connected_universe",
+        get_connected_universe,
+        METH_NOARGS,
+        PyDoc_STR("get_connected_universe()\n--\n\n"
+                  "Gets the universe that the current client is connecting to\n"
+                  ":return: `int`"),
+    },
+    {
+        "get_server_real_time",
+        get_server_real_time,
+        METH_NOARGS,
+        PyDoc_STR("get_server_real_time()\n--\n\n"
+                  "Returns the Steam server time in Unix epoch format.\n"
+                  ":return: `int` (Number of seconds since Jan 1, 1970 UTC)"),
+    },
+    {
+        "get_ip_country",
+        get_ip_country,
+        METH_NOARGS,
+        PyDoc_STR("get_ip_country()\n--\n\n"
+                  "Returns the 2 digit ISO 3166-1-alpha-2 format country code which client is running in.\n"
+                  ":return: `str`"),
+    },
+    {
+        "get_current_battery_power",
+        get_current_battery_power,
+        METH_NOARGS,
+        PyDoc_STR("get_current_battery_power()\n--\n\n"
+                  "Gets the current amount of battery power on the computer.\n"
+                  ":return: `int`"),
+    },
+    {
+        "get_appid",
+        get_appid,
+        METH_NOARGS,
+        PyDoc_STR("get_appid()\n--\n\n"
+                  "Gets the App ID of the current process.\n"
+                  ":return: `int`"),
+    },
+    {
+        "get_ipc_call_count",
+        get_ipc_call_count,
+        METH_NOARGS,
+        PyDoc_STR("get_ipc_call_count()\n--\n\n"
+                  "Returns the number of IPC calls made since the last time this function was called.\n"
+                  ":return: `int`"),
+    },
+    {
+        "is_steam_running_in_vr",
+        is_steam_running_in_vr,
+        METH_NOARGS,
+        PyDoc_STR("is_steam_running_in_vr()\n--\n\n"
+                  "Checks if Steam is running in VR mode.\n"
+                  ":return: `bool`"),
+    },
+    {
+        "is_steam_in_big_picture_mode",
+        is_steam_in_big_picture_mode,
+        METH_NOARGS,
+        PyDoc_STR("is_steam_in_big_picture_mode()\n--\n\n"
+                  "Checks if Steam & the Steam Overlay are running in Big Picture mode.\n"
+                  ":return: `bool`"),
+    },
+    {
+        "is_steam_china_launcher",
+        is_steam_china_launcher,
+        METH_NOARGS,
+        PyDoc_STR("is_steam_china_launcher()\n--\n\n"
+                  "Returns whether the current launcher is a Steam China launcher.\n"
+                  ":return: `bool`"),
+    },
+    {
+        "is_steam_running_on_steam_deck",
+        is_steam_running_on_steam_deck,
+        METH_NOARGS,
+        PyDoc_STR("is_steam_running_on_steam_deck()\n--\n\n"
+                  "Checks if Steam is running on a Steam Deck device.\n"
+                  ":return: `bool`"),
+    },
     {NULL},
 };
 
@@ -234,7 +340,8 @@ PyTypeObject SteamAPIType = {
     0,
     0,
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
-    0,
+    PyDoc_STR("`SteamAPI` Client.\n"
+              "This interface should be accessed preferably using `stlib.client.SteamAPIExecutor`"),
     0,
     0,
     0,

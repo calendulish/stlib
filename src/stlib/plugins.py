@@ -15,6 +15,19 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
+"""
+`plugins` interface is used to import and use stlib plugins
+
+Example:
+
+```
+from stlib import plugins
+
+if plugins.has_plugin('indiegala'):
+    indiegala = plugins.get_plugin('indiegala')
+    indiegala.do_login()
+```
+"""
 
 import glob
 import importlib.machinery

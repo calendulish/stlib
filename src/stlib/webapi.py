@@ -16,6 +16,10 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 
+"""
+`webapi` interface is used to interact with the oficial SteamWebAPI.
+"""
+
 import logging
 import time
 from typing import Any, Dict, List, NamedTuple, Optional

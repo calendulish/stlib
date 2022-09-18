@@ -29,7 +29,7 @@ static PyMethodDef steamworks_methods[] = {
 static struct PyModuleDef steamworks_module = {
     PyModuleDef_HEAD_INIT,
     "stlib.steamworks",
-    NULL,
+    PyDoc_STR("SteamWorks SDK python bindings"),
     -1,
     steamworks_methods,
 };

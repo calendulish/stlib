@@ -30,7 +30,7 @@ stlib_modules = [
     'universe',
     'client',
     'plugins',
-    'steam_api',
+    'steamworks',
     'utils',
 ]
 
@@ -39,7 +39,7 @@ if __name__ == "__main__":
 
     render.configure(
         logo_link='https://lara.monster/stlib',
-        footer_text='dev@lara.monster'
+        footer_text='dev@lara.monster',
     )
 
     html_path = Path('html')

@@ -15,6 +15,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
+"""
+`login` interface is used to interact with undocumented steam login methods
+it supports both desktop and mobile login at steam services
+"""
+
 import asyncio
 import http.cookies
 import json

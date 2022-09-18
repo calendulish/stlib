@@ -16,6 +16,12 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 
+"""
+`universe` interface is a low level interface that imitate structure
+and functionality from internal SteamAPI universe. The main use of this
+interface is to generate necessary parameters to other stlib interfaces
+"""
+
 import base64
 import hashlib
 import hmac
