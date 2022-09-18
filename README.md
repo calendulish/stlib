@@ -37,10 +37,15 @@ Dependencies to run
 - aiohttp
 
 
-API Reference
--------------
+API Reference & Documentation
+-----------------------------
 
-https://lara.monster/stlib
+[Current Version (>=1.0)](https://lara.monster/stlib)
+
+:warning: **If you are using the legacy version** please update.
+The legacy version isn't maintained or supported and docs are
+available only to help you in the upgrade process to latest version.
+[Legacy Version (<=0.14)](https://lara.monster/stlib.legacy)
 
 Made with stlib
 ---------------
