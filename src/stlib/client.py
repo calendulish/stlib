@@ -19,6 +19,18 @@
 """
 `client` interface is used to interact directly with SteamWorks SDK
 it's an optional module and can be disabled when building stlib.
+
+I recommend you to check if SteamWorks is available prior using
+the client interface:
+
+```
+import stlib
+
+if stlib.steamworks_available:
+    from stlib import client
+else:
+    # not available
+```
 """
 
 import logging

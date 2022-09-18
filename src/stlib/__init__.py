@@ -82,6 +82,14 @@ from ctypes import cdll
 # noinspection PyUnresolvedReferences
 __all__ = ["steamworks"]
 
+try:
+    # noinspection PyUnresolvedReferences
+    from stlib import steamworks
+except ImportError:
+    steamworks_available = False
+else:
+    steamworks_available = True
+
 
 class NoSteamWorksError(ImportError):
     """Raised when stlib was compiled without SteamWorks support"""
