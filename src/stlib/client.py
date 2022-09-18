@@ -26,10 +26,12 @@ from concurrent.futures.process import ProcessPoolExecutor
 from types import TracebackType
 from typing import Optional, Type
 
+from . import NoSteamWorksError
+
 try:
     from stlib import steamworks  # type: ignore
 except ImportError:
-    raise ImportError(
+    raise NoSteamWorksError(
         'stlib has been built without SteamWorks support. '
         'Client interface is unavailable'
     )

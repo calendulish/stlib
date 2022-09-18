@@ -80,7 +80,13 @@ from contextlib import suppress
 from ctypes import cdll
 
 # noinspection PyUnresolvedReferences
-__all__ = ["steam_api"]
+__all__ = ["steamworks"]
+
+
+class NoSteamWorksError(ImportError):
+    """Raised when stlib was compiled without SteamWorks support"""
+    pass
+
 
 if sys.platform == 'win32' and sys.version_info > (3, 7):
     for site_packages in site.getsitepackages():
