@@ -93,7 +93,7 @@ classifiers = [
 
 setup(
     name='stlib',
-    version='0.14.1',
+    version='1.0',
     description="Async library that provides features related to Steam client and compatible stuffs",
     author='Lara Maia',
     author_email='dev@lara.monster',
@@ -110,7 +110,7 @@ setup(
         'beautifulsoup4',
         'rsa',
     ],
-    python_requires='>=3.7',
+    python_requires='>=3.9',
     cmdclass={"build_ext": OptionalBuild},  # type: ignore
     zip_safe=False,
 )
