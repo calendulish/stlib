@@ -97,7 +97,7 @@ class Login(utils.Base):
         self.mobile_login_url = mobile_login_url
         self.steamguard_url = steamguard_url
         self.api_url = api_url
-        self.login_trial = 2
+        self.login_trial = 3
 
     @property
     def username(self) -> str:
@@ -268,7 +268,7 @@ class Login(utils.Base):
         elif 'requires_twofactor' in json_data and json_data['requires_twofactor']:
             if self.login_trial > 0:
                 self.login_trial -= 1
-                await asyncio.sleep(3)
+                await asyncio.sleep(5)
                 login_data = await self.do_login(**_original_fargs)
                 return login_data
 
