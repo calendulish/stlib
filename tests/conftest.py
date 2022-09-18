@@ -17,22 +17,5 @@
 #
 
 
-import inspect
-import time
-from typing import Optional
-
-import pytest
-from tests import MANUAL_TESTING
-
-
-@pytest.fixture(scope="session", autouse=True)
-def debug(msg: Optional[str] = None, wait_for: int = 5) -> None:
-    if MANUAL_TESTING is True:
-        current_frame = inspect.currentframe()
-        outer_frame = inspect.getouterframes(current_frame, 2)
-
-        if msg:
-            print(f'   -> {outer_frame[1][3]}:{msg}')
-            time.sleep(wait_for)
-        else:
-            print('\n')
+def pytest_assertion_pass(item, lineno, orig, expl):
+    print(f"{item}:{lineno} -> {orig} resolves to {expl}")

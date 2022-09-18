@@ -107,9 +107,105 @@ static PyObject *server_get_steamid(PyObject *self, PyObject *args)
     return PyLong_FromUnsignedLongLong(SteamID.ConvertToUint64());
 }
 
+static PyObject *server_get_seconds_since_app_active(PyObject *self, PyObject *args)
+{
+    uint32 seconds = SteamGameServerUtils()->GetSecondsSinceAppActive();
+
+    return PyLong_FromUnsignedLong(seconds);
+}
+
+static PyObject *server_get_seconds_since_computer_active(PyObject *self, PyObject *args)
+{
+    uint32 seconds = SteamGameServerUtils()->GetSecondsSinceComputerActive();
+
+    return PyLong_FromUnsignedLong(seconds);
+}
+
+static PyObject *server_get_connected_universe(PyObject *self, PyObject *args)
+{
+    EUniverse universe = SteamGameServerUtils()->GetConnectedUniverse();
+
+    return PyLong_FromLong(universe);
+}
+
+static PyObject *server_get_server_real_time(PyObject *self, PyObject *args)
+{
+    uint32 time = SteamGameServerUtils()->GetServerRealTime();
+
+    return PyLong_FromUnsignedLong(time);
+}
+
+static PyObject *server_get_ip_country(PyObject *self, PyObject *args)
+{
+    const char *country = SteamGameServerUtils()->GetIPCountry();
+
+    return PyUnicode_FromString(country);
+}
+
+static PyObject *server_get_current_battery_power(PyObject *self, PyObject *args)
+{
+    uint8 current = SteamGameServerUtils()->GetCurrentBatteryPower();
+
+    return PyLong_FromUnsignedLong(current);
+}
+
+static PyObject *server_get_appid(PyObject *self, PyObject *args)
+{
+    uint32 appid = SteamGameServerUtils()->GetAppID();
+
+    return PyLong_FromUnsignedLong(appid);
+}
+
+static PyObject *server_get_ipc_call_count(PyObject *self, PyObject *args)
+{
+    uint32 call_count = SteamGameServerUtils()->GetIPCCallCount();
+
+    return PyLong_FromUnsignedLong(call_count);
+}
+
+static PyObject *server_is_steam_running_in_vr(PyObject *self, PyObject *args)
+{
+    bool result = SteamGameServerUtils()->IsSteamRunningInVR();
+
+    return PyBool_FromLong(result);
+}
+
+static PyObject *server_is_steam_in_big_picture_mode(PyObject *self, PyObject *args)
+{
+    bool result = SteamGameServerUtils()->IsSteamInBigPictureMode();
+
+    return PyBool_FromLong(result);
+}
+
+static PyObject *server_is_steam_china_launcher(PyObject *self, PyObject *args)
+{
+    bool result = SteamGameServerUtils()->IsSteamChinaLauncher();
+
+    return PyBool_FromLong(result);
+}
+
+static PyObject *server_is_steam_running_on_steam_deck(PyObject *self, PyObject *args)
+{
+    bool result = SteamGameServerUtils()->IsSteamRunningOnSteamDeck();
+
+    return PyBool_FromLong(result);
+}
+
 static PyMethodDef SteamGameServerMethods[] = {
     {"shutdown", server_shutdown, METH_NOARGS, NULL},
     {"get_steamid", server_get_steamid, METH_NOARGS, NULL},
+    {"get_seconds_since_app_active", server_get_seconds_since_app_active, METH_NOARGS, NULL},
+    {"get_seconds_since_computer_active", server_get_seconds_since_computer_active, METH_NOARGS, NULL},
+    {"get_connected_universe", server_get_connected_universe, METH_NOARGS, NULL},
+    {"get_server_real_time", server_get_server_real_time, METH_NOARGS, NULL},
+    {"get_ip_country", server_get_ip_country, METH_NOARGS, NULL},
+    {"get_current_battery_power", server_get_current_battery_power, METH_NOARGS, NULL},
+    {"get_appid", server_get_appid, METH_NOARGS, NULL},
+    {"get_ipc_call_count", server_get_ipc_call_count, METH_NOARGS, NULL},
+    {"is_steam_running_in_vr", server_is_steam_running_in_vr, METH_NOARGS, NULL},
+    {"is_steam_in_big_picture_mode", server_is_steam_in_big_picture_mode, METH_NOARGS, NULL},
+    {"is_steam_china_launcher", server_is_steam_china_launcher, METH_NOARGS, NULL},
+    {"is_steam_running_on_steam_deck", server_is_steam_running_on_steam_deck, METH_NOARGS, NULL},
     {NULL},
 };
 

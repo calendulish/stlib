@@ -16,8 +16,10 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 
-
+import inspect
 import os
+import time
+from typing import Optional
 
 import pytest
 
@@ -25,3 +27,15 @@ MANUAL_TESTING = int(os.environ.get('MANUAL_TESTING', 0))
 
 requires_manual_testing = pytest.mark.skipif(MANUAL_TESTING == False,
                                              reason="This test can't run without MANUAL_TESTING")
+
+
+def debug(msg: Optional[str] = None, wait_for: int = 5) -> None:
+    if MANUAL_TESTING:
+        current_frame = inspect.currentframe()
+        outer_frame = inspect.getouterframes(current_frame, 2)
+
+        if msg:
+            print(f'   -> {outer_frame[1][3]}:{msg}')
+            time.sleep(wait_for)
+        else:
+            print('\n')
