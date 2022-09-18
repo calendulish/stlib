@@ -104,12 +104,12 @@ class _Manager:
 
         for plugin_directory in self._module_search_paths:
             if not os.path.isdir(plugin_directory):
-                log.debug(f"Unable to find plugin directory in:\n{plugin_directory}")
+                log.debug("Unable to find plugin directory in:\n%s", plugin_directory)
                 continue
 
             for full_path in glob.glob(os.path.join(plugin_directory, '*.py*')):
                 module_name = os.path.basename(full_path).split('.')[0]
-                log.debug(f"{module_name} found at {full_path}")
+                log.debug("%s found at %s", module_name, full_path)
                 plugin_spec = importlib.util.spec_from_file_location(module_name, full_path)
                 assert isinstance(plugin_spec, importlib.machinery.ModuleSpec), "No module spec?"
                 module_ = importlib.util.module_from_spec(plugin_spec)
@@ -119,14 +119,11 @@ class _Manager:
                 except ImportError as exception:
                     raise PluginLoaderError(exception)
 
-                log.debug(f"Plugin {module_name} loaded.")
+                log.debug("Plugin %s loaded.", module_name)
                 self.plugins[module_.__name__][0] = module_
 
     def has_plugin(self, plugin_name: str) -> bool:
-        if plugin_name in self.plugins.keys():
-            return True
-        else:
-            return False
+        return plugin_name in self.plugins
 
     def get_plugin(self, plugin_name: str, *args: Any, **kwargs: Any) -> Any:
         _module = self.plugins[plugin_name][0]
@@ -147,7 +144,7 @@ def _plugin_manager(
         log.debug("Creating a new plugin manager")
         manager = _Manager(plugin_search_paths)
     else:
-        log.debug(f"Using existent plugin manager")
+        log.debug("Using existent plugin manager")
 
     return function
 

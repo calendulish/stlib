@@ -162,15 +162,15 @@ class Community(utils.Base):
 
         if 'sessionid' in response.cookies:
             return str(response.cookies['sessionid'].value)
-        else:
-            html = response.content
-            for line in html.splitlines():
-                if 'g_sessionID' in line:
-                    assert isinstance(line, str), "line was wrong type (bytes?)"
-                    _, raw_value = line.split('= "')
-                    return raw_value[:-2]
 
-            raise KeyError
+        html = response.content
+        for line in html.splitlines():
+            if 'g_sessionID' in line:
+                assert isinstance(line, str), "line was wrong type (bytes?)"
+                _, raw_value = line.split('= "')
+                return raw_value[:-2]
+
+        raise KeyError
 
     async def get_inventory(
             self,
@@ -196,10 +196,10 @@ class Community(utils.Base):
             )
 
             if not json_data['success']:
-                raise AttributeError(f"Unable to get inventory details")
+                raise AttributeError("Unable to get inventory details")
 
             if json_data['total_inventory_count'] == 0:
-                raise InventoryEmptyError(steamid, appid, contextid, f"Inventory is empty")
+                raise InventoryEmptyError(steamid, appid, contextid, "Inventory is empty")
 
             if 'last_assetid' in json_data:
                 params['start_assetid'] = json_data['last_assetid']
@@ -394,7 +394,7 @@ class Community(utils.Base):
                 listing_prices = html.find('div', class_="mobileconf_listing_prices")
                 final_price = listing_prices.find(text=lambda element: 'You receive' in element.text).next.next.strip()
                 sell_price = listing_prices.find(text=lambda element: 'Buyer pays' in element.text).next.next.strip()
-                receive = ["{} ({})".format(final_price, sell_price)]
+                receive = [f"{final_price} ({sell_price})"]
 
                 javascript = html.find_all("script")[2]
                 json_data = self.get_json_from_js(javascript)

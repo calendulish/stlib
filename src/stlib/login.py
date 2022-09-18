@@ -203,15 +203,12 @@ class Login(utils.Base):
         if not json_data['success']:
             if 'error_text' in json_data:
                 raise LoginError(json_data['error_text'])
-            else:
-                raise LoginError("Current session is invalid")
+
+            raise LoginError("Current session is invalid")
 
         log.debug("User has phone? %s", json_data["has_phone"])
 
-        if json_data["has_phone"]:
-            return True
-        else:
-            return False
+        return json_data["has_phone"]
 
     async def do_login(
             self,
@@ -268,9 +265,11 @@ class Login(utils.Base):
 
         if 'message' in json_data and 'too many login failures' in json_data['message']:
             raise LoginBlockedError("Your network is blocked. Please, try again later")
-        elif 'emailauth_needed' in json_data and json_data['emailauth_needed']:
+
+        if 'emailauth_needed' in json_data and json_data['emailauth_needed']:
             raise MailCodeError("Mail code requested")
-        elif 'requires_twofactor' in json_data and json_data['requires_twofactor']:
+
+        if 'requires_twofactor' in json_data and json_data['requires_twofactor']:
             if self.login_trial > 0:
                 self.login_trial -= 1
                 await asyncio.sleep(5)
@@ -278,17 +277,19 @@ class Login(utils.Base):
                 return login_data
 
             raise TwoFactorCodeError("Authenticator code requested")
-        elif 'captcha_needed' in json_data and json_data['captcha_needed']:
+
+        if 'captcha_needed' in json_data and json_data['captcha_needed']:
             if captcha_text and captcha_gid:
                 if 'message' in json_data and 'verify your humanity' not in json_data['message']:
                     raise LoginError(json_data['message'])
 
             captcha = await self.get_captcha(json_data['captcha_gid'])
             raise CaptchaError(json_data['captcha_gid'], captcha, "Captcha code requested")
-        elif mobile_login and 'oauth' not in json_data:
+
+        if mobile_login and 'oauth' not in json_data:
             raise LoginError(f"Unable to log-in on mobile session: {json_data['message']}")
-        else:
-            raise LoginError(f"Unable to log-in: {json_data['message']}")
+
+        raise LoginError(f"Unable to log-in: {json_data['message']}")
 
     async def is_logged_in(self, steamid: universe.SteamId) -> bool:
         response = await self.request(f'{steamid.profile_url}/edit', allow_redirects=False, raise_for_status=False)
@@ -296,10 +297,7 @@ class Login(utils.Base):
         if 'profile could not be found' in response.content:
             log.error("steamid %s seems invalid", steamid.id64)
 
-        if response.status == 200:
-            return True
-        else:
-            return False
+        return response.status == 200
 
     def restore_login(self, steamid: universe.SteamId, token: str, token_secure: str) -> None:
         """

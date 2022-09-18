@@ -112,7 +112,7 @@ class Base:
             _session_cache['http_session'][session_index] = kwargs['http_session']
         else:
             if session_index in _session_cache['http_session']:
-                log.info(f"Reusing http session at index %s for %s", session_index, cls.__name__)
+                log.info("Reusing http session at index %s for %s", session_index, cls.__name__)
                 kwargs['http_session'] = _session_cache['http_session'][session_index]
             else:
                 log.info("Creating a new http session at index %s for %s", session_index, cls.__name__)
@@ -120,11 +120,11 @@ class Base:
 
         if session_index in _session_cache[cls.__name__]:
             raise IndexError(f"There's already a {cls.__name__} session at index {session_index}")
-        else:
-            log.info("Creating a new %s session at %s", cls.__name__, session_index)
-            _session_cache[cls.__name__][session_index] = super().__new__(cls)
-            log.debug("Initializing instance for %s", cls.__name__)
-            _session_cache[cls.__name__][session_index].__init__(**kwargs)  # type: ignore
+
+        log.info("Creating a new %s session at %s", cls.__name__, session_index)
+        _session_cache[cls.__name__][session_index] = super().__new__(cls)
+        log.debug("Initializing instance for %s", cls.__name__)
+        _session_cache[cls.__name__][session_index].__init__(**kwargs)  # type: ignore
 
         session = _session_cache[cls.__name__][session_index]
         assert isinstance(session, Base), "Wrong session type"
@@ -289,7 +289,7 @@ class Base:
                     log.debug("Auto recovering in 5 seconds")
                     await asyncio.sleep(5)
                     continue
-                else:
-                    raise exception from None
+
+                raise exception from None
 
         return result
