@@ -268,7 +268,7 @@ class Base:
 
         log.debug("Requesting %s via %s with %s:%s", url, http_method, params, data)
 
-        for _ in range(3):
+        for try_count in range(3):
             try:
                 async with self.http_session.request(**request_params) as response:
                     result = Response(
@@ -285,7 +285,7 @@ class Base:
                 if 400 <= exception.status <= 499:
                     raise exception from None
 
-                if auto_recovery:
+                if auto_recovery and try_count < 2:
                     log.debug("Auto recovering in 5 seconds")
                     await asyncio.sleep(5)
                     continue
