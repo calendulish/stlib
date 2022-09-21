@@ -15,6 +15,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
+"""
+`utils` is used internaly by stlib to provide other stlib interfaces.
+"""
+
 import asyncio
 import contextlib
 import http.cookies
@@ -108,7 +112,7 @@ class Base:
             _session_cache['http_session'][session_index] = kwargs['http_session']
         else:
             if session_index in _session_cache['http_session']:
-                log.info(f"Reusing http session at index %s for %s", session_index, cls.__name__)
+                log.info("Reusing http session at index %s for %s", session_index, cls.__name__)
                 kwargs['http_session'] = _session_cache['http_session'][session_index]
             else:
                 log.info("Creating a new http session at index %s for %s", session_index, cls.__name__)
@@ -116,11 +120,11 @@ class Base:
 
         if session_index in _session_cache[cls.__name__]:
             raise IndexError(f"There's already a {cls.__name__} session at index {session_index}")
-        else:
-            log.info("Creating a new %s session at %s", cls.__name__, session_index)
-            _session_cache[cls.__name__][session_index] = super().__new__(cls)
-            log.debug("Initializing instance for %s", cls.__name__)
-            _session_cache[cls.__name__][session_index].__init__(**kwargs)  # type: ignore
+
+        log.info("Creating a new %s session at %s", cls.__name__, session_index)
+        _session_cache[cls.__name__][session_index] = super().__new__(cls)
+        log.debug("Initializing instance for %s", cls.__name__)
+        _session_cache[cls.__name__][session_index].__init__(**kwargs)  # type: ignore
 
         session = _session_cache[cls.__name__][session_index]
         assert isinstance(session, Base), "Wrong session type"
@@ -264,7 +268,7 @@ class Base:
 
         log.debug("Requesting %s via %s with %s:%s", url, http_method, params, data)
 
-        for _ in range(3):
+        for try_count in range(3):
             try:
                 async with self.http_session.request(**request_params) as response:
                     result = Response(
@@ -281,11 +285,11 @@ class Base:
                 if 400 <= exception.status <= 499:
                     raise exception from None
 
-                if auto_recovery:
+                if auto_recovery and try_count < 2:
                     log.debug("Auto recovering in 5 seconds")
                     await asyncio.sleep(5)
                     continue
-                else:
-                    raise exception from None
+
+                raise exception from None
 
         return result

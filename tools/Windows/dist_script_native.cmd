@@ -28,7 +28,7 @@ for /d %%i in (%cd%) do (
 )
 
 :: download steamworks
-pushd src\\steam_api\\steamworks_sdk || exit 1
+pushd src\\steamworks || exit 1
 
 setlocal enabledelayedexpansion
 if not exist steamworks-sdk.zip (
@@ -36,7 +36,7 @@ if not exist steamworks-sdk.zip (
     set system32=!system32:cmd.exe=!
     set curl="!system32!curl.exe"
     set certutil="!system32!certutil.exe"
-    set steamworks="https://github.com/ShyPixie/Overlays/blob/master/dev-util/steamworks-sdk/files/steamworks_sdk_151.zip?raw=true"
+    set steamworks="https://github.com/ShyPixie/Overlays/blob/master/dev-util/steamworks-sdk/files/steamworks_sdk_155.zip?raw=true"
     !curl! -o steamworks-sdk.zip -L !steamworks! || !certutil! -urlcache -split -f !steamworks! steamworks-sdk.zip || exit 1
 )
 

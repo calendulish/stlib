@@ -30,20 +30,20 @@ stlib now supports plugins!
 ---------------------------
 See more at: [stlib-plugins](https://github.com/ShyPixie/stlib-plugins)
 
-Dependencies to build SteamAPI C Extension (Optional)
+Dependencies to build SteamWorks Python Extension (Optional)
 -----------------------------------------------------
 
-WARNING: SteamAPI C Extension is incomplete, but it's easy to implement.
+WARNING: SteamWorks Python Extension is incomplete, but it's easy to implement.
 If you need a feature that is not present, send a pull request or open an issue.
 
-- Python and headers >= 3.6
+- Python and headers >= 3.9
 - Microsoft Visual C++ compiler (MSVC) or GNU Compiler (GCC)
-- Steamworks SDK >= v1.51
+- Steamworks SDK >= v1.55
 
 Dependencies to run
 -------------------
 
-- Python >= 3.6
+- Python >= 3.9
 - asyncio
 - beautifulsoup4
 - rsa
@@ -80,7 +80,21 @@ from contextlib import suppress
 from ctypes import cdll
 
 # noinspection PyUnresolvedReferences
-__all__ = ["steam_api"]
+__all__ = ["steamworks"]
+
+try:
+    # noinspection PyUnresolvedReferences
+    from stlib import steamworks
+except ImportError:
+    steamworks_available = False
+else:
+    steamworks_available = True
+
+
+class NoSteamWorksError(ImportError):
+    """Raised when stlib was compiled without SteamWorks support"""
+    pass
+
 
 if sys.platform == 'win32' and sys.version_info > (3, 7):
     for site_packages in site.getsitepackages():

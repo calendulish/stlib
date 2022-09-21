@@ -16,6 +16,10 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 
+"""
+`internals` interface is used to access the undocumented SteamAPI methods
+"""
+
 import logging
 from typing import List, NamedTuple, Dict, Tuple, Any
 
@@ -111,7 +115,7 @@ class Internals(utils.Base):
         json_data = await self.request_json(f'{self.store_url}/api/appdetails', params=params)
 
         if not json_data[appid_string]['success']:
-            raise ValueError("Failed to get details for app %s", appid_string)
+            raise ValueError(f"Failed to get details for app {appid_string}")
 
         game_params = {
             'name': json_data[appid_string]['data']['name'],
@@ -145,7 +149,7 @@ class Internals(utils.Base):
         json_data = await self.request_json(f'{self.store_url}/api/packagedetails', params=params)
 
         if not json_data[packageid_string]['success']:
-            raise ValueError("Failed to get details for package %s", packageid_string)
+            raise ValueError(f"Failed to get details for package {packageid_string}")
 
         package_params = {
             'packageid': packageid_string,
@@ -172,7 +176,7 @@ class Internals(utils.Base):
         :return: {appid: (price, discount)}
         """
         assert isinstance(appids, List), "appids must be a list"
-        assert all([isinstance(id_, int) for id_ in appids]), "each appid must be a number"
+        assert all(isinstance(id_, int) for id_ in appids), "each appid must be a number"
 
         appids_string = map(str, appids)
         params = {'appids': ','.join(appids_string), 'filters': 'price_overview'}

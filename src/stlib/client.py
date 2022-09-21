@@ -19,20 +19,32 @@
 """
 `client` interface is used to interact directly with SteamWorks SDK
 it's an optional module and can be disabled when building stlib.
+
+I recommend you to check if SteamWorks is available prior using
+the client interface:
+
+```
+import stlib
+
+if stlib.steamworks_available:
+    from stlib import client
+else:
+    # not available
+```
 """
 
-import asyncio
 import logging
-import os
 from concurrent.futures.process import ProcessPoolExecutor
 from types import TracebackType
-from typing import Any, Optional, Type, Coroutine
+from typing import Optional, Type
+
+from . import NoSteamWorksError
 
 try:
-    from stlib import steam_api  # type: ignore
+    from stlib import steamworks  # type: ignore
 except ImportError:
-    raise ImportError(
-        'stlib has been built without steam_api support. '
+    raise NoSteamWorksError(
+        'stlib has been built without SteamWorks support. '
         'Client interface is unavailable'
     )
 
@@ -51,107 +63,61 @@ class SteamAPIError(Exception):
 
 class SteamGameServer:
     """
-    Create and run a steam game server.
+    Create and run a SteamGameServer
 
     Example:
 
     ```
-        with SteamGameServer() as server:
-            server_time = server.get_server_time()
+        with SteamGameServer() as game_server:
+            server_time = game_server.get_server_time()
     ```
     """
 
-    def __init__(self, ip: int = 0x0100007f, port: int = 27016,
-                 appid: int = 480) -> None:
-        log.debug('Set SteamAppId to %s', appid)
-        os.environ["SteamAppId"] = str(appid)
+    def __init__(self, appid: int = 480, ip: int = 0x0100007f, port: int = 27016) -> None:
+        self.game_server = steamworks.SteamGameServer(appid, ip, port)
 
-        result = steam_api.server_init(ip, port)
-        log.debug('server init returns %s', result)
-
-        if result is False:
-            raise SteamGameServerError("Unable to initialize SteamGameServer")
-
-    def __enter__(self) -> Any:
-        return steam_api.SteamGameServer()
+    def __enter__(self) -> steamworks.SteamGameServer:
+        return self.game_server
 
     def __exit__(self,
                  exception_type: Optional[Type[BaseException]],
-                 exception_value: Optional[Exception],
+                 exception_value: Optional[BaseException],
                  traceback: Optional[TracebackType]) -> None:
-        log.debug('Closing GameServer')
-        steam_api.server_shutdown()
-
-        try:
-            os.environ.pop('SteamAppId')
-        except KeyError:
-            log.warning("Tried to unset SteamAppId but it's already unset")
+        log.debug('Closing SteamGameServer')
+        self.game_server.shutdown()
 
 
-class SteamApiExecutor(ProcessPoolExecutor):
+class SteamAPIExecutor(ProcessPoolExecutor):
     """
-    Create a isolated steam app process.
+    Create an isolated process to access SteamAPI
 
     Example:
 
     ```
-        async with SteamApiExecutor() as executor:
-            steam_user = executor.submit(steam_api.SteamUser).result()
-            steamid = executor.submit(steam_user.get_steam_id).result()
+        with SteamAPIExecutor() as steam_api:
+            steamid = steam_api.get_steamid()
     ```
     """
 
-    def __init__(self, appid: int = 480, loop: Optional[Any] = None) -> None:
+    def __init__(self, appid: int = 480, max_workers: int = 1) -> None:
         """
         :param appid: owned steam appid.
-        :param loop: current event loop.
+        :param max_workers: max workers processes
         """
-        super().__init__()
+        super().__init__(max_workers=max_workers)
         self.appid = appid
-        self.loop = loop if loop else asyncio.get_event_loop()
+        self._steam_api_handle = self.submit(steamworks.SteamAPI, self.appid)
 
-    async def __aenter__(self) -> Any:
-        await self.init()
-        return self
+    @property
+    def steam_api(self) -> steamworks.SteamAPI:
+        return self._steam_api_handle.result()
 
-    async def __aexit__(self,
-                        exception_type: Optional[Type[BaseException]],
-                        exception_value: Optional[Exception],
-                        traceback: Optional[TracebackType]) -> None:
-        await self.shutdown()
+    def __enter__(self) -> steamworks.SteamAPI:
+        return self.steam_api
 
-    async def init(self) -> None:
-        """
-        Initialize steam app process and populate steam_api pointers.
-        """
-        log.debug("Set SteamAppId to %s", self.appid)
-        os.environ["SteamAppId"] = str(self.appid)
-        result = await self.loop.run_in_executor(self, steam_api.init)
-
-        log.debug("SteamAPI init returns %s", result)
-
-        if result is False:
-            raise SteamAPIError("Unable to initialize SteamAPI (Invalid game id?)")
-
-    async def soft_shutdown(self) -> None:
-        """
-        Request steam_api to shutdown and clean-up resources associated with steam app.
-        """
-        log.debug("Soft Shutdown SteamAPI")
-        await self.loop.run_in_executor(self, steam_api.shutdown)
-
-    # noinspection PyMethodOverriding
-    async def shutdown(self, wait: bool = True) -> None:  # type: ignore
-        """
-        Request steam_api to shutdown, close executor processes, clean-up resources
-        :param wait: Block if True
-        :return:
-        """
-        log.debug("Shutdown SteamAPI")
-        await self.loop.run_in_executor(self, steam_api.shutdown)
-        super().shutdown(wait)
-
-        try:
-            os.environ.pop("SteamAppId")
-        except KeyError:
-            log.warning("Tried to unset SteamAppId but it's already unset")
+    def __exit__(self,
+                 exception_type: Optional[Type[BaseException]],
+                 exception_value: Optional[BaseException],
+                 traceback: Optional[TracebackType]) -> None:
+        log.debug('Closing SteamAPI')
+        self.shutdown()

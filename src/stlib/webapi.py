@@ -16,6 +16,10 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 
+"""
+`webapi` interface is used to interact with the oficial SteamWebAPI.
+"""
+
 import logging
 import time
 from typing import Any, Dict, List, NamedTuple, Optional
@@ -199,7 +203,7 @@ class SteamWebAPI(utils.Base):
 
             games.append(Game(**game_params))
 
-        log.debug(f"{json_data['response']['game_count']} owned games found.")
+        log.debug("%s owned games found.", json_data['response']['game_count'])
 
         return games
 
@@ -225,9 +229,11 @@ class SteamWebAPI(utils.Base):
 
         if response['status'] == 29:
             raise AuthenticatorExists('An Authenticator is already active for that account.')
-        elif response['status'] == 84 or response['status'] == 2:
+
+        if response['status'] == 84 or response['status'] == 2:
             raise PhoneNotRegistered('Phone not registered on Steam Account.')
-        elif response['status'] != 1:
+
+        if response['status'] != 1:
             raise NotImplementedError(f"add_authenticator is returning status {response['status']}")
 
         return login.LoginData(auth=response, oauth={})
@@ -299,7 +305,4 @@ class SteamWebAPI(utils.Base):
         if json_data['response']['revocation_attempts_remaining'] == 0:
             raise RevocationError('No more attempts')
 
-        if 'success' in json_data['response'] and json_data['response']['success'] is True:
-            return True
-        else:
-            return False
+        return 'success' in json_data['response'] and json_data['response']['success'] is True

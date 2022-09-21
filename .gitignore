@@ -6,6 +6,9 @@ venv
 __pycache__
 *.pyc
 steamworks_sdk
+steamworks-sdk.zip
+src/steamworks/sdk
+config/
 cmake-build-debug
 .mypy_cache
 .coverage
