@@ -72,7 +72,7 @@ steamworks = Extension(
     include_dirs=[SOURCES_PATH, HEADERS_PATH],
     library_dirs=[str(SDK_PATH / 'redistributable_bin' / REDIST_PATH)],
     libraries=[API_NAME],
-    extra_compile_args=['-D_CRT_SECURE_NO_WARNINGS'],
+    extra_compile_args=['-D_CRT_SECURE_NO_WARNINGS', '/std:c++17' if 'MSC' in sys.version else '-std=c++17'],
 )
 
 classifiers = [

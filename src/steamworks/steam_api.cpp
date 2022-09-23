@@ -18,8 +18,11 @@
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
 #include <structmember.h>
+#include <charconv>
 
 #include "steam/steam_api.h"
+
+#include "common.h"
 
 typedef struct
 {
@@ -42,9 +45,9 @@ static int SteamAPIObjectInit(SteamAPIObject *self, PyObject *args, PyObject *kw
     }
 
     char appid_string[32];
-    sprintf(appid_string, "SteamAppId=%u", appID);
+    std::to_chars(appid_string, appid_string + sizeof(appID), appID);
 
-    if (putenv(appid_string) != 0)
+    if (setenv("SteamAppId", appid_string, true) != 0)
     {
         PyErr_SetString(PyExc_AttributeError, "Error when setting AppID");
         return -1;
@@ -56,7 +59,7 @@ static int SteamAPIObjectInit(SteamAPIObject *self, PyObject *args, PyObject *kw
         return -1;
     }
 
-    if (putenv("SteamAppId=") != 0)
+    if (setenv("SteamAppId", "", true) != 0)
     {
         PyErr_SetString(PyExc_AttributeError, "Error when unsetting AppID");
         return -1;
