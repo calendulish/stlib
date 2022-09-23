@@ -91,13 +91,21 @@ classifiers = [
     'Typing :: Typed',
 ]
 
+try:
+    with open('README.md') as readme:
+        long_description = readme.read()
+except FileNotFoundError:
+    long_description = ''
+
 setup(
     name='stlib',
     version='1.0.2',
     description="Async library that provides features related to Steam client and compatible stuffs",
+    long_description=long_description,
+    long_description_content_type='text/markdown',
     author='Lara Maia',
     author_email='dev@lara.monster',
-    url='http://github.com/ShyPixie/stlib',
+    url='https://github.com/ShyPixie/stlib',
     license='GPLv3',
     classifiers=classifiers,
     keywords='steam valve',
