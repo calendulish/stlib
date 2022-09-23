@@ -31,6 +31,49 @@ jobs:
             dist/
           if-no-files-found: error
           retention-days: 90
+  rpi-build:
+    if: ${{ always() }}
+    needs: delete-old-artifacts
+    runs-on: ubuntu-latest
+    name: Build ${{ matrix.arch }} ${{ matrix.python-version }}
+    strategy:
+      matrix:
+        include:
+        - arch: 'armv7'
+          distro: 'archarm_latest'
+        - arch: 'aarch64'
+          distro: 'archarm_latest'
+    steps:
+      - uses: actions/checkout@v3
+      - uses: uraimo/run-on-arch-action@v2.2.1
+        id: build
+        with:
+          arch: ${{ matrix.arch }}
+          distro: ${{ matrix.distro }}
+          setup: mkdir -p "${PWD}/artifacts"
+          dockerRunArgs: --volume "${PWD}/artifacts:/artifacts"
+          env: |
+            release_name: "stlib-RPI-${{ matrix.arch }}"
+          shell: /bin/sh
+          install: |
+            pacman -Syu --noconfirm
+            pacman -S --noconfirm python python-build tar
+          run: |
+            python -m build --sdist --wheel
+            pushd build
+            mv lib.linux* "${release_name}"
+            tar -vvcf "${release_name}.zip" "${release_name}"
+            popd
+            cp -rfv build/ /artifacts/
+            cp -rfv dist/ /artifacts/
+      - uses: actions/upload-artifact@v3
+        with:
+          name: rpi_${{ matrix.arch }}
+          path: |
+            artifacts/build/*.zip
+            artifacts/dist/
+          if-no-files-found: error
+          retention-days: 90
   windows-build:
     if: ${{ always() }}
     needs: delete-old-artifacts
@@ -61,11 +104,12 @@ jobs:
           retention-days: 90
   generate-badges:
     if: ${{ always() }}
-    needs: [linux-build, windows-build]
+    needs: [linux-build, rpi-build, windows-build]
     runs-on: ubuntu-latest
     env:
       linux-badge-color: ${{ needs.linux-build.result == 'success' && 'green' || 'red' }}
       windows-badge-color: ${{ needs.windows-build.result == 'success' && 'green' || 'red' }}
+      rpi-badge-color: ${{ needs.rpi-build.result == 'success' && 'green' || 'red' }}
     steps:
       - uses: RubbaBoy/BYOB@v1.3.0
         with:
@@ -73,6 +117,15 @@ jobs:
           LABEL: 'Linux build'
           STATUS: ${{ needs.linux-build.result }}
           COLOR: ${{ env.linux-badge-color }}
+          GITHUB_TOKEN: ${{ secrets.ACTIONS_TOKEN }}
+          REPOSITORY: ShyPixie/.github
+          ACTOR: ShyPixie
+      - uses: RubbaBoy/BYOB@v1.3.0
+        with:
+          NAME: stlib-rpi-build
+          LABEL: 'RPI build'
+          STATUS: ${{ needs.rpi-build.result }}
+          COLOR: ${{ env.rpi-badge-color }}
           GITHUB_TOKEN: ${{ secrets.ACTIONS_TOKEN }}
           REPOSITORY: ShyPixie/.github
           ACTOR: ShyPixie
