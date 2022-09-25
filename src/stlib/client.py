@@ -51,19 +51,10 @@ except ImportError:
 log = logging.getLogger(__name__)
 
 
-class SteamGameServerError(Exception):
-    """Raised when SteamGameServer can't be initialized"""
-    pass
-
-
-class SteamAPIError(Exception):
-    """Raised when SteamAPI can't be initialized"""
-    pass
-
-
 class SteamGameServer:
     """
-    Create and run a SteamGameServer
+    Create and run a SteamGameServer.
+    It will raise ProcessLookupError if Steam Client isn't running.
 
     Example:
 
@@ -89,7 +80,8 @@ class SteamGameServer:
 
 class SteamAPIExecutor(ProcessPoolExecutor):
     """
-    Create an isolated process to access SteamAPI
+    Create an isolated process to access SteamAPI.
+    It will raise ProcessLookupError if Steam Client isn't running.
 
     Example:
 
