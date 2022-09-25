@@ -45,7 +45,7 @@ static int SteamAPIObjectInit(SteamAPIObject *self, PyObject *args, PyObject *kw
     }
 
     char appid_string[32];
-    std::to_chars(appid_string, appid_string + sizeof(appID), appID);
+    std::to_chars(appid_string, appid_string + 32, appID);
 
     if (setenv("SteamAppId", appid_string, true) != 0)
     {
