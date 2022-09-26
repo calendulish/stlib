@@ -208,7 +208,7 @@ class Community(utils.Base):
                 break
 
         items = []
-        for index, item in enumerate(json_data['descriptions']):
+        for item in json_data['descriptions']:
             if 'market_name' in item:
                 name = item['market_name']
 
@@ -217,17 +217,23 @@ class Community(utils.Base):
             else:
                 name = item['name']
 
+            for asset in json_data['assets']:
+                if asset['classid'] == item['classid']:
+                    amount = asset['amount']
+                    assetid = asset['assetid']
+                    break
+
             kwargs = {
                 'name': name,
                 'type': item['type'],
-                'amount': json_data['assets'][index]['amount'],
+                'amount': amount,
                 'marketable': item['marketable'],
                 'tradable': item['tradable'],
                 'commodity': item['commodity'],
                 'appid': item['appid'],
                 'classid': item['classid'],
                 'instanceid': item['instanceid'],
-                'assetid': json_data['assets'][index]['assetid'],
+                'assetid': assetid,
                 'icon_url': item['icon_url'],
                 'icon_url_large': item['icon_url_large'],
                 'expiration': item['item_expiration'],
