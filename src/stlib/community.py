@@ -19,7 +19,7 @@
 """
 `community` interface is used to access entry points available at steamcommunity.com
 """
-
+import aiohttp
 import asyncio
 import json
 import logging
@@ -574,6 +574,11 @@ class Community(utils.Base):
 
     async def get_api_key(self) -> Tuple[str, str]:
         html = await self.request_html(f'{self.community_url}/dev/apikey')
+        main = html.find('div', id='mainContents')
+
+        if 'Access Denied' in main.find('h2').text:
+            raise PermissionError("Your Steam account is limited")
+
         contents = html.find('div', id="bodyContents_ex")
 
         if 'Register' in contents.find('h2').text:
