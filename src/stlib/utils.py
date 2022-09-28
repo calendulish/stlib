@@ -125,16 +125,17 @@ class Base:
             else:
                 log.info("Creating a new http session at index %s for %s", session_index, cls.__name__)
                 kwargs['http_session'] = aiohttp.ClientSession(raise_for_status=True)
+                _session_cache['http_session'][session_index] = kwargs['http_session']
 
         if session_index in _session_cache[cls.__name__]:
             raise IndexError(f"There's already a {cls.__name__} session at index {session_index}")
 
         log.info("Creating a new %s session at %s", cls.__name__, session_index)
-        _session_cache[cls.__name__][session_index] = super().__new__(cls)
-        log.debug("Initializing instance for %s", cls.__name__)
-        _session_cache[cls.__name__][session_index].__init__(**kwargs)  # type: ignore
+        session = _session_cache[cls.__name__][session_index] = super().__new__(cls)
 
-        session = _session_cache[cls.__name__][session_index]
+        log.debug("Initializing instance for %s", cls.__name__)
+        session.__init__(**kwargs)  # type: ignore
+
         assert isinstance(session, Base), "Wrong session type"
         return session
 
