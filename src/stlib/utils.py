@@ -66,6 +66,14 @@ class Base:
         self._headers = headers
         self._http_session = http_session
 
+    def __del__(self) -> None:
+        coro = self._http_session.close()
+
+        try:
+            asyncio.create_task(coro)
+        except RuntimeError:
+            asyncio.run(coro)
+
     @property
     def headers(self) -> Dict[str, str]:
         """returns the default headers to send with all http requests"""
