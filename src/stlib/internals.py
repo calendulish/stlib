@@ -99,7 +99,7 @@ class Internals(utils.Base):
         Example:
 
             ```
-            internals = Internals.get_session(0)
+            internals = await Internals.new_session(0)
             game = await internals.get_game(480)
             ```
         """

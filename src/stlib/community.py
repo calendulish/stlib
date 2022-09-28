@@ -125,7 +125,7 @@ class Community(utils.Base):
         Example:
 
             ```
-            community = Community.get_session(0)
+            community = await Community.new_session(0)
             item_name = await community.get_item_name(appid, classid)
             ```
         """

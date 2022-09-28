@@ -82,7 +82,7 @@ class SteamWebAPI(utils.Base):
         Example:
 
             ```
-            webapi = SteamWebAPI.get_session(0)
+            webapi = await SteamWebAPI.new_session(0, api_key='SteamAPIKey')
             owned_games = await webapi.get_owned_games(steamid)
             ```
         """

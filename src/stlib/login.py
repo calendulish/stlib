@@ -89,7 +89,7 @@ class Login(utils.Base):
         Example:
 
             ```
-            login_session = Login.get_session(0)
+            login_session = await Login.new_session(0)
             login_session.username = 'SteamUserName'
             login_session.password = 'SteamPassword'
             await login_session.do_login()
