@@ -29,6 +29,8 @@ from typing import Dict, Any, Optional, NamedTuple, Union
 import aiohttp
 from bs4 import BeautifulSoup
 
+from stlib import login
+
 log = logging.getLogger(__name__)
 _session_cache: Dict[str, Dict[int, Union['Base', aiohttp.ClientSession]]] = {}
 
@@ -280,6 +282,14 @@ class Base:
         for try_count in range(3):
             try:
                 async with self.http_session.request(**request_params) as response:
+                    if len(response.history) >= 1:
+                        location = response.history[0].headers['Location']
+                    else:
+                        location = response.headers.get('Location', '')
+
+                    if 'login/home/?goto=' in location:
+                        raise login.LoginError('User are not logged in')
+
                     result = Response(
                         response.status,
                         response.request_info,
