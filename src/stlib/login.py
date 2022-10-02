@@ -292,7 +292,10 @@ class Login(utils.Base):
         raise LoginError(f"Unable to log-in: {json_data['message']}")
 
     async def is_logged_in(self, steamid: universe.SteamId) -> bool:
-        response = await self.request(f'{steamid.profile_url}/edit', allow_redirects=False, raise_for_status=False)
+        try:
+            response = await self.request(f'{steamid.profile_url}/edit', allow_redirects=False, raise_for_status=False)
+        except LoginError:
+            return False
 
         if 'profile could not be found' in response.content:
             log.error("steamid %s seems invalid", steamid.id64)
