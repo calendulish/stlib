@@ -70,34 +70,8 @@ class PluginLoaderError(PluginError):
     pass
 
 
-class _Plugin:
-    def __init__(self, headers: Optional[Dict[str, str]] = None) -> None:
-        self._headers = headers
-        self._session_index = 0
-
-    def __init_subclass__(cls, **kwargs: Any) -> None:
-        super().__init__(cls, **kwargs)
-        _Manager.plugins[cls.__module__] = [None, cls.__name__]
-
-    def __getattr__(self, item: str) -> Any:
-        module = _Manager.plugins[self.__module__][0]
-
-        if hasattr(module, item):
-            return getattr(module, item)
-
-        raise AttributeError(f"{self} object has no attribute {item}")
-
-    @property
-    def headers(self) -> Dict[str, str]:
-        if not self._headers:
-            self._headers = self.session.headers
-
-        assert isinstance(self._headers, dict)
-        return self._headers
-
-
 class _Manager:
-    plugins: Dict[str, List[Union[Optional[ModuleType], str]]] = {}
+    plugins: Dict[str, ModuleType] = {}
 
     def __init__(self, module_search_paths: Tuple[str, ...] = default_search_paths) -> None:
         self._module_search_paths = module_search_paths
@@ -120,18 +94,15 @@ class _Manager:
                     raise PluginLoaderError(exception)
 
                 log.debug("Plugin %s loaded.", module_name)
-                self.plugins[module_.__name__][0] = module_
+                self.plugins[module_.__name__] = module_
 
     def has_plugin(self, plugin_name: str) -> bool:
         return plugin_name in self.plugins
 
-    def get_plugin(self, plugin_name: str, *args: Any, **kwargs: Any) -> Any:
-        _module = self.plugins[plugin_name][0]
-        _name = self.plugins[plugin_name][1]
+    def get_plugin(self, plugin_name: str) -> ModuleType:
+        _module = self.plugins[plugin_name]
         assert isinstance(_module, ModuleType), "Wrong module type"
-        assert isinstance(_name, str), "Wrong module name"
-        plugin = getattr(_module, _name)
-        return plugin(*args, **kwargs)
+        return _module
 
 
 def _plugin_manager(
@@ -165,7 +136,7 @@ def get_plugin(plugin_name: str) -> Any:
     """
     Get plugin from plugin name
     :param plugin_name: Plugin name to look up
-    :return: `_Plugin`
+    :return: plugin module requested
     """
     assert isinstance(manager, _Manager), "Plugin manager not initialized"
     return manager.get_plugin(plugin_name)
