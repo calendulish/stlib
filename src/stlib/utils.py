@@ -109,33 +109,35 @@ class Base:
         :param kwargs: Instance parameters
         :return: Instance of module
         """
-        if cls.__name__ not in _session_cache:
-            log.debug("Creating a new cache object at %s for %s", session_index, cls.__name__)
-            _session_cache[cls.__name__] = {}
+        cache_name = f'{cls.__module__}.{cls.__name__}'
+
+        if cache_name not in _session_cache:
+            log.debug("Creating a new cache object at %s for %s", session_index, cache_name)
+            _session_cache[cache_name] = {}
 
         if 'http_session' not in _session_cache:
-            log.debug("Creating a new http cache object at %s for %s", session_index, cls.__name__)
+            log.debug("Creating a new http cache object at %s for %s", session_index, cache_name)
             _session_cache['http_session'] = {}
 
         if 'http_session' in kwargs:
-            log.info("Using existent http session at kwargs for %s", cls.__name__)
+            log.info("Using existent http session at kwargs for %s", cache_name)
             _session_cache['http_session'][session_index] = kwargs['http_session']
         else:
             if session_index in _session_cache['http_session']:
-                log.info("Reusing http session at index %s for %s", session_index, cls.__name__)
+                log.info("Reusing http session at index %s for %s", session_index, cache_name)
                 kwargs['http_session'] = _session_cache['http_session'][session_index]
             else:
-                log.info("Creating a new http session at index %s for %s", session_index, cls.__name__)
+                log.info("Creating a new http session at index %s for %s", session_index, cache_name)
                 kwargs['http_session'] = aiohttp.ClientSession(raise_for_status=True)
                 _session_cache['http_session'][session_index] = kwargs['http_session']
 
-        if session_index in _session_cache[cls.__name__]:
-            raise IndexError(f"There's already a {cls.__name__} session at index {session_index}")
+        if session_index in _session_cache[cache_name]:
+            raise IndexError(f"There's already a {cache_name} session at index {session_index}")
 
-        log.info("Creating a new %s session at %s", cls.__name__, session_index)
-        session = _session_cache[cls.__name__][session_index] = super().__new__(cls)
+        log.info("Creating a new %s session at %s", cache_name, session_index)
+        session = _session_cache[cache_name][session_index] = super().__new__(cls)
 
-        log.debug("Initializing instance for %s", cls.__name__)
+        log.debug("Initializing instance for %s", cache_name)
         session.__init__(**kwargs)  # type: ignore
 
         assert isinstance(session, Base), "Wrong session type"
@@ -148,8 +150,10 @@ class Base:
         :param session_index: Session number
         :param no_fail: suppress errors if there is no session at given index
         """
-        if cls.__name__ in _session_cache and session_index in _session_cache[cls.__name__]:
-            del _session_cache[cls.__name__][session_index]
+        cache_name = f'{cls.__module__}.{cls.__name__}'
+
+        if cache_name in _session_cache and session_index in _session_cache[cache_name]:
+            del _session_cache[cache_name][session_index]
             http_session = _session_cache['http_session'][session_index]
             assert isinstance(http_session, aiohttp.ClientSession), "Wrong http session type"
             await http_session.close()
@@ -166,10 +170,12 @@ class Base:
         :param session_index: session number
         :return: instance of module
         """
-        if cls.__name__ not in _session_cache or session_index not in _session_cache[cls.__name__]:
-            raise IndexError(f"There's no session for {cls.__name__} at {session_index}")
+        cache_name = f'{cls.__module__}.{cls.__name__}'
 
-        session = _session_cache[cls.__name__][session_index]
+        if cache_name not in _session_cache or session_index not in _session_cache[cache_name]:
+            raise IndexError(f"There's no session for {cache_name} at {session_index}")
+
+        session = _session_cache[cache_name][session_index]
         assert isinstance(session, Base), "Wrong session type"
         return session
 
