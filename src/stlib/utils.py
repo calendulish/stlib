@@ -157,7 +157,7 @@ class Base:
             http_session = _session_cache['http_session'][session_index]
             assert isinstance(http_session, aiohttp.ClientSession), "Wrong http session type"
             await http_session.close()
-            del http_session
+            del _session_cache['http_session'][session_index]
         else:
             if not no_fail:
                 raise IndexError(f"There's no session at {session_index}")
