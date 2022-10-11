@@ -6,7 +6,7 @@ stlib
 [![Coverage](https://codecov.io/gh/ShyPixie/stlib/branch/master/graph/badge.svg?token=DMKFKEUUZP)](https://codecov.io/gh/ShyPixie/stlib)
 [![Quality](https://api.codiga.io/project/33228/score/svg)](https://app.codiga.io/project/33228/dashboard)
 [![GitHub license](https://img.shields.io/badge/license-GPLv3-brightgreen.svg?style=flat)](https://www.gnu.org/licenses/gpl-3.0.html)
-[![Donate](https://img.shields.io/badge/Donate-PayPal-brightgreen.svg?style=flat)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=WVQ5XM935XNLN&item_name=python-template)
+[![GitHub release](https://img.shields.io/github/release/ShyPixie/stlib.svg?style=flat)](https://github.com/ShyPixie/stlib/releases)
 
 Async library that provides features related to Steam client and compatible stuff
 
