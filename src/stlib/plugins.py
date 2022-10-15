@@ -35,8 +35,8 @@ import importlib.util
 import logging
 import os
 import sys
-from types import ModuleType
-from typing import Tuple, Dict, Optional, Callable, Any
+from types import ModuleType, MappingProxyType
+from typing import Tuple, Dict, Optional, Callable, Any, List
 
 log = logging.getLogger(__name__)
 manager: Optional['_Manager'] = None
@@ -71,10 +71,9 @@ class PluginLoaderError(PluginError):
 
 
 class _Manager:
-    plugins: Dict[str, ModuleType] = {}
-
     def __init__(self, custom_search_paths: Tuple[str, ...] = ()) -> None:
         self._module_search_paths = custom_search_paths + default_search_paths
+        self._plugins: Dict[str, ModuleType] = {}
 
         for plugin_directory in self._module_search_paths:
             if not os.path.isdir(plugin_directory):
@@ -94,13 +93,17 @@ class _Manager:
                     raise PluginLoaderError(exception)
 
                 log.debug("Plugin %s loaded.", module_name)
-                self.plugins[module_.__name__] = module_
+                self._plugins[module_.__name__] = module_
+
+    @property
+    def plugins(self) -> MappingProxyType[str, ModuleType]:
+        return MappingProxyType(self._plugins)
 
     def has_plugin(self, plugin_name: str) -> bool:
-        return plugin_name in self.plugins
+        return plugin_name in self._plugins
 
     def get_plugin(self, plugin_name: str) -> ModuleType:
-        _module = self.plugins[plugin_name]
+        _module = self._plugins[plugin_name]
         assert isinstance(_module, ModuleType), "Wrong module type"
         return _module
 
@@ -128,6 +131,11 @@ def add_search_paths(*paths: str) -> None:
         raise RuntimeError("Can't change search path after plugin manager initialization")
 
     manager = _Manager(tuple(paths))
+
+
+@_plugin_manager
+def get_available_plugins() -> List[str]:
+    return list(manager.plugins.keys())
 
 
 @_plugin_manager

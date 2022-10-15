@@ -20,10 +20,11 @@ from types import ModuleType
 
 from stlib import plugins
 
+
 class TestPlugins:
     def test_plugins(self) -> None:
-        for plugin in plugins.manager.plugins:
+        for plugin in plugins.get_available_plugins():
             assert plugins.has_plugin(plugin) is True
             plugin_module = plugins.get_plugin(plugin)
-            
+
             assert isinstance(plugin_module, ModuleType)
