@@ -36,7 +36,7 @@ import logging
 import os
 import sys
 from types import ModuleType
-from typing import Tuple, Dict, Optional, Callable, Any, List, Union
+from typing import Tuple, Dict, Optional, Callable, Any
 
 log = logging.getLogger(__name__)
 manager: Optional['_Manager'] = None
@@ -73,8 +73,8 @@ class PluginLoaderError(PluginError):
 class _Manager:
     plugins: Dict[str, ModuleType] = {}
 
-    def __init__(self, module_search_paths: Tuple[str, ...] = default_search_paths) -> None:
-        self._module_search_paths = module_search_paths
+    def __init__(self, custom_search_paths: Tuple[str, ...] = ()) -> None:
+        self._module_search_paths = custom_search_paths + default_search_paths
 
         for plugin_directory in self._module_search_paths:
             if not os.path.isdir(plugin_directory):
@@ -105,19 +105,25 @@ class _Manager:
         return _module
 
 
-def _plugin_manager(
-        function: Callable[..., Any],
-        plugin_search_paths: Tuple[str, ...] = default_search_paths,
-) -> Callable[..., Any]:
+def _plugin_manager(function: Callable[..., Any]) -> Callable[..., Any]:
     global manager
 
     if not manager:
         log.debug("Creating a new plugin manager")
-        manager = _Manager(plugin_search_paths)
+        manager = _Manager()
     else:
         log.debug("Using existent plugin manager")
 
     return function
+
+
+def add_search_paths(*paths: str) -> None:
+    global manager
+
+    if manager:
+        raise RuntimeError("Can't change search path after plugin manager initialization")
+
+    manager = _Manager(tuple(paths))
 
 
 @_plugin_manager
