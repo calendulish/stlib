@@ -125,6 +125,13 @@ def _plugin_manager(function: Callable[..., Any]) -> Callable[..., Any]:
 
 
 def add_search_paths(*paths: str) -> None:
+    """
+    Add `paths` to plugin search paths.
+    Must be called before use any method from `plugins` module.
+    The custom search paths will take precedence over default search paths.
+    :param paths: The paths you want to include
+    :return: None
+    """
     global manager
 
     if manager:
@@ -135,6 +142,10 @@ def add_search_paths(*paths: str) -> None:
 
 @_plugin_manager
 def get_available_plugins() -> List[str]:
+    """
+    Return a list of available plugins
+    :return: list of available plugins
+    """
     return list(manager.plugins.keys())
 
 
