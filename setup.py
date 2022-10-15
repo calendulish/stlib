@@ -99,7 +99,7 @@ except FileNotFoundError:
 
 setup(
     name='stlib',
-    version='1.0.2',
+    version='1.0.3',
     description="Async library that provides features related to Steam client and compatible stuffs",
     long_description=long_description,
     long_description_content_type='text/markdown',
