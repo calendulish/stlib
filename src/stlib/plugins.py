@@ -28,7 +28,7 @@ if plugins.has_plugin('indiegala'):
     indiegala.do_login()
 ```
 """
-
+import functools
 import glob
 import importlib.machinery
 import importlib.util
@@ -106,15 +106,19 @@ class _Manager:
 
 
 def _plugin_manager(function: Callable[..., Any]) -> Callable[..., Any]:
-    global manager
+    @functools.wraps(function)
+    def wrapper(*args: Any, **kwargs: Any) -> Any:
+        global manager
 
-    if not manager:
-        log.debug("Creating a new plugin manager")
-        manager = _Manager()
-    else:
-        log.debug("Using existent plugin manager")
+        if not manager:
+            log.debug("Creating a new plugin manager")
+            manager = _Manager()
+        else:
+            log.debug("Using existent plugin manager")
 
-    return function
+        return function(*args, **kwargs)
+
+    return wrapper
 
 
 def add_search_paths(*paths: str) -> None:
