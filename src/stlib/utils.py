@@ -304,6 +304,13 @@ class Base:
                         response.content_type,
                     )
                     break
+            except aiohttp.ClientConnectorError as exception:
+                log.debug("Connector error %s", str(exception))
+
+                if auto_recovery:
+                    log.debug("Trying again in 5 seconds")
+                    await asyncio.sleep(5)
+                    continue
             except aiohttp.ClientResponseError as exception:
                 log.debug("Response error %s", exception.status)
 
