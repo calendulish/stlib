@@ -127,14 +127,14 @@ jobs:
       - uses: actions/setup-python@v4
         with:
           python-version: '3.10'
-      - run: python -m pip install auditwheel
+      - run: python -m pip install patchelf auditwheel
       - run: python ./tools/auditwheel_.py repair --plat manylinux2014_x86_64 linux/dist/stlib-*cp310*.whl
       #- run: python ./tools/auditwheel_.py repair --plat manylinux2014_armv7l rpi_armv7/dist/stlib-*cp310*.whl
       #- run: python ./tools/auditwheel_.py repair --plat manylinux2014_aarch64 rpi_aarch64/dist/stlib-*cp310*.whl
       - uses: actions/setup-python@v4
         with:
           python-version: '3.9'
-      - run: python -m pip install auditwheel
+      - run: python -m pip install patchelf auditwheel
       - run: python ./tools/auditwheel_.py repair --plat manylinux2014_x86_64 linux/dist/stlib-*cp39*.whl
       - run: mv windows/dist/stlib-*win_amd64.whl wheelhouse/
       - uses: pypa/gh-action-pypi-publish@release/v1
