@@ -284,8 +284,9 @@ class Base:
         }
 
         log.debug("Requesting %s via %s with %s:%s", url, http_method, params, data)
+        try_count = 0
 
-        for try_count in range(4):
+        while True:
             try:
                 async with self.http_session.request(**request_params) as response:
                     if len(response.history) >= 1:
@@ -322,6 +323,7 @@ class Base:
                 if auto_recovery and try_count < 3:
                     log.debug("Auto recovering in 5 seconds")
                     await asyncio.sleep(5)
+                    try_count += 1
                     continue
 
                 raise exception from None
