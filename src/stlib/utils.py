@@ -311,6 +311,8 @@ class Base:
                     log.debug("Trying again in 5 seconds")
                     await asyncio.sleep(5)
                     continue
+
+                raise exception from None
             except aiohttp.ClientResponseError as exception:
                 log.debug("Response error %s", exception.status)
 
