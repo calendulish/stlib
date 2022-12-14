@@ -99,10 +99,20 @@ class SteamAPIExecutor(ProcessPoolExecutor):
         super().__init__(max_workers=max_workers)
         self.appid = appid
         self._steam_api_handle = self.submit(steamworks.SteamAPI, self.appid)
+        self._is_running = True
 
     @property
     def steam_api(self) -> steamworks.SteamAPI:
+        """
+        :return: Return a pointer to the internal SteamAPI handle
+        """
         return self._steam_api_handle.result()
+
+    def is_running(self) -> bool:
+        """
+        :return: Return True if SteamAPI is running.
+        """
+        return self._is_running
 
     def __enter__(self) -> steamworks.SteamAPI:
         return self.steam_api
@@ -113,3 +123,4 @@ class SteamAPIExecutor(ProcessPoolExecutor):
                  traceback: Optional[TracebackType]) -> None:
         log.debug('Closing SteamAPI')
         self.shutdown()
+        self._is_running = False
