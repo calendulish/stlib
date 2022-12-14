@@ -197,6 +197,70 @@ static PyObject *is_steam_running_on_steam_deck(PyObject *self, PyObject *args)
     return PyBool_FromLong(result);
 }
 
+static PyObject *is_logged_on(PyObject *self, PyObject *args)
+{
+    bool result = SteamUser()->BLoggedOn();
+
+    return PyBool_FromLong(result);
+}
+
+static PyObject *get_steamid(PyObject *self, PyObject *args)
+{
+    CSteamID SteamID = SteamUser()->GetSteamID();
+
+    return PyLong_FromUnsignedLongLong(SteamID.ConvertToUint64());
+}
+
+static PyObject *get_game_badge_level(PyObject *self, PyObject *args)
+{
+    uint32 nSeries;
+    uint32 bFoil;
+
+    if (!PyArg_ParseTuple(args, "II", &nSeries, &bFoil))
+    {
+        return NULL;
+    }
+
+    uint16 badge_level = SteamUser()->GetGameBadgeLevel(nSeries, bFoil);
+
+    return PyLong_FromUnsignedLong(badge_level);
+}
+
+static PyObject *get_player_steam_level(PyObject *self, PyObject *args)
+{
+    uint16 player_level = SteamUser()->GetPlayerSteamLevel();
+
+    return PyLong_FromUnsignedLong(player_level);
+}
+
+static PyObject *is_phone_verified(PyObject *self, PyObject *args)
+{
+    bool result = SteamUser()->BIsPhoneVerified();
+
+    return PyBool_FromLong(result);
+}
+
+static PyObject *is_two_factor_enabled(PyObject *self, PyObject *args)
+{
+    bool result = SteamUser()->BIsTwoFactorEnabled();
+
+    return PyBool_FromLong(result);
+}
+
+static PyObject *is_phone_identifying(PyObject *self, PyObject *args)
+{
+    bool result = SteamUser()->BIsPhoneIdentifying();
+
+    return PyBool_FromLong(result);
+}
+
+static PyObject *is_phone_requiring_verification(PyObject *self, PyObject *args)
+{
+    bool result = SteamUser()->BIsPhoneRequiringVerification();
+
+    return PyBool_FromLong(result);
+}
+
 static PyMethodDef SteamApiMethods[] = {
     {
         "shutdown",
@@ -317,6 +381,72 @@ static PyMethodDef SteamApiMethods[] = {
         METH_NOARGS,
         PyDoc_STR("is_steam_running_on_steam_deck()\n--\n\n"
                   "Checks if Steam is running on a Steam Deck device.\n"
+                  ":return: `bool`"),
+    },
+    {
+        "is_logged_on",
+        is_logged_on,
+        METH_NOARGS,
+        PyDoc_STR("is_logged_on()\n--\n\n"
+                  "Checks if user is logged on.\n"
+                  ":return: `bool`"),
+    },
+    {
+        "get_steamid",
+        get_steamid,
+        METH_NOARGS,
+        PyDoc_STR("get_steamid()\n--\n\n"
+                  "get steamid of logged on user.\n"
+                  ":return: `int`"),
+    },
+    {
+        "get_game_badge_level",
+        get_game_badge_level,
+        METH_VARARGS,
+        PyDoc_STR("get_game_badge_level(series, foil)\n--\n\n"
+                  "Get badge level of current running game.\n"
+                  ":param series: `int`\n"
+                  ":param foil: `int`\n"
+                  ":return: `int`"),
+    },
+    {
+        "get_player_steam_level",
+        get_player_steam_level,
+        METH_NOARGS,
+        PyDoc_STR("get_player_steam_level()\n--\n\n"
+                  "get steam level of current logged on user.\n"
+                  ":return: `int`"),
+    },
+    {
+        "is_phone_verified",
+        is_phone_verified,
+        METH_NOARGS,
+        PyDoc_STR("is_phone_verified()\n--\n\n"
+                  "Check if phone number of current logged on user is verified.\n"
+                  ":return: `bool`"),
+    },
+    {
+        "is_two_factor_enabled",
+        is_two_factor_enabled,
+        METH_NOARGS,
+        PyDoc_STR("is_two_factor_enabled()\n--\n\n"
+                  "Check if two factor is enabled on current logged on user.\n"
+                  ":return: `bool`"),
+    },
+    {
+        "is_phone_identifying",
+        is_phone_identifying,
+        METH_NOARGS,
+        PyDoc_STR("is_phone_identifying()\n--\n\n"
+                  "Check if phone number was used to verify user identity.\n"
+                  ":return: `bool`"),
+    },
+    {
+        "is_phone_requiring_verification",
+        is_phone_requiring_verification,
+        METH_NOARGS,
+        PyDoc_STR("is_phone_requiring_verification()\n--\n\n"
+                  "Check if phone number of current user is requiring verification.\n"
                   ":return: `bool`"),
     },
     {NULL},
