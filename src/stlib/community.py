@@ -19,7 +19,6 @@
 """
 `community` interface is used to access entry points available at steamcommunity.com
 """
-import aiohttp
 import asyncio
 import json
 import logging
@@ -467,6 +466,21 @@ class Community(utils.Base):
             cards = int(progress.text.split(' ', 3)[0])
 
         return cards
+
+    async def get_last_played_game(self, steamid: universe.SteamId) -> int:
+        """
+        Get last played game
+        :param steamid: `SteamId`
+        :return: gameid
+        """
+        params = {'tab': 'recent'}
+
+        response = await self.request(f"{steamid.profile_url}/games", params=params)
+        start = response.content.index('rgGames') + 10
+        end = response.content.index(';', start)
+        json_data = response.content[start:end]
+
+        return json.loads(json_data)[0]['appid']
 
     async def send_trade_offer(
             self,
