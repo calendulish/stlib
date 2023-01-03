@@ -1,5 +1,5 @@
 /*
-/ Lara Maia <dev@lara.monster> 2015 ~ 2022
+/ Lara Maia <dev@lara.monster> 2015 ~ 2023
 /
 / The stlib is free software: you can redistribute it and/or
 / modify it under the terms of the GNU General Public License as

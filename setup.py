@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Lara Maia <dev@lara.monster> 2015 ~ 2022
+# Lara Maia <dev@lara.monster> 2015 ~ 2023
 #
 # The stlib is free software: you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -99,7 +99,7 @@ except FileNotFoundError:
 
 setup(
     name='stlib',
-    version='1.0.6',
+    version='1.0.7',
     description="Async library that provides features related to Steam client and compatible stuffs",
     long_description=long_description,
     long_description_content_type='text/markdown',
