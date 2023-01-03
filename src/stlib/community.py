@@ -261,7 +261,7 @@ class Community(utils.Base):
             pages = 1
 
         for page in range(1, pages):
-            params['p'] = page
+            params['p'] = page + 1
             html = await self.request_html(f"{steamid.profile_url}/badges/", params=params)
             badges_raw += html.find_all('div', class_='badge_title_row')
 
