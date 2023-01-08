@@ -130,3 +130,8 @@ class SteamAPIExecutor(ProcessPoolExecutor):
         log.debug('Closing SteamAPI')
         self.shutdown()
         self._is_running = False
+
+    # noinspection PyMethodOverriding
+    def shutdown(self) -> None:
+        self.submit(self._steam_api_handler.shutdown)
+        super().shutdown()
