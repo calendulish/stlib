@@ -20,6 +20,7 @@
 """
 
 import asyncio
+import atexit
 import contextlib
 import http.cookies
 import json
@@ -68,7 +69,9 @@ class Base:
         self._headers = headers
         self._http_session = http_session
 
-    def __del__(self) -> None:
+        atexit.register(self.__close_http_session)
+
+    def __close_http_session(self) -> None:
         coro = self._http_session.close()
 
         try:
