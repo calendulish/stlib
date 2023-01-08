@@ -32,11 +32,10 @@ else:
     # not available
 ```
 """
-
 import logging
 from concurrent.futures.process import ProcessPoolExecutor
 from types import TracebackType
-from typing import Optional, Type
+from typing import Optional, Type, Any
 
 from . import NoSteamWorksError
 
@@ -66,6 +65,9 @@ class SteamGameServer:
 
     def __init__(self, appid: int = 480, ip: int = 0x0100007f, port: int = 27016) -> None:
         self.game_server = steamworks.SteamGameServer(appid, ip, port)
+
+    def __getattr__(self, item) -> Any:
+        return getattr(self.game_server, item)
 
     def __enter__(self) -> steamworks.SteamGameServer:
         return self.game_server
@@ -101,8 +103,12 @@ class SteamAPIExecutor(ProcessPoolExecutor):
         self._steam_api_handle = self.submit(steamworks.SteamAPI, self.appid)
         self._is_running = True
 
+    def __getattr__(self, item) -> Any:
+        module = getattr(self._steam_api_handler, item)
+        return lambda *args, **kwargs: self.submit(module, *args, **kwargs).result()
+
     @property
-    def steam_api(self) -> steamworks.SteamAPI:
+    def _steam_api_handler(self) -> steamworks.SteamAPI:
         """
         :return: Return a pointer to the internal SteamAPI handle
         """
@@ -114,8 +120,8 @@ class SteamAPIExecutor(ProcessPoolExecutor):
         """
         return self._is_running
 
-    def __enter__(self) -> steamworks.SteamAPI:
-        return self.steam_api
+    def __enter__(self) -> 'SteamAPIExecutor':
+        return self
 
     def __exit__(self,
                  exception_type: Optional[Type[BaseException]],
