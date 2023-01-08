@@ -15,12 +15,37 @@
 / along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
+#ifdef _WIN32
+#define BLACK_HOLE "nul"
+#else
+#define BLACK_HOLE "/dev/null"
+#endif
+
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
 
 #include "steam/steam_api.h"
 
 #include "steamworks.h"
+
+class BlackHole {
+private:
+    int old_descriptor;
+public:
+    BlackHole(const char* hole)
+        : old_descriptor (-1)
+    {
+        fflush(stderr);
+        old_descriptor = _dup(_fileno(stderr));
+        freopen(hole, "wb", stderr);
+    }
+
+    ~BlackHole ()
+    {
+        fflush(stderr);
+        _dup2(old_descriptor, _fileno(stderr));
+    }
+};
 
 static PyMethodDef steamworks_methods[] = {
     {NULL},
@@ -71,5 +96,6 @@ PyMODINIT_FUNC PyInit_steamworks(void)
         return NULL;
     }
 
+    BlackHole black_hole(BLACK_HOLE);
     return module;
 }
