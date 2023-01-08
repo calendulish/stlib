@@ -16,10 +16,8 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 
-import os
-
-from stlib import client
-from tests import requires_manual_testing
+from stlib import client, steamworks
+from tests import requires_manual_testing, debug
 
 
 @requires_manual_testing
@@ -27,21 +25,21 @@ def test_game_server() -> None:
     with client.SteamGameServer() as game_server:
         assert isinstance(game_server, steamworks.SteamGameServer)
 
-        server_time = server.get_server_time()
+        server_time = game_server.get_server_real_time()
         assert isinstance(server_time, int)
         assert len(str(server_time)) == 10
 
     game_server = client.SteamGameServer()
-    server_time = game_server.get_server_time()
+    server_time = game_server.get_server_real_time()
     assert isinstance(server_time, int)
     assert len(str(server_time)) == 10
     game_server.shutdown()
 
 
 @requires_manual_testing
-def test_steam_api_executor(debug) -> None:
+def test_steam_api_executor() -> None:
     with client.SteamAPIExecutor() as steam_api:
-        assert isinstance(steam_api, steamworks.SteamAPI)
+        assert isinstance(steam_api._steam_api_handler, steamworks.SteamAPI)
         debug("SteamAPIExecutor started", wait_for=6)
 
         steamid = steam_api.get_steamid()
@@ -50,12 +48,12 @@ def test_steam_api_executor(debug) -> None:
 
     debug("SteamAPIExecutor shutdown", wait_for=6)
 
-    executor = client.SteamApiExecutor()
+    steam_api = client.SteamAPIExecutor()
     debug("SteamAPIExecutor manually started", wait_for=6)
 
-    steamid = executor.steam_api.get_steamid()
+    steamid = steam_api.get_steamid()
     assert isinstance(steamid, int)
     assert len(str(steamid)) == 17
 
-    executor.shutdown()
+    steam_api.shutdown()
     debug("SteamAPIExecutor manually shutdown", wait_for=6)
