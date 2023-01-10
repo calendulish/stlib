@@ -25,7 +25,7 @@ jobs:
       - run: ./tools/Linux/dist_script.sh
       - uses: actions/upload-artifact@v3
         with:
-          name: linux
+          name: linux_${{ matrix.python-version }}
           path: |
             build/*.zip
             dist/
@@ -96,7 +96,7 @@ jobs:
       - run: dist_script_native.cmd
       - uses: actions/upload-artifact@v3
         with:
-          name: windows
+          name: windows_${{ matrix.python-version }}
           path: |
             build/*.zip
             dist/
@@ -113,8 +113,12 @@ jobs:
         with:
           draft: true
           files: |
-            linux/dist/*.whl
-            windows/dist/*.whl
+            linux_3.9/dist/*.whl
+            linux_3.10/dist/*.whl
+            linux_3.11/dist/*.whl
+            windows_3.9/dist/*.whl
+            windows_3.10/dist/*.whl
+            windows_3.11/dist/*.whl
             rpi_aarch64/dist/*.whl
             rpi_armv7/dist/*.whl
   pypi-upload:
@@ -128,20 +132,22 @@ jobs:
         with:
           python-version: '3.11'
       - run: python -m pip install patchelf auditwheel
-      - run: python ./tools/auditwheel_.py repair --plat manylinux2014_x86_64 linux/dist/stlib-*cp311*.whl
+      - run: python ./tools/auditwheel_.py repair --plat manylinux2014_x86_64 linux_3.11/dist/stlib-*cp311*.whl
       - uses: actions/setup-python@v4
         with:
           python-version: '3.10'
       - run: python -m pip install patchelf auditwheel
-      - run: python ./tools/auditwheel_.py repair --plat manylinux2014_x86_64 linux/dist/stlib-*cp310*.whl
+      - run: python ./tools/auditwheel_.py repair --plat manylinux2014_x86_64 linux_3.10/dist/stlib-*cp310*.whl
       #- run: python ./tools/auditwheel_.py repair --plat manylinux2014_armv7l rpi_armv7/dist/stlib-*cp310*.whl
       #- run: python ./tools/auditwheel_.py repair --plat manylinux2014_aarch64 rpi_aarch64/dist/stlib-*cp310*.whl
       - uses: actions/setup-python@v4
         with:
           python-version: '3.9'
       - run: python -m pip install patchelf auditwheel
-      - run: python ./tools/auditwheel_.py repair --plat manylinux2014_x86_64 linux/dist/stlib-*cp39*.whl
-      - run: mv windows/dist/stlib-*win_amd64.whl wheelhouse/
+      - run: python ./tools/auditwheel_.py repair --plat manylinux2014_x86_64 linux_3.9/dist/stlib-*cp39*.whl
+      - run: mv windows_3.9/dist/stlib-*win_amd64.whl wheelhouse/
+      - run: mv windows_3.10/dist/stlib-*win_amd64.whl wheelhouse/
+      - run: mv windows_3.11/dist/stlib-*win_amd64.whl wheelhouse/
       - uses: pypa/gh-action-pypi-publish@release/v1
         with:
           password: ${{ secrets.PYPI_API_TOKEN }}
