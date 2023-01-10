@@ -15,9 +15,16 @@
 / along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
+#include <stdio.h>
+
 #ifdef _WIN32
+#include <io.h>
 #define BLACK_HOLE "nul"
+#define fileno _fileno
+#define dup _dup
+#define dup2 _dup2
 #else
+#include <unistd.h>
 #define BLACK_HOLE "/dev/null"
 #endif
 
@@ -36,14 +43,14 @@ public:
         : old_descriptor (-1)
     {
         fflush(stderr);
-        old_descriptor = _dup(_fileno(stderr));
+        old_descriptor = dup(fileno(stderr));
         freopen(hole, "wb", stderr);
     }
 
     ~BlackHole ()
     {
         fflush(stderr);
-        _dup2(old_descriptor, _fileno(stderr));
+        dup2(old_descriptor, fileno(stderr));
     }
 };
 
