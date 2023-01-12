@@ -82,14 +82,6 @@ from ctypes import cdll
 # noinspection PyUnresolvedReferences
 __all__ = ["steamworks"]
 
-try:
-    # noinspection PyUnresolvedReferences
-    from stlib import steamworks
-except ImportError:
-    steamworks_available = False
-else:
-    steamworks_available = True
-
 
 class NoSteamWorksError(ImportError):
     """Raised when stlib was compiled without SteamWorks support"""
@@ -107,3 +99,11 @@ if sys.platform == 'linux':
     for site_packages in site.getsitepackages():
         with suppress(OSError):
             cdll.LoadLibrary(os.path.join(site_packages, 'stlib', 'libsteam_api.so'))
+
+try:
+    # noinspection PyUnresolvedReferences
+    from stlib import steamworks
+except ImportError:
+    steamworks_available = False
+else:
+    steamworks_available = True
