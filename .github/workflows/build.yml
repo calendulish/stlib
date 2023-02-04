@@ -167,6 +167,7 @@ jobs:
       - run: mv windows_3.9/dist/stlib-*win_amd64.whl wheelhouse/
       - run: mv windows_3.10/dist/stlib-*win_amd64.whl wheelhouse/
       - run: mv windows_3.11/dist/stlib-*win_amd64.whl wheelhouse/
+      - run: mv linux_3.11/dist/stlib-*.tar.gz wheelhouse/
       - uses: pypa/gh-action-pypi-publish@release/v1
         with:
           password: ${{ secrets.PYPI_API_TOKEN }}
