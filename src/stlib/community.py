@@ -22,7 +22,7 @@
 import asyncio
 import json
 import logging
-from typing import List, Tuple, Any, Dict, NamedTuple, Union
+from typing import List, Tuple, Any, Dict, NamedTuple, Union, Optional
 
 from bs4 import BeautifulSoup
 
@@ -467,20 +467,21 @@ class Community(utils.Base):
 
         return cards
 
-    async def get_last_played_game(self, steamid: universe.SteamId) -> int:
+    async def get_last_played_game(self, steamid: universe.SteamId) -> Optional[int]:
         """
         Get last played game
         :param steamid: `SteamId`
         :return: gameid
         """
-        params = {'tab': 'recent'}
+        html = await self.request_html(f"{steamid.profile_url}")
+        game_list = html.find('div', class_="recent_games")
 
-        response = await self.request(f"{steamid.profile_url}/games", params=params)
-        start = response.content.index('rgGames') + 10
-        end = response.content.index(';', start)
-        json_data = response.content[start:end]
+        if not game_list:
+            return None
 
-        return json.loads(json_data)[0]['appid']
+        gameid = game_list.find('a')['href'].split('/')[-1]
+
+        return int(gameid)
 
     async def send_trade_offer(
             self,
