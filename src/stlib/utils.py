@@ -24,6 +24,7 @@ import atexit
 import contextlib
 import http.cookies
 import json
+import locale
 import logging
 from typing import Dict, Any, Optional, NamedTuple, Union
 
@@ -332,3 +333,15 @@ class Base:
                 raise exception from None
 
         return result
+
+
+def convert_steam_price(price: Union[str, int]) -> str:
+    price_raw = str(price)
+
+    if len(price_raw) == 1:
+        price_raw = float(f".0{price_raw}")
+    else:
+        price_raw = float(f"{price_raw[:-2]}.{price_raw[-2:]}")
+
+    locale.setlocale(locale.LC_MONETARY, "")
+    return locale.currency(price_raw)

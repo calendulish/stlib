@@ -62,6 +62,18 @@ class Item(NamedTuple):
     """List with custom actions for `Item`"""
 
 
+class Order(NamedTuple):
+    name: str
+    link: str
+    type: str
+    price: str
+    amount: int
+    orderid: int
+    actions: List[Dict[str, str]]
+    icon_url: str
+    icon_url_large: str
+
+
 class Confirmation(NamedTuple):
     mode_accept: str
     """Confirmation mode for accept action"""
@@ -482,6 +494,68 @@ class Community(utils.Base):
         gameid = game_list.find('a')['href'].split('/')[-1]
 
         return int(gameid)
+
+    async def get_my_orders(self) -> Tuple[List[Order], List[Order]]:
+        params = {"start": 0, "count": 100, "norender": 1, "l": "english"}
+        json_data = {}
+
+        while True:
+            json_data.update(await self.request_json(f"{self.community_url}/market/mylistings", params=params))
+
+            if not json_data['success']:
+                raise AttributeError("Unable to get order details")
+
+            if json_data['total_count'] > 100:
+                params['start'] += 100
+                await asyncio.sleep(5)
+            else:
+                break
+
+        my_sell_orders = []
+
+        for order in json_data['listings']:
+            asset = order['asset']
+            appid = asset['appid']
+            contexid = asset['contextid']
+            hash_name = asset['market_hash_name']
+            price_raw = int(order['price']) + int(order['fee'])
+
+            my_sell_orders.append(
+                Order(
+                    asset['name'],
+                    f"{self.community_url}/market/listings/{appid}/{contexid}/{hash_name}",
+                    asset['type'],
+                    utils.convert_steam_price(price_raw),
+                    int(asset['amount']),
+                    int(asset['id']),
+                    asset['owner_actions'] if 'owner_actions' in asset else [],
+                    asset['icon_url'],
+                    asset['icon_url_large'],
+                )
+            )
+
+        my_buy_orders = []
+        for order in json_data['buy_orders']:
+            appid = order['appid']
+            hash_name = order['hash_name']
+            price_raw = order['price']
+            description = order['description']
+
+            my_buy_orders.append(
+                Order(
+                    description['name'],
+                    f"{self.community_url}/market/listings/{appid}/{hash_name}",
+                    description['type'],
+                    utils.convert_steam_price(price_raw),
+                    int(order['quantity']),
+                    int(order['buy_orderid']),
+                    order['owner_actions'] if 'owner_actions' in order else [],
+                    description['icon_url'],
+                    description['icon_url_large'],
+                )
+            )
+
+        return my_sell_orders, my_buy_orders
 
     async def send_trade_offer(
             self,
