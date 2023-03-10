@@ -17,6 +17,7 @@
 #
 
 import asyncio
+import codecs
 import configparser
 from pathlib import Path
 
@@ -69,7 +70,14 @@ async def do_login(steamid) -> None:
 
     if not await login_session.is_logged_in(steamid):
         login_session.username = parser.get('Test', 'account_name')
-        login_session.password = parser.get('Test', 'password_raw')
+
+        try:
+            login_session.password = parser.get('Test', 'password_raw')
+        except configparser.NoOptionError:
+            encrypted_pass = parser.get('Test', 'password')
+            key = codecs.decode(encrypted_pass, 'rot13')
+            raw = codecs.decode(key.encode(), 'base64')
+            login_session.password = raw.decode()
 
         login_data = await login_session.do_login(shared_secret, mobile_login=True)
         parser.set('Test', 'token', login_data.oauth['wgtoken'])
