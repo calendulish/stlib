@@ -199,12 +199,13 @@ class Community(utils.Base):
         :return: List of `Item`
         """
         params = {'l': 'english', 'count': count}
+        json_data = {}
 
         while True:
-            json_data = await self.request_json(
+            json_data.update(await self.request_json(
                 f"{self.community_url}/inventory/{steamid.id64}/{appid}/{contextid}",
                 params=params,
-            )
+            ))
 
             if not json_data['success']:
                 raise AttributeError("Unable to get inventory details")
@@ -214,7 +215,7 @@ class Community(utils.Base):
 
             if 'last_assetid' in json_data:
                 params['start_assetid'] = json_data['last_assetid']
-                await asyncio.sleep(.5)
+                await asyncio.sleep(10)
             else:
                 break
 
