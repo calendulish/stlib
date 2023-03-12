@@ -184,24 +184,46 @@ class Base:
         return session
 
     @staticmethod
-    def get_json_from_js(javascript: BeautifulSoup) -> Dict[str, Any]:
+    def get_json_from_js_func(javascript: BeautifulSoup, target: str, separator: str = '\t+') -> Dict[str, Any]:
         """
-        converts javascript data to json data
+        get json data from javascript functions
         :param javascript: javascript parsed with data. Usually contents of a ''<script>''  tag
-        :return: json data as Dict
+        :param target: the function to get data from
+        :param separator: delimiter string where to split data while parsing
+        :return: json data
         """
         json_data = {}
-        for line in str(javascript).split('\t+'):
-            if "BuildHover" in line:
+        for line in str(javascript).split(separator):
+            if target in line:
                 for item in line.split(','):
                     with contextlib.suppress(ValueError):
                         key_raw, value_raw = item.split(':"')
                         key = key_raw.replace('"', '')
                         value = bytes(value_raw.replace('"', ''), 'utf-8').decode('unicode_escape')
                         json_data[key] = value
-            break
+
+                break
 
         return json_data
+
+    @staticmethod
+    def get_vars_from_js(javascript: BeautifulSoup, separator: str = '\n') -> Dict[str, str]:
+        """
+        get variables and it's values from javascript (as `str` values)
+        :param javascript: javascript parsed with data. Usually contents of a ''<script>'' tag
+        :param separator: delimiter string where to split data while parsing
+        :return: a dict with variables data
+        """
+        vars_data = {}
+
+        for line in str(javascript).split(separator):
+            with contextlib.suppress(ValueError):
+                key_raw, value_raw = line.split(" = ")
+                key = key_raw.replace("var ", '').strip()
+                value = value_raw[:-2].strip()
+                vars_data[key] = value
+
+        return vars_data
 
     @staticmethod
     async def get_html(response: Response) -> BeautifulSoup:
@@ -222,23 +244,47 @@ class Base:
         assert isinstance(json_data, dict)
         return json_data
 
-    async def request_json_from_js(
+    async def request_json_from_js_func(
             self,
             *args: str,
             script_index: int = 0,
+            target: str,
+            separator: str = '\t+',
             **kwargs: Any,
     ) -> Dict[str, Any]:
         """
         make a new http request and returns json data from javascript at given index
-        It's a convenient helper for `request`
+        It's a convenient helper for `get_json_from_js`
         :param args: request args
         :param script_index: index of script at html page
+        :param target: the function to get data from
+        :param separator: delimiter string where to split data while parsing
         :param kwargs: request kwargs
         :return: json_data as Dict
         """
         html = await self.request_html(*args, **kwargs)
         javascript = html.find_all('script')[script_index]
-        return self.get_json_from_js(javascript)
+        return self.get_json_from_js(javascript, target, separator)
+
+    async def request_vars_from_js(
+            self,
+            *args: str,
+            script_index: int = 0,
+            separator: str = '\n',
+            **kwargs: Any,
+    ) -> Dict[str, str]:
+        """
+        make a new http request and returns vars data from javascript at given index
+        It's a convenient helper for `get_vars_from_js`
+        :param args: request args
+        :param script_index: index of script at html page
+        :param separator: delimiter string where to split data while parsing
+        :param kwargs: request kwargs
+        :return: vars_data as Dict
+        """
+        html = await self.request_html(*args, **kwargs)
+        javascript = html.find_all('script')[script_index]
+        return self.get_vars_from_js(javascript, separator)
 
     async def request_html(self, *args: str, **kwargs: Any) -> BeautifulSoup:
         """

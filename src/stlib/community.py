@@ -314,8 +314,9 @@ class Community(utils.Base):
         """Get item name from app ID"""
         params = {'content_only': 1}
 
-        json_data = await self.request_json_from_js(
+        json_data = await self.request_json_from_js_func(
             f"{self.economy_url}/itemclasshover/{appid}/{classid}",
+            target="BuildHover",
             params=params,
         )
 
@@ -415,7 +416,7 @@ class Community(utils.Base):
                 receive = [f"{final_price} ({sell_price})"]
 
                 javascript = html.find_all("script")[2]
-                json_data = self.get_json_from_js(javascript)
+                json_data = self.get_json_from_js_func(javascript, target="BuildHover")
 
                 if 'market_name' in json_data and json_data['market_name']:
                     give = [json_data['market_name']]
