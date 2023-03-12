@@ -485,7 +485,7 @@ class Community(utils.Base):
         """
         Get last played game
         :param steamid: `SteamId`
-        :return: gameid
+        :return: gameid or None
         """
         html = await self.request_html(f"{steamid.profile_url}")
         game_list = html.find('div', class_="recent_games")
@@ -498,6 +498,10 @@ class Community(utils.Base):
         return int(gameid)
 
     async def get_my_orders(self) -> Tuple[List[Order], List[Order]]:
+        """
+        Get list of orders for current logged user
+        :return: sell orders (`Order`) and buy orders (`Order`)
+        """
         params = {"start": 0, "count": 100, "norender": 1, "l": "english"}
         json_data = {}
 
@@ -560,6 +564,13 @@ class Community(utils.Base):
         return my_sell_orders, my_buy_orders
 
     async def get_item_histogram(self, appid: int, hash_name: str) -> Dict[str, Any]:
+        """
+        get item histogram
+        :param appid: appid
+        :param hash_name: item hash name
+        :return: histogram data
+        """
+
         html = await self.request_html(f"{self.community_url}/market/listings/{appid}/{hash_name}")
         scripts = html.find_all("script")
 

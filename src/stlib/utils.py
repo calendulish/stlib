@@ -382,6 +382,11 @@ class Base:
 
 
 def convert_steam_price(price: Union[str, int]) -> str:
+    """
+    convert raw int steam price to real monetary price
+    :param price: raw steam int price
+    :return: a `str` representing a monetary price
+    """
     price_raw = str(price)
 
     if len(price_raw) == 1:
