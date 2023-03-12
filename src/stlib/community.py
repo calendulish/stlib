@@ -559,6 +559,30 @@ class Community(utils.Base):
 
         return my_sell_orders, my_buy_orders
 
+    async def get_item_histogram(self, appid: int, hash_name: str) -> Dict[str, Any]:
+        html = await self.request_html(f"{self.community_url}/market/listings/{appid}/{hash_name}")
+        scripts = html.find_all("script")
+
+        item_activity_func = str(scripts[27])
+        start = item_activity_func.index("LoadOrderSpread") + 17
+        end = item_activity_func[start:].index(" );") + start
+        item_nameid = item_activity_func[start:end]
+
+        wallet_vars = self.get_vars_from_js(scripts[26])
+        wallet_info = json.loads(wallet_vars['g_rgWalletInfo'])
+
+        params = {
+            'language': 'english',
+            'currency': wallet_info['wallet_currency'],
+            'country': wallet_info['wallet_country'],
+            'item_nameid': item_nameid,
+            'norender': 1,
+        }
+
+        json_data = await self.request_json(f"{self.community_url}/market/itemordershistogram", params=params)
+
+        return json_data
+
     async def send_trade_offer(
             self,
             steamid: universe.SteamId,

@@ -37,3 +37,9 @@ async def test_get_my_buy_orders(community_session) -> None:
         assert isinstance(order, community.Order)
 
     debug(str(my_orders), wait_for=3)
+
+
+async def test_get_item_histogram(community_session) -> None:
+    histogram = await community_session.get_item_histogram(753, "1385730-:SecretPresent:")
+    assert isinstance(histogram, dict)
+    debug(str(histogram), wait_for=0)
