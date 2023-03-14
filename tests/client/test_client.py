@@ -15,8 +15,15 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
+import pytest
 
-from stlib import client, steamworks
+from stlib import NoSteamWorksError
+
+try:
+    from stlib import client, steamworks  # noqa
+except NoSteamWorksError as exception:
+    pytest.skip(str(exception), allow_module_level=True)
+
 from tests import requires_manual_testing, debug
 
 

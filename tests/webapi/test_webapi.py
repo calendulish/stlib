@@ -15,19 +15,21 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
+import pytest
+
 from stlib import universe, webapi, login
+from tests import debug, LIMITED_ACCOUNT
 
-from tests import requires_manual_testing, debug
+if LIMITED_ACCOUNT:
+    pytest.skip("requires unlimited account", allow_module_level=True)
 
 
-@requires_manual_testing
 async def test_server_time(webapi_session) -> None:
     server_time = await webapi_session.get_server_time()
     assert isinstance(server_time, int)
     assert len(str(server_time)) == 10
 
 
-@requires_manual_testing
 async def test_get_custom_profile_url(webapi_session, steamid) -> None:
     profile_url = await webapi_session.get_custom_profile_url(steamid)
     assert isinstance(profile_url, str)
@@ -35,7 +37,6 @@ async def test_get_custom_profile_url(webapi_session, steamid) -> None:
     debug(profile_url, wait_for=0)
 
 
-@requires_manual_testing
 async def test_get_steamid(webapi_session, steamid) -> None:
     profile_url = await webapi_session.get_custom_profile_url(steamid)
     steamid_2 = await webapi_session.get_steamid(profile_url)
@@ -43,14 +44,12 @@ async def test_get_steamid(webapi_session, steamid) -> None:
     assert steamid == steamid_2
 
 
-@requires_manual_testing
 async def test_get_personaname(webapi_session, steamid) -> None:
     persona = await webapi_session.get_personaname(steamid)
     isinstance(persona, str)
     debug(persona, wait_for=0)
 
 
-@requires_manual_testing
 async def test_get_owned_games(webapi_session, steamid) -> None:
     owned_games = await webapi_session.get_owned_games(steamid)
     assert isinstance(owned_games, list)
@@ -62,7 +61,6 @@ async def test_get_owned_games(webapi_session, steamid) -> None:
     debug(str(owned_games_filtered[0]), wait_for=0)
 
 
-@requires_manual_testing
 async def test_new_authenticator(webapi_session, steamid, oauth_token) -> None:
     login_data = webapi_session.new_authenticator(steamid, oauth_token)
     isinstance(login_data, login.LoginData)

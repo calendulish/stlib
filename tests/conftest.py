@@ -19,6 +19,7 @@
 import asyncio
 import codecs
 import configparser
+import os
 from pathlib import Path
 
 import pytest
@@ -28,6 +29,22 @@ from stlib import login, webapi, universe, community
 
 config_file = Path(__file__).parent.resolve() / 'conftest.ini'
 parser = configparser.RawConfigParser()
+
+if os.getenv("GITHUB_ACTIONS"):
+    parser.add_section('Test')
+    parser.set('Test', 'steamid', os.getenv("steamid"))
+    parser.set('Test', 'account_name', os.getenv("account_name"))
+    parser.set('Test', 'password_raw', os.getenv("password_raw"))
+    parser.set('Test', 'shared_secret', os.getenv("shared_secret"))
+    parser.set('Test', 'identity_secret', os.getenv("identity_secret"))
+    parser.set('Test', 'api_key', os.getenv("api_key"))
+    parser.set('Test', 'token', "0")
+    parser.set('Test', 'token_secure', "0")
+    parser.set('Test', 'oauth_token', "0")
+
+    with open(config_file, 'w', encoding="utf8") as config_file_object:
+        parser.write(config_file_object)
+
 parser.read(config_file)
 
 
@@ -47,6 +64,7 @@ def event_loop():
 def steamid() -> universe.SteamId:
     steamid_ = universe.generate_steamid(parser.get('Test', 'steamid'))
     return steamid_
+
 
 @pytest.fixture(scope='session')
 def oauth_token() -> str:

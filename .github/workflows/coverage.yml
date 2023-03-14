@@ -18,6 +18,14 @@ jobs:
       - run: python -m pip install dist/*.whl -v
       - run: python -m pip install pytest pytest-cov pytest-asyncio
       - run: pytest --cov=stlib --cov-report=xml
+        env:
+          steamid: ${{ secrets.STEAMID }}
+          account_name: ${{ secrets.ACCOUNT_NAME }}
+          password_raw: ${{ secrets.PASSWORD_RAW }}
+          shared_secret: ${{ secrets.SHARED_SECRET }}
+          identity_secret: ${{ secrets.IDENTITY_SECRET }}
+          api_key: ${{ secrets.API_KEY }}
+          LIMITED_ACCOUNT: ${{ secrets.LIMITED_ACCOUNT }}
       - uses: codecov/codecov-action@v3
         with:
           token: ${{ secrets.CODECOV_TOKEN }}

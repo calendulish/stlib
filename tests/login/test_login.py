@@ -17,20 +17,9 @@
 #
 
 from stlib import login
-from tests import requires_manual_testing, MANUAL_TESTING
 
 
 class TestLogin:
-    if MANUAL_TESTING:
-        config_parser = configparser.RawConfigParser()
-        config_parser.read(os.path.join(os.path.dirname(__file__), '..', 'conftest.ini'))
-        username = config_parser.get("Test", "username")
-        password = config_parser.get("Test", "password")
-        api_url = config_parser.get("Test", "api_url")
-        api_key = config_parser.get("Test", "api_key")
-        steamid_raw = config_parser.getint("Test", "steamid")
-
-    @requires_manual_testing
     def test_login(self) -> None:
         # TODO
         pass
@@ -51,28 +40,31 @@ class TestLogin:
         # TODO
         pass
 
-    @requires_manual_testing
-    async def test_is_logged_in(self) -> None:
-        login_session = await login.Login.new_session(0)
-        steamid = await universe.generate_steamid(steamid_raw)
+    # noinspection PyUnusedLocal
+    async def test_is_logged_in(self, do_login, steamid) -> None:
+        login_session = login.Login.get_session(0)
+        is_logged_in = await login_session.is_logged_in(steamid)
+        assert is_logged_in is True
+
+        login_session = await login.Login.new_session(1)
         is_logged_in = await login_session.is_logged_in(steamid)
         assert is_logged_in is False
 
     async def test_session(self) -> None:
-        login_session_1 = await login.Login.new_session(0)
-        login_session_2 = await login.Login.new_session(1)
+        login_session_1 = await login.Login.new_session(2)
+        login_session_2 = await login.Login.new_session(3)
 
         try:
             await login.Login.new_session(0)
         except IndexError:
             pass
 
-        login_session_3 = login.Login.get_session(0)
-        login_session_4 = login.Login.get_session(1)
-        login_session_5 = login.Login.get_session(0)
+        login_session_3 = login.Login.get_session(2)
+        login_session_4 = login.Login.get_session(3)
+        login_session_5 = login.Login.get_session(2)
 
         try:
-            login.Login.get_session(2)
+            login.Login.get_session(4)
         except IndexError:
             pass
 

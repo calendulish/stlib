@@ -17,8 +17,11 @@
 #
 
 import base64
+
 import rsa
+
 from stlib import universe
+
 
 class TestUniverse:
     def test_generate_otp_code(self) -> None:
@@ -37,7 +40,7 @@ class TestUniverse:
                 'B', 'C', 'D', 'F', 'G', 'H', 'J', 'K',
                 'M', 'N', 'P', 'Q', 'R', 'T', 'V', 'W',
                 'X', 'Y'
-                ]
+            ]
 
     def test_generate_device_id(self) -> None:
         device_id = universe.generate_device_id('A')

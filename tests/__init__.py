@@ -24,9 +24,13 @@ from typing import Optional
 import pytest
 
 MANUAL_TESTING = int(os.environ.get('MANUAL_TESTING', 0))
+LIMITED_ACCOUNT = int(os.environ.get('LIMITED_ACCOUNT', 0))
 
-requires_manual_testing = pytest.mark.skipif(MANUAL_TESTING == False,
+requires_manual_testing = pytest.mark.skipif(MANUAL_TESTING == False,  # noqa
                                              reason="This test can't run without MANUAL_TESTING")
+
+requires_unlimited_account = pytest.mark.skipif(LIMITED_ACCOUNT == True,  # noqa
+                                                reason="This test ccan't run using a limited account")
 
 
 def debug(msg: Optional[str] = None, wait_for: int = 5) -> None:

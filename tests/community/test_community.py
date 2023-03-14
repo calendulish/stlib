@@ -15,18 +15,17 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
+
 from stlib import community
-from tests import requires_manual_testing, debug
+from tests import debug, requires_unlimited_account
 
 
-@requires_manual_testing
 async def test_get_last_played_game(community_session, steamid) -> None:
     last_played_game = await community_session.get_last_played_game(steamid)
     assert isinstance(last_played_game, int) or last_played_game is None
     debug(str(last_played_game), wait_for=0)
 
 
-@requires_manual_testing
 async def test_get_my_buy_orders(community_session) -> None:
     my_orders = await community_session.get_my_orders()
     assert isinstance(my_orders, tuple)
@@ -39,6 +38,7 @@ async def test_get_my_buy_orders(community_session) -> None:
     debug(str(my_orders), wait_for=3)
 
 
+@requires_unlimited_account
 async def test_get_item_histogram(community_session) -> None:
     histogram = await community_session.get_item_histogram(753, "1385730-:SecretPresent:")
     assert isinstance(histogram, dict)
