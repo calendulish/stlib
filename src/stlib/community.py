@@ -64,11 +64,13 @@ class Item(NamedTuple):
 
 class Order(NamedTuple):
     name: str
-    link: str
+    appid: int
+    hash_name: str
     type: str
     price: str
     amount: int
     orderid: int
+    contextid: Optional[int]
     actions: List[Dict[str, str]]
     icon_url: str
     icon_url_large: str
@@ -521,19 +523,18 @@ class Community(utils.Base):
 
         for order in json_data['listings']:
             asset = order['asset']
-            appid = asset['appid']
-            contexid = asset['contextid']
-            hash_name = asset['market_hash_name']
             price_raw = int(order['price']) + int(order['fee'])
 
             my_sell_orders.append(
                 Order(
                     asset['name'],
-                    f"{self.community_url}/market/listings/{appid}/{contexid}/{hash_name}",
+                    int(asset['appid']),
+                    asset['market_hash_name'],
                     asset['type'],
                     utils.convert_steam_price(price_raw),
                     int(asset['amount']),
                     int(asset['id']),
+                    int(asset['contextid']),
                     asset['owner_actions'] if 'owner_actions' in asset else [],
                     asset['icon_url'],
                     asset['icon_url_large'],
@@ -542,19 +543,19 @@ class Community(utils.Base):
 
         my_buy_orders = []
         for order in json_data['buy_orders']:
-            appid = order['appid']
-            hash_name = order['hash_name']
             price_raw = order['price']
             description = order['description']
 
             my_buy_orders.append(
                 Order(
                     description['name'],
-                    f"{self.community_url}/market/listings/{appid}/{hash_name}",
+                    int(order['appid']),
+                    order['hash_name'],
                     description['type'],
                     utils.convert_steam_price(price_raw),
                     int(order['quantity']),
                     int(order['buy_orderid']),
+                    None,
                     order['owner_actions'] if 'owner_actions' in order else [],
                     description['icon_url'],
                     description['icon_url_large'],
