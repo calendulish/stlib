@@ -5,6 +5,7 @@ jobs:
   coverage:
     runs-on: ubuntu-latest
     strategy:
+      max-parallel: 1
       matrix:
         python-version: ['3.9', '3.10', '3.11']
     name: Python ${{ matrix.python-version }} coverage
@@ -17,6 +18,8 @@ jobs:
       - run: ./tools/Linux/dist_script.sh
       - run: python -m pip install dist/*.whl -v
       - run: python -m pip install pytest pytest-cov pytest-asyncio
+      - name: Prevent exceeding steam rate limits (waiting 30s)
+        run: sleep 30s
       - run: pytest --cov=stlib --cov-report=xml
         env:
           steamid: ${{ secrets.STEAMID }}
