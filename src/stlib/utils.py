@@ -207,9 +207,9 @@ class Base:
         return json_data
 
     @staticmethod
-    def get_vars_from_js(javascript: BeautifulSoup, separator: str = '\n') -> Dict[str, str]:
+    def get_vars_from_js(javascript: BeautifulSoup, separator: str = '\n') -> Dict[str, Any]:
         """
-        get variables and it's values from javascript (as `str` values)
+        get variables and it's values from javascript
         :param javascript: javascript parsed with data. Usually contents of a ''<script>'' tag
         :param separator: delimiter string where to split data while parsing
         :return: a dict with variables data
@@ -221,7 +221,7 @@ class Base:
                 key_raw, value_raw = line.split(" = ")
                 key = key_raw.replace("var ", '').strip()
                 value = value_raw[:-2].strip()
-                vars_data[key] = value
+                vars_data[key] = json.loads(value)
 
         return vars_data
 
