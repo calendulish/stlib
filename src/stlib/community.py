@@ -575,18 +575,24 @@ class Community(utils.Base):
         html = await self.request_html(f"{self.community_url}/market/listings/{appid}/{hash_name}")
         scripts = html.find_all("script")
 
-        item_activity_func = str(scripts[27])
+        item_activity_func = str(scripts[-1])
         start = item_activity_func.index("LoadOrderSpread") + 17
         end = item_activity_func[start:].index(" );") + start
         item_nameid = item_activity_func[start:end]
 
-        wallet_vars = self.get_vars_from_js(scripts[26])
-        wallet_info = json.loads(wallet_vars['g_rgWalletInfo'])
+        wallet_vars = self.get_vars_from_js(scripts[-2])
+
+        if 'g_rgWalletInfo' in wallet_vars:
+            currency = wallet_vars['g_rgWalletInfo']['wallet_currency']
+            country = wallet_vars['g_rgWalletInfo']['wallet_country']
+        else:
+            currency = 0
+            country = wallet_vars['g_strCountryCode']
 
         params = {
             'language': 'english',
-            'currency': wallet_info['wallet_currency'],
-            'country': wallet_info['wallet_country'],
+            'currency': currency,
+            'country': country,
             'item_nameid': item_nameid,
             'norender': 1,
         }
