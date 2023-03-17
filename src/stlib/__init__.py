@@ -28,7 +28,7 @@ stlib is intended to develop console or GUI applications that need interaction w
 
 stlib now supports plugins!
 ---------------------------
-See more at: [stlib-plugins](https://github.com/ShyPixie/stlib-plugins)
+See more at: [stlib-plugins](https://github.com/calendulish/stlib-plugins)
 
 Dependencies to build SteamWorks Python Extension (Optional)
 -----------------------------------------------------
@@ -52,7 +52,7 @@ Dependencies to run
 Made with stlib
 ---------------
 
-Steam Tools NG - https://github.com/ShyPixie/steam-tools-ng
+Steam Tools NG - https://github.com/calendulish/steam-tools-ng
 
 ___________________________________________________________________________________________
 

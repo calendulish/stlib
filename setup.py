@@ -105,7 +105,7 @@ setup(
     long_description_content_type='text/markdown',
     author='Lara Maia',
     author_email='dev@lara.monster',
-    url='https://github.com/ShyPixie/stlib',
+    url='https://github.com/calendulish/stlib',
     license='GPLv3',
     classifiers=classifiers,
     keywords='steam valve',
