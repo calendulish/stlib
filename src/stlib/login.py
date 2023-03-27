@@ -299,6 +299,7 @@ class Login(utils.Base):
 
         if 'profile could not be found' in response.content:
             log.error("steamid %s seems invalid", steamid.id64)
+            return False
 
         return response.status == 200
 
