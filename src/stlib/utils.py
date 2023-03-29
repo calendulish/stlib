@@ -187,7 +187,7 @@ class Base:
     def get_json_from_js_func(javascript: BeautifulSoup, target: str, separator: str = '\t+') -> Dict[str, Any]:
         """
         get json data from javascript functions
-        :param javascript: javascript parsed with data. Usually contents of a ''<script>''  tag
+        :param javascript: javascript parsed with data. Usually contents of a ''script''  tag
         :param target: the function to get data from
         :param separator: delimiter string where to split data while parsing
         :return: json data
@@ -210,7 +210,7 @@ class Base:
     def get_vars_from_js(javascript: BeautifulSoup, separator: str = '\n') -> Dict[str, Any]:
         """
         get variables and it's values from javascript
-        :param javascript: javascript parsed with data. Usually contents of a ''<script>'' tag
+        :param javascript: javascript parsed with data. Usually contents of a ''script'' tag
         :param separator: delimiter string where to split data while parsing
         :return: a dict with variables data
         """
