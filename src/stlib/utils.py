@@ -264,7 +264,7 @@ class Base:
         """
         html = await self.request_html(*args, **kwargs)
         javascript = html.find_all('script')[script_index]
-        return self.get_json_from_js(javascript, target, separator)
+        return self.get_json_from_js_func(javascript, target, separator)
 
     async def request_vars_from_js(
             self,
