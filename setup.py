@@ -16,6 +16,7 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 import os
+import platform
 import shutil
 import sys
 
@@ -50,8 +51,9 @@ class OptionalBuild(build_ext):
         bin_path = SDK_PATH / 'redistributable_bin'
         output_dir = Path(self.build_lib) / 'stlib'
         output_dir.mkdir(parents=True, exist_ok=True)
+        compatible = True if platform.machine() in ['x86_64', 'amd64', 'i386', 'x86'] else False
 
-        if HEADERS_PATH.exists():
+        if compatible and HEADERS_PATH.exists():
             shutil.copy(
                 bin_path / REDIST_PATH / EXTRA_NAME,
                 output_dir,
