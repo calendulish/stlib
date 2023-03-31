@@ -71,13 +71,16 @@ If not, see http://www.gnu.org/licenses/.
 Lara Maia <dev@lara.monster> 2015 ~ 2023
 
 """
-
 import os
 import site
 import sys
 from contextlib import suppress
-
 from ctypes import cdll
+from typing import Any
+
+import aiohttp
+
+from . import utils
 
 # noinspection PyUnresolvedReferences
 __all__ = ["steamworks"]
@@ -107,3 +110,15 @@ except ImportError:
     steamworks_available = False
 else:
     steamworks_available = True
+
+
+async def set_default_http_session(session_index: int, *args: Any, **kwargs: Any) -> aiohttp.ClientSession:
+    """
+    Set default http session for stlib modules at given `session_index`
+    :param session_index: Session number
+    :param args: extra args when creating a new http session
+    :param kwargs: extra kargs when creating a new http session
+    :return: http session
+    """
+    http_session = await utils.Base.new_http_session(session_index, *args, **kwargs)
+    return http_session

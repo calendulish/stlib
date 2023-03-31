@@ -34,7 +34,7 @@ from bs4 import BeautifulSoup
 from stlib import login
 
 log = logging.getLogger(__name__)
-_session_cache: Dict[str, Dict[int, Union['Base', aiohttp.ClientSession]]] = {}
+_session_cache: Dict[str, Dict[int, Union['Base', aiohttp.ClientSession]]] = {'http_session': {}}
 
 
 class Response(NamedTuple):
@@ -62,14 +62,8 @@ class Base:
             "Use get_session(<index>) to support multiple sessions."
         )
 
-    def __init__(
-            self,
-            headers: Optional[Dict[str, str]] = None,
-            http_session: Optional[aiohttp.ClientSession] = None,
-    ) -> None:
-        self._headers = headers
+    def __init__(self, http_session: Optional[aiohttp.ClientSession] = None) -> None:
         self._http_session = http_session
-
         atexit.register(self.__close_http_session)
 
     def __close_http_session(self) -> None:
@@ -79,14 +73,6 @@ class Base:
             asyncio.create_task(coro)
         except RuntimeError:
             asyncio.run(coro)
-
-    @property
-    def headers(self) -> Dict[str, str]:
-        """returns the default headers to send with all http requests"""
-        if not self._headers:
-            self._headers = {'User-Agent': 'Unknown/0.0.0'}
-
-        return self._headers
 
     @property
     def http_session(self) -> aiohttp.ClientSession:
@@ -101,16 +87,46 @@ class Base:
         self.http_session.cookie_jar.update_cookies(cookies)
 
     @classmethod
-    async def new_session(cls, session_index: int, **kwargs: Any) -> 'Base':
+    async def new_http_session(
+            cls,
+            session_index: int,
+            raise_for_status: bool = True,
+            *args: Any, **kwargs: Any,
+    ) -> aiohttp.ClientSession:
+        """
+        Create a http session at given `session_index`.
+        If a previous instance exists in cache at same index, it will returns IndexError.
+
+        :param session_index: Session number
+        :param raise_for_status: Raise if the response status is 400 or higher.
+        :param args: extra args when creating a new http session
+        :param kwargs: extra kargs when creating a new http session
+        :return: Instance of module
+        """
+        if session_index in _session_cache['http_session']:
+            raise IndexError(f"There's already a http_session session at index {session_index}")
+
+        if 'headers' in kwargs:
+            kwargs['headers'] = {'User-Agent': 'Unknown/0.0.0'}
+
+        log.info("Creating a new http session at index %s for custom http session", session_index)
+        http_session = aiohttp.ClientSession(*args, raise_for_status=raise_for_status, **kwargs)
+        _session_cache['http_session'][session_index] = http_session
+
+        assert isinstance(http_session, aiohttp.ClientSession), "Wrong session type"
+        return http_session
+
+    @classmethod
+    async def new_session(cls, session_index: int, *args: Any, **kwargs: Any) -> 'Base':
         """
         Create an instance of module at given `session_index`.
         If a previous instance exists in cache at same index, it will returns IndexError.
         The instance will be associated with a http session at same index.
         If a http session is not present in cache, it'll create a new one.
-        If there's a 'http_session' present in kwargs, it will be used instead.
 
         :param session_index: Session number
-        :param kwargs: Instance parameters
+        :param args: extra args when creating a new http session
+        :param kwargs: extra kwargs when creating a new http session
         :return: Instance of module
         """
         cache_name = f'{cls.__module__}.{cls.__name__}'
@@ -119,21 +135,12 @@ class Base:
             log.debug("Creating a new cache object at %s for %s", session_index, cache_name)
             _session_cache[cache_name] = {}
 
-        if 'http_session' not in _session_cache:
-            log.debug("Creating a new http cache object at %s for %s", session_index, cache_name)
-            _session_cache['http_session'] = {}
-
-        if 'http_session' in kwargs:
-            log.info("Using existent http session at kwargs for %s", cache_name)
-            _session_cache['http_session'][session_index] = kwargs['http_session']
+        if session_index in _session_cache['http_session']:
+            log.info("Reusing http session at index %s for %s", session_index, cache_name)
+            http_session = _session_cache['http_session'][session_index]
         else:
-            if session_index in _session_cache['http_session']:
-                log.info("Reusing http session at index %s for %s", session_index, cache_name)
-                kwargs['http_session'] = _session_cache['http_session'][session_index]
-            else:
-                log.info("Creating a new http session at index %s for %s", session_index, cache_name)
-                kwargs['http_session'] = aiohttp.ClientSession(raise_for_status=True)
-                _session_cache['http_session'][session_index] = kwargs['http_session']
+            http_session = await cls.new_http_session(session_index, *args, **kwargs)
+            _session_cache['http_session'][session_index] = http_session
 
         if session_index in _session_cache[cache_name]:
             raise IndexError(f"There's already a {cache_name} session at index {session_index}")
@@ -142,7 +149,7 @@ class Base:
         session = _session_cache[cache_name][session_index] = super().__new__(cls)
 
         log.debug("Initializing instance for %s", cache_name)
-        session.__init__(**kwargs)  # type: ignore
+        session.__init__(http_session=http_session)
 
         assert isinstance(session, Base), "Wrong session type"
         return session
@@ -300,7 +307,6 @@ class Base:
             *,
             params: Optional[Dict[str, str]] = None,
             data: Optional[Dict[str, str]] = None,
-            headers: Optional[Dict[str, str]] = None,
             auto_recovery: bool = True,
             raw_data: bool = False,
             **kwargs: Any,
@@ -310,7 +316,6 @@ class Base:
         :param url: URL to request
         :param params: Http parameters
         :param data: Form data
-        :param headers: Http headers
         :param auto_recovery: If defined and http request fail, it will try again
         :param raw_data: If defined it will return raw data instead text
         :param kwargs: Extra kwargs passed directly to http request
@@ -319,9 +324,6 @@ class Base:
         if not params:
             params = {}
 
-        if not headers:
-            headers = {}
-
         http_method = 'POST' if data else 'GET'
 
         request_params: Dict[str, Any] = {
@@ -329,7 +331,6 @@ class Base:
             'url': url,
             'params': params,
             'data': data,
-            'headers': {**self.headers, **headers},
             **kwargs,
         }
 
