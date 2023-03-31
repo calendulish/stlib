@@ -77,50 +77,7 @@ steamworks = Extension(
     extra_compile_args=['-D_CRT_SECURE_NO_WARNINGS', '/std:c++17' if 'MSC' in sys.version else '-std=c++17'],
 )
 
-classifiers = [
-    'Development Status :: 5 - Production/Stable',
-    'Intended Audience :: Developers',
-    'Topic :: Games/Entertainment',
-    'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
-    'Operating System :: POSIX :: Linux',
-    'Operating System :: Microsoft :: Windows',
-    'Programming Language :: Python :: 3 :: Only',
-    'Programming Language :: Python :: 3.7',
-    'Programming Language :: Python :: 3.8',
-    'Programming Language :: Python :: 3.9',
-    'Programming Language :: Python :: 3.10',
-    'Programming Language :: Python :: 3.11',
-    'Typing :: Typed',
-]
-
-try:
-    with open('README.md') as readme:
-        long_description = readme.read()
-except FileNotFoundError:
-    long_description = ''
-
 setup(
-    name='stlib',
-    version='1.3.1',
-    description="Async library that provides features related to Steam client and compatible stuffs",
-    long_description=long_description,
-    long_description_content_type='text/markdown',
-    author='Lara Maia',
-    author_email='dev@lara.monster',
-    url='https://github.com/calendulish/stlib',
-    license='GPLv3',
-    classifiers=classifiers,
-    keywords='steam valve',
-    packages=find_packages('src'),
-    package_dir={'': 'src'},
-    include_package_data=True,
     ext_modules=[steamworks],
-    install_requires=[
-        'aiohttp',
-        'beautifulsoup4',
-        'rsa',
-    ],
-    python_requires='>=3.9',
     cmdclass={"build_ext": OptionalBuild},  # type: ignore
-    zip_safe=False,
 )
