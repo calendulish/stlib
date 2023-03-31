@@ -60,7 +60,7 @@ class Base:
             "Use get_session(<index>) to support multiple sessions."
         )
 
-    def __init__(self, http_session: Optional[aiohttp.ClientSession] = None) -> None:
+    def __init__(self, http_session: Optional[aiohttp.ClientSession] = None, *args, **kwargs) -> None:
         self._http_session = http_session
         atexit.register(self.__close_http_session)
 
@@ -121,10 +121,11 @@ class Base:
         If a previous instance exists in cache at same index, it will returns IndexError.
         The instance will be associated with a http session at same index.
         If a http session is not present in cache, it'll create a new one.
+        If you need custom params for http session, use `new_http_session` before calling this method.
 
         :param session_index: Session number
-        :param args: extra args when creating a new http session
-        :param kwargs: extra kwargs when creating a new http session
+        :param args: extra args when creating a new instance
+        :param kwargs: extra kwargs when creating a new instance
         :return: Instance of module
         """
         cache_name = f'{cls.__module__}.{cls.__name__}'
@@ -137,7 +138,7 @@ class Base:
             log.info("Reusing http session at index %s for %s", session_index, cache_name)
             http_session = _session_cache['http_session'][session_index]
         else:
-            http_session = await cls.new_http_session(session_index, *args, **kwargs)
+            http_session = await cls.new_http_session(session_index)
             _session_cache['http_session'][session_index] = http_session
 
         if session_index in _session_cache[cache_name]:
@@ -147,7 +148,7 @@ class Base:
         session = _session_cache[cache_name][session_index] = super().__new__(cls)
 
         log.debug("Initializing instance for %s", cache_name)
-        session.__init__(http_session=http_session)
+        session.__init__(http_session=http_session, *args, **kwargs)
 
         assert isinstance(session, Base), "Wrong session type"
         return session
