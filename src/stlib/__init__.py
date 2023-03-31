@@ -112,9 +112,9 @@ else:
     steamworks_available = True
 
 
-async def set_default_http_session(session_index: int, *args: Any, **kwargs: Any) -> aiohttp.ClientSession:
+async def set_default_http_params(session_index: int, *args: Any, **kwargs: Any) -> aiohttp.ClientSession:
     """
-    Set default http session for stlib modules at given `session_index`
+    Set default http params for stlib modules at given `session_index`
     :param session_index: Session number
     :param args: extra args when creating a new http session
     :param kwargs: extra kargs when creating a new http session
