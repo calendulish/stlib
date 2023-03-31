@@ -31,8 +31,6 @@ from typing import Dict, Any, Optional, NamedTuple, Union
 import aiohttp
 from bs4 import BeautifulSoup
 
-from stlib import login
-
 log = logging.getLogger(__name__)
 _session_cache: Dict[str, Dict[int, Union['Base', aiohttp.ClientSession]]] = {'http_session': {}}
 
@@ -346,7 +344,8 @@ class Base:
                         location = response.headers.get('Location', '')
 
                     if 'login/home/?goto=' in location:
-                        raise login.LoginError('User are not logged in')
+                        from .login import LoginError as _LoginError  # avoid circular imports
+                        raise _LoginError('User are not logged in')
 
                     result = Response(
                         response.status,

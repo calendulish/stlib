@@ -80,7 +80,7 @@ from typing import Any
 
 import aiohttp
 
-from . import utils
+from .utils import Base as _Base
 
 # noinspection PyUnresolvedReferences
 __all__ = ["steamworks"]
@@ -120,5 +120,5 @@ async def set_default_http_session(session_index: int, *args: Any, **kwargs: Any
     :param kwargs: extra kargs when creating a new http session
     :return: http session
     """
-    http_session = await utils.Base.new_http_session(session_index, *args, **kwargs)
+    http_session = await _Base.new_http_session(session_index, *args, **kwargs)
     return http_session
