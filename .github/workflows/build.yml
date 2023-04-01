@@ -58,7 +58,7 @@ jobs:
           distro: 'archarm_latest'
     steps:
       - uses: actions/checkout@v3
-      - uses: uraimo/run-on-arch-action@v2.2.1
+      - uses: uraimo/run-on-arch-action@v2
         id: build
         with:
           arch: ${{ matrix.arch }}
@@ -185,9 +185,9 @@ jobs:
       - uses: pypa/gh-action-pypi-publish@release/v1
         with:
           password: ${{ secrets.PYPI_API_TOKEN }}
-          packages_dir: wheelhouse/
+          packages-dir: wheelhouse/
           verbose: true
-          print_hash: true
+          print-hash: true
   generate-badges:
     if: ${{ always() }}
     needs: [linux-build, rpi-build, windows-build, msys-build]
