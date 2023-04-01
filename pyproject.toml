@@ -42,7 +42,6 @@ changelog = "https://github.com/calendulish/steam-tools-ng/releases"
 [tool.setuptools]
 include-package-data = true
 zip-safe = false
-
-[tools.setuptools.packages.find]
-where = ["src"]
+package-dir = {"" = "src"}
+packages = ["stlib"]
 
