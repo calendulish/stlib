@@ -93,7 +93,7 @@ class Base:
     ) -> aiohttp.ClientSession:
         """
         Create a http session at given `session_index`.
-        If a previous instance exists in cache at same index, it will returns IndexError.
+        If a previous instance exists in cache at same index, it will raise IndexError.
 
         :param session_index: Session number
         :param raise_for_status: Raise if the response status is 400 or higher.
@@ -118,7 +118,7 @@ class Base:
     async def new_session(cls, session_index: int, *args: Any, **kwargs: Any) -> 'Base':
         """
         Create an instance of module at given `session_index`.
-        If a previous instance exists in cache at same index, it will returns IndexError.
+        If a previous instance exists in cache at same index, it will raise IndexError.
         The instance will be associated with a http session at same index.
         If a http session is not present in cache, it'll create a new one.
         If you need custom params for http session, use `new_http_session` before calling this method.
@@ -176,7 +176,7 @@ class Base:
     def get_session(cls, session_index: int) -> 'Base':
         """
         Get an instance of module from cache at `session_index`.
-        If session isn't present in cache, it will returns IndexError
+        If session isn't present in cache, it will raise IndexError
         :param session_index: session number
         :return: instance of module
         """
