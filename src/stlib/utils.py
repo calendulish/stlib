@@ -104,7 +104,7 @@ class Base:
         if session_index in _session_cache['http_session']:
             raise IndexError(f"There's already a http_session session at index {session_index}")
 
-        if 'headers' in kwargs:
+        if not 'headers' in kwargs:
             kwargs['headers'] = {'User-Agent': 'Unknown/0.0.0'}
 
         log.info("Creating a new http session at index %s for custom http session", session_index)
