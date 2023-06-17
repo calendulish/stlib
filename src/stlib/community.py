@@ -237,6 +237,7 @@ class Community(utils.Base):
                     assetid = asset['assetid']
                     break
 
+            # noinspection PyUnboundLocalVariable
             kwargs = {
                 'name': name,
                 'type': item['type'],

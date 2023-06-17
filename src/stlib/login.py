@@ -247,7 +247,7 @@ class Login(utils.Base):
         if mobile_login:
             login_url = self.mobile_login_url
             cookies: http.cookies.SimpleCookie[str] = http.cookies.SimpleCookie()
-            cookies['mobileClientVersion'] = '0 (2.3.1)'
+            cookies['mobileClientVersion'] = '25 (3.6.0)'
             cookies['mobileClient'] = "android"
             self.update_cookies(cookies)
         else:
@@ -259,7 +259,10 @@ class Login(utils.Base):
             oauth_data = {}
 
             if mobile_login:
-                oauth_data = json.loads(json_data.pop('oauth'))
+                try:
+                    oauth_data = json.loads(json_data.pop('oauth'))
+                except KeyError:
+                    log.warning("No oauth data found.")
 
             return LoginData(json_data, oauth_data)
 
