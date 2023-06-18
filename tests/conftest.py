@@ -98,9 +98,14 @@ async def do_login(steamid) -> None:
             login_session.password = raw.decode()
 
         login_data = await login_session.do_login(shared_secret, mobile_login=True)
-        parser.set('Test', 'token', login_data.oauth['wgtoken'])
-        parser.set('Test', 'token_secure', login_data.oauth['wgtoken_secure'])
-        parser.set('Test', 'oauth_token', login_data.oauth['oauth_token'])
+
+        if login_data.oauth:
+            parser.set('Test', 'token', login_data.oauth['wgtoken'])
+            parser.set('Test', 'token_secure', login_data.oauth['wgtoken_secure'])
+            parser.set('Test', 'oauth_token', login_data.oauth['oauth_token'])
+        else:
+            parser.set('Test', 'token', login_data.auth['transfer_parameters']['webcookie'])
+            parser.set('Test', 'token_secure', login_data.auth['transfer_parameters']['token_secure'])
 
         with open(config_file, 'w', encoding="utf8") as config_file_object:
             parser.write(config_file_object)
