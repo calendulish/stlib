@@ -55,9 +55,14 @@ def pytest_assertion_pass(item, lineno, orig, expl):
 @pytest_asyncio.fixture(scope='session')
 def event_loop():
     try:
-        return asyncio.get_running_loop()
+        loop = asyncio.get_running_loop()
     except RuntimeError:
-        return asyncio.new_event_loop()
+        loop = asyncio.new_event_loop()
+
+    try:
+        yield loop
+    finally:
+        loop.close()
 
 
 @pytest.fixture(scope='session')
