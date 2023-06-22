@@ -81,18 +81,24 @@ class Confirmation(NamedTuple):
     """Confirmation mode for accept action"""
     mode_cancel: str
     """Confirmation mode for cancel action"""
-    confid: int
-    """Configuration ID"""
+    id: int
+    """Confirmation ID"""
     creatorid: int
     """Creator ID"""
-    key: int
-    """Confirmation key"""
+    nonce: int
+    """Nonce key"""
+    time: int
+    """Creation time"""
+    icon: str
+    """Icon"""
     type: int
     """Confirmation type"""
+    summary: List[str]
+    """Trade summary"""
+    to: str
+    """Trade partner"""
     give: List[str]
     """List of items to give"""
-    to: str
-    """Trade destination"""
     receive: List[str]
     """List of items to receive"""
 
@@ -353,48 +359,40 @@ class Community(utils.Base):
         :return: List of `Confirmation`
         """
         params = await self._new_mobileconf_query(deviceid, steamid, identity_secret, 'conf')
+        json_data = await self.request_json(f'{self.mobileconf_url}/getlist', params=params)
 
-        response = await self.request(
-            f'{self.mobileconf_url}/conf',
-            params=params,
-            allow_redirects=False,
-            raise_for_status=False,
-        )
-
-        if response.status == 302:
+        if not json_data['success']:
             raise login.LoginError('User is not logged in')
 
-        html = await self.get_html(response)
-
         confirmations = []
-        for confirmation in html.find_all('div', class_='mobileconf_list_entry'):
+        for confirmation in json_data['conf']:
             details_params = await self._new_mobileconf_query(
                 deviceid,
                 steamid,
                 identity_secret,
-                f"details{confirmation['data-confid']}",
+                f"details{confirmation['id']}",
             )
-
-            confid = confirmation['data-confid']
-            key = confirmation['data-key']
-            type_ = confirmation['data-type']
 
             log.debug(
                 "Getting human readable information from %s as type %s (%s)",
-                confid,
-                type_,
-                "Market" if type_ == '3' else 'Trade Item',
+                confirmation['id'],
+                confirmation['type'],
+                "Market" if confirmation['type'] == 3 else 'Trade Item',
             )
 
-            json_data = await self.request_json(f"{self.mobileconf_url}/details/{confid}", params=details_params)
+            json_data = await self.request_json(
+                f"{self.mobileconf_url}/details/{confirmation['id']}",
+                params=details_params,
+            )
 
             if not json_data['success']:
-                raise AttributeError(f"Unable to get details for confirmation {confid}")
+                raise AttributeError(f"Unable to get details for confirmation {confirmation['id']}")
 
             html = BeautifulSoup(json_data["html"], 'html.parser')
 
-            if type_ == "1" or type_ == "2":
-                to = html.find('span', class_="trade_partner_headline_sub").get_text()
+            if confirmation['type'] in (1, 2):
+                offer_friend = html.find('div', class_="mobileconf_offer_friend")
+                to = offer_friend.find_next('span').text.strip()
 
                 item_list = html.find_all('div', class_="tradeoffer_item_list")
 
@@ -409,8 +407,7 @@ class Community(utils.Base):
                     appid, classid = item['data-economy-item'].split('/')[1:3]
                     name = await self.get_item_name(appid, classid)
                     receive.append(name)
-
-            elif type_ == "3":
+            elif confirmation['type'] == 3:
                 to = "Market"
 
                 listing_prices = html.find('div', class_="mobileconf_listing_prices")
@@ -433,28 +430,31 @@ class Community(utils.Base):
 
                 if quantity:
                     give[0] = f'{quantity.next.next.strip()} {give[0]}'
-            elif type_ == '5':
+            elif confirmation['type'] == 5:
                 to = "Steam"
                 give = ["Change phone number"]
                 receive = ["Phone number has not been entered yet"]
-            elif type_ == '6':
+            elif confirmation['type'] == 6:
                 to = "Steam"
                 give = ["Make changes to your account"]
                 receive = [f"Number to match: {html.find_all('div')[3].text.strip()}"]
             else:
                 to = "NotImplemented"
-                give = [f"{confid}"]
-                receive = [f"{key}"]
+                give = [f"{confirmation['id']}"]
+                receive = [f"{confirmation['nonce']}"]
 
             confirmations.append(
                 Confirmation(
-                    confirmation['data-accept'],
-                    confirmation['data-cancel'],
-                    int(confid),
-                    int(confirmation['data-creator']),
-                    int(key),
-                    int(type_),
-                    give, to, receive,
+                    confirmation['accept'],
+                    confirmation['cancel'],
+                    confirmation['id'],
+                    confirmation['creator_id'],
+                    confirmation['nonce'],
+                    confirmation['creation_time'],
+                    confirmation['icon'],
+                    confirmation['type'],
+                    confirmation['summary'],
+                    to, give, receive,
                 )
             )
 
