@@ -213,6 +213,7 @@ class Community(utils.Base):
             json_data.update(await self.request_json(
                 f"{self.community_url}/inventory/{steamid.id64}/{appid}/{contextid}",
                 params=params,
+                auto_recovery=False,
             ))
 
             if not json_data['success']:

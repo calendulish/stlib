@@ -146,7 +146,7 @@ class Internals(utils.Base):
         """Get package details. See `Package`"""
         packageid_string = str(packageid)
         params = {'packageids': packageid_string}
-        json_data = await self.request_json(f'{self.store_url}/api/packagedetails', params=params)
+        json_data = await self.request_json(f'{self.store_url}/api/packagedetails', params=params, auto_recovery=False)
 
         if not json_data[packageid_string]['success']:
             raise ValueError(f"Failed to get details for package {packageid_string}")
