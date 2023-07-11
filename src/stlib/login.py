@@ -20,12 +20,9 @@
 it supports both desktop and mobile login at steam services
 """
 
-import asyncio
-import http.cookies
-import json
 import logging
-import time
-from typing import Any, Dict, NamedTuple, Optional
+import random
+from typing import Any, Dict, NamedTuple, Optional, List
 
 import rsa
 
@@ -34,16 +31,28 @@ from . import universe, utils
 log = logging.getLogger(__name__)
 
 
+class TransferInfo(NamedTuple):
+    url: str
+    nonce: str
+    auth: str
+
+
 class LoginData(NamedTuple):
-    auth: Dict[str, Any]
-    """Auth data"""
-    oauth: Dict[str, Any]
-    """OAuth data"""
+    steamid: int
+    client_id: str
+    sessionid: str
+    refresh_token: str
+    access_token: str
+    transfer_info: List[TransferInfo]
 
 
 class LoginError(ValueError):
     """Raised when login can`t be completed"""
-    pass
+
+    def __init__(self, message: str, captcha_requested: bool = False) -> None:
+        super().__init__(message)
+
+        self.captcha_requested = captcha_requested
 
 
 class LoginBlockedError(LoginError):
@@ -77,8 +86,7 @@ class Login(utils.Base):
     def __init__(
             self,
             *,
-            login_url: str = 'https://steamcommunity.com/login',
-            mobile_login_url: str = 'https://steamcommunity.com/mobilelogin',
+            login_url: str = 'https://login.steampowered.com',
             steamguard_url: str = 'https://steamcommunity.com/steamguard',
             api_url: str = 'https://api.steampowered.com',
             **kwargs: Any,
@@ -99,7 +107,6 @@ class Login(utils.Base):
         self._username: Optional[str] = None
         self.__password: Optional[str] = None
         self.login_url = login_url
-        self.mobile_login_url = mobile_login_url
         self.steamguard_url = steamguard_url
         self.api_url = api_url
         self.login_trial = 3
@@ -125,14 +132,7 @@ class Login(utils.Base):
     def password(self, __password: str) -> None:
         self.__password = __password
 
-    async def _new_login_data(
-            self,
-            authenticator_code: str = '',
-            emailauth: str = '',
-            captcha_gid: int = -1,
-            captcha_text: str = '',
-            mobile_login: bool = False,
-    ) -> Dict[str, Any]:
+    async def _new_login_data(self, mobile_login: bool = False) -> Dict[str, Any]:
         steam_key = await self.get_steam_key(self.username)
 
         if not self.__password:
@@ -141,20 +141,14 @@ class Login(utils.Base):
         encrypted_password = universe.encrypt_password(steam_key, self.__password)
 
         data = {
-            'username': self.username,
-            "password": encrypted_password.decode(),
-            "emailauth": emailauth,
-            "twofactorcode": authenticator_code,
-            "captchagid": captcha_gid,
-            "captcha_text": captcha_text,
-            "loginfriendlyname": "stlib",
-            "rsatimestamp": steam_key.timestamp,
-            "remember_login": 'true',
-            "donotcache": ''.join([str(int(time.time())), '000']),
+            "account_name": self.username,
+            "encrypted_password": encrypted_password.decode(),
+            "encryption_timestamp": steam_key.timestamp,
+            "device_friendly_name": "stlib",
+            "persistence": 1,
+            "platform_type": "3" if mobile_login else "2",
+            "website_id": "Mobile" if mobile_login else "Community",
         }
-
-        if mobile_login:
-            data['oauth_client_id'] = universe.STEAM_UNIVERSE['public']
 
         return data
 
@@ -164,13 +158,16 @@ class Login(utils.Base):
         :param username: Steam username as string
         :return: `SteamKey`
         """
-        params = {'username': username}
-        json_data = await self.request_json(f'{self.login_url}/getrsakey/', params=params)
+        params = {'account_name': username}
+        json_data = await self.request_json(
+            f'{self.api_url}/IAuthenticationService/GetPasswordRSAPublicKey/v1',
+            params=params,
+        )
 
-        if json_data['success']:
-            public_mod = int(json_data['publickey_mod'], 16)
-            public_exp = int(json_data['publickey_exp'], 16)
-            timestamp = int(json_data['timestamp'])
+        if json_data['response']:
+            public_mod = int(json_data['response']['publickey_mod'], 16)
+            public_exp = int(json_data['response']['publickey_exp'], 16)
+            timestamp = int(json_data['response']['timestamp'])
         else:
             raise ValueError('Failed to get public key.')
 
@@ -213,18 +210,16 @@ class Login(utils.Base):
     async def do_login(
             self,
             shared_secret: str = '',
-            emailauth: str = '',
-            captcha_gid: int = -1,
-            captcha_text: str = '',
+            mail_code: str = '',
+            captcha_token: str = '',
             mobile_login: bool = False,
             authenticator_code: str = '',
     ) -> LoginData:
         """
-        Login an user on Steam
+        Login a user on Steam
         :param shared_secret: User shared secret
-        :param emailauth: OTP received by email
-        :param captcha_gid: gid of received captcha
-        :param captcha_text: text of received captcha
+        :param mail_code: OTP received by email
+        :param captcha_token: captcha code received
         :param mobile_login: True to request mobile session instead desktop one
         :param authenticator_code: OTP from steam authenticator
         :return: Updated `LoginData`
@@ -232,67 +227,108 @@ class Login(utils.Base):
         _original_fargs = locals().copy()
         _original_fargs.pop('self')
 
+        data = await self._new_login_data(mobile_login)
+
+        json_data = await self.request_json(
+            f'{self.api_url}/IAuthenticationService/BeginAuthSessionViaCredentials/v1',
+            data=data,
+        )
+
+        if 'steamid' not in json_data['response']:
+            raise LoginError('Unable to log-in. Check your username and password.')
+
+        client_id = json_data['response']['client_id']
+        request_id = json_data['response']['request_id']
+        steamid = json_data['response']['steamid']
+
         if shared_secret:
-            json_data = await self.request_json(f'{self.api_url}/ISteamWebAPIUtil/GetServerInfo/v1')
-            server_time = json_data['servertime']
+            server_data = await self.request_json(f'{self.api_url}/ISteamWebAPIUtil/GetServerInfo/v1')
+            server_time = server_data['servertime']
             authenticator_code = universe.generate_steam_code(server_time, shared_secret)
+
+        if not shared_secret and authenticator_code:
+            log.warning("Using external authenticator code to log-in")
         else:
-            if authenticator_code:
-                log.warning("Using external authenticator code to log-in")
-            else:
-                log.warning("Logging without two-factor authentication.")
+            log.warning("Logging without two-factor authentication.")
 
-        data = await self._new_login_data(authenticator_code, emailauth, captcha_gid, captcha_text, mobile_login)
+        if authenticator_code:
+            data = {
+                "client_id": client_id,
+                "steamid": steamid,
+                "code": authenticator_code,
+                "code_type": "3",
+            }
 
-        if mobile_login:
-            login_url = self.mobile_login_url
-            cookies: http.cookies.SimpleCookie[str] = http.cookies.SimpleCookie()
-            cookies['mobileClientVersion'] = '25 (3.6.0)'
-            cookies['mobileClient'] = "android"
-            self.update_cookies(cookies)
+            auth_data = await self.request_json(
+                f'{self.api_url}/IAuthenticationService/UpdateAuthSessionWithSteamGuardCode/v1',
+                data=data,
+                raise_for_status=False,
+            )
+
+            if not auth_data['response']:
+                raise LoginError('SteamGuard code is wrong')
+        elif mail_code:
+            raise NotImplementedError
+        elif captcha_token:
+            raise NotImplementedError
         else:
-            login_url = self.login_url
+            captcha_requested = False
 
-        json_data = await self.request_json(f'{login_url}/dologin', data=data)
+            if len(json_data['response']['allowed_confirmations']) > 1:
+                captcha_requested = True
 
-        if json_data['success']:
-            oauth_data = {}
+            confirmation_type = json_data['response']['allowed_confirmations'][0]['confirmation_type']
 
-            if mobile_login:
-                try:
-                    oauth_data = json.loads(json_data.pop('oauth'))
-                except KeyError:
-                    log.warning("No oauth data found.")
+            if confirmation_type == 2:
+                raise MailCodeError("Mail code requested", captcha_requested)
 
-            return LoginData(json_data, oauth_data)
+            if confirmation_type == 3:
+                raise TwoFactorCodeError("Authenticator code requested", captcha_requested)
 
-        if 'message' in json_data and 'too many login failures' in json_data['message']:
-            raise LoginBlockedError("Your network is blocked. Please, try again later")
+            if confirmation_type == 6:
+                raise NotImplementedError
+                # raise CaptchaError(gid, captcha, 'Captcha code requested')
 
-        if 'emailauth_needed' in json_data and json_data['emailauth_needed']:
-            raise MailCodeError("Mail code requested")
+        data = {
+            "client_id": client_id,
+            "request_id": request_id,
+        }
 
-        if 'requires_twofactor' in json_data and json_data['requires_twofactor']:
-            if self.login_trial > 0:
-                self.login_trial -= 1
-                await asyncio.sleep(5)
-                login_data = await self.do_login(**_original_fargs)
-                return login_data
+        json_data = await self.request_json(
+            f'{self.api_url}/IAuthenticationService/PollAuthSessionStatus/v1',
+            data=data,
+        )
 
-            raise TwoFactorCodeError("Authenticator code requested")
+        if 'refresh_token' not in json_data['response']:
+            raise LoginError('Tokens are not received. Try again.')
 
-        if 'captcha_needed' in json_data and json_data['captcha_needed']:
-            if captcha_text and captcha_gid:
-                if 'message' in json_data and 'verify your humanity' not in json_data['message']:
-                    raise LoginError(json_data['message'])
+        refresh_token = json_data['response']['refresh_token']
+        access_token = json_data['response']['access_token']
+        sessionid = ''.join(random.choices('0123456789abcdef', k=24))
 
-            captcha = await self.get_captcha(json_data['captcha_gid'])
-            raise CaptchaError(json_data['captcha_gid'], captcha, "Captcha code requested")
+        data = {
+            "nonce": refresh_token,
+            "sessionid": sessionid,
+        }
 
-        if mobile_login and 'oauth' not in json_data:
-            raise LoginError(f"Unable to log-in on mobile session: {json_data['message']}")
+        json_data = await self.request_json(f'{self.login_url}/jwt/finalizelogin', data=data)
+        transfer_info = []
 
-        raise LoginError(f"Unable to log-in: {json_data['message']}")
+        for item in json_data['transfer_info']:
+            data = {
+                'nonce': item['params']['nonce'],
+                'auth': item['params']['auth'],
+                'steamID': steamid,
+            }
+
+            response = await self.request(item['url'], data=data)
+
+            if 'steamLoginSecure' not in response.cookies:
+                raise LoginError('Error setting login cookies')
+
+            transfer_info.append(TransferInfo(item['url'], data['nonce'], data['auth']))
+
+        return LoginData(steamid, client_id, sessionid, refresh_token, access_token, transfer_info)
 
     async def is_logged_in(self, steamid: universe.SteamId) -> bool:
         try:
@@ -305,15 +341,3 @@ class Login(utils.Base):
             return False
 
         return response.status == 200
-
-    def restore_login(self, steamid: universe.SteamId, token: str, token_secure: str) -> None:
-        """
-        Restore a previous saved session
-        :param steamid: `SteamId`
-        :param token: Login token code
-        :param token_secure: Login token secure code
-        """
-        cookies: http.cookies.SimpleCookie[str] = http.cookies.SimpleCookie()
-        cookies['steamLogin'] = f'{steamid.id64}%7C%7C{token}'
-        cookies['steamLoginSecure'] = f'{steamid.id64}%7C%7C{token_secure}'
-        self.update_cookies(cookies)
