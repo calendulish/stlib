@@ -22,6 +22,7 @@ it supports both desktop and mobile login at steam services
 
 import logging
 import random
+from enum import Enum
 from typing import Any, Dict, NamedTuple, Optional, List
 
 import rsa
@@ -46,6 +47,12 @@ class LoginData(NamedTuple):
     transfer_info: List[TransferInfo]
 
 
+class AuthCodeType(Enum):
+    email = 2
+    device = 3
+    machine = 6
+
+
 class LoginError(ValueError):
     """Raised when login can`t be completed"""
 
@@ -63,11 +70,8 @@ class LoginBlockedError(LoginError):
 class CaptchaError(LoginError):
     """Raised when captcha is requested"""
 
-    def __init__(self, captcha_gid: int, captcha: bytes, message: str) -> None:
-        super().__init__(message)
-
-        self.captcha_gid = captcha_gid
-        self.captcha = captcha
+    def __init__(self, message: str) -> None:
+        super().__init__(message, captcha_requested=True)
 
 
 class MailCodeError(LoginError):
@@ -210,18 +214,16 @@ class Login(utils.Base):
     async def do_login(
             self,
             shared_secret: str = '',
-            mail_code: str = '',
-            captcha_token: str = '',
+            auth_code: str = '',
+            auth_code_type: AuthCodeType = AuthCodeType.device,
             mobile_login: bool = False,
-            authenticator_code: str = '',
     ) -> LoginData:
         """
         Login a user on Steam
         :param shared_secret: User shared secret
-        :param mail_code: OTP received by email
-        :param captcha_token: captcha code received
+        :param auth_code: optional auth code to login
+        :param auth_code_type: auth code type
         :param mobile_login: True to request mobile session instead desktop one
-        :param authenticator_code: OTP from steam authenticator
         :return: Updated `LoginData`
         """
         _original_fargs = locals().copy()
@@ -244,19 +246,19 @@ class Login(utils.Base):
         if shared_secret:
             server_data = await self.request_json(f'{self.api_url}/ISteamWebAPIUtil/GetServerInfo/v1')
             server_time = server_data['servertime']
-            authenticator_code = universe.generate_steam_code(server_time, shared_secret)
+            auth_code = universe.generate_steam_code(server_time, shared_secret)
 
-        if not shared_secret and authenticator_code:
-            log.warning("Using external authenticator code to log-in")
+        if not shared_secret and auth_code:
+            log.warning("Using external auth code to log-in")
         else:
             log.warning("Logging without two-factor authentication.")
 
-        if authenticator_code:
+        if auth_code:
             data = {
                 "client_id": client_id,
                 "steamid": steamid,
-                "code": authenticator_code,
-                "code_type": "3",
+                "code": auth_code,
+                "code_type": auth_code_type.value,
             }
 
             auth_data = await self.request_json(
@@ -267,27 +269,22 @@ class Login(utils.Base):
 
             if not auth_data['response']:
                 raise LoginError('SteamGuard code is wrong')
-        elif mail_code:
-            raise NotImplementedError
-        elif captcha_token:
-            raise NotImplementedError
         else:
             captcha_requested = False
 
             if len(json_data['response']['allowed_confirmations']) > 1:
                 captcha_requested = True
 
-            confirmation_type = json_data['response']['allowed_confirmations'][0]['confirmation_type']
+            auth_code_type = json_data['response']['allowed_confirmations'][0]['confirmation_type']
 
-            if confirmation_type == 2:
+            if auth_code_type == 2:
                 raise MailCodeError("Mail code requested", captcha_requested)
 
-            if confirmation_type == 3:
+            if auth_code_type == 3:
                 raise TwoFactorCodeError("Authenticator code requested", captcha_requested)
 
-            if confirmation_type == 6:
-                raise NotImplementedError
-                # raise CaptchaError(gid, captcha, 'Captcha code requested')
+            if auth_code_type == 6:
+                raise CaptchaError("Captcha code requested")
 
         data = {
             "client_id": client_id,
