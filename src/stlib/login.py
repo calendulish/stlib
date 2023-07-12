@@ -260,9 +260,9 @@ class Login(utils.Base):
             server_time = server_data['servertime']
             auth_code = universe.generate_steam_code(server_time, shared_secret)
 
-        if not shared_secret and auth_code:
+        if auth_code:
             log.warning("Using external auth code to log-in")
-        else:
+        elif not shared_secret:
             log.warning("Logging without two-factor authentication.")
 
         if auth_code:
