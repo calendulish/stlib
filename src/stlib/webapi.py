@@ -26,7 +26,7 @@ from typing import Any, Dict, List, NamedTuple, Optional
 
 import aiohttp
 
-from . import universe, login, utils
+from . import universe, utils
 
 log = logging.getLogger(__name__)
 
@@ -46,6 +46,18 @@ class Game(NamedTuple):
     """True if game has market items"""
     has_workshop: bool
     """True if game has workshop"""
+
+
+class AuthenticatorData(NamedTuple):
+    shared_secret: str
+    identity_secret: str
+    serial_number: int
+    revocation_code: str
+    uri: str
+    token_gid: str
+    account_name: str
+    server_time: int
+    phone_number_hint: int
 
 
 class PhoneNotRegistered(Exception):
@@ -91,21 +103,19 @@ class SteamWebAPI(utils.Base):
         self.api_key = api_key
 
     @staticmethod
-    async def _new_mobile_query(
+    async def _new_mobile_data(
             steamid: universe.SteamId,
-            oauth_token: str,
             token_type: str = 'mobileapp',
     ) -> Dict[str, Any]:
         current_time = int(time.time())
 
-        params = {
+        data = {
             'steamid': steamid.id64,
-            'access_token': oauth_token,
             'authenticator_time': current_time,
             'authenticator_type': universe.TOKEN_TYPE[token_type],
         }
 
-        return params
+        return data
 
     async def get_server_time(self) -> int:
         """Get server time"""
@@ -210,21 +220,28 @@ class SteamWebAPI(utils.Base):
     async def new_authenticator(
             self,
             steamid: universe.SteamId,
-            oauth_token: str,
+            access_token: str,
             phone_id: int = 1,
-    ) -> login.LoginData:
+    ) -> AuthenticatorData:
         """
         Initialize process to add a new authenticator to account
         :param steamid: `SteamId`
-        :param oauth_token: user oauth token
+        :param access_token: user access token
         :param phone_id: Index of phone number
         :return: Updated account login data
         """
-        data = await self._new_mobile_query(steamid, oauth_token)
-        data['device_identifier'] = universe.generate_device_id(oauth_token)
+        data = await self._new_mobile_data(steamid)
+        data['device_identifier'] = universe.generate_device_id(access_token)
         data['sms_phone_id'] = phone_id
 
-        json_data = await self.request_json(f'{self.api_url}/ITwoFactorService/AddAuthenticator/v1', data=data)
+        params = {'access_token': access_token}
+
+        json_data = await self.request_json(
+            f'{self.api_url}/ITwoFactorService/AddAuthenticator/v1',
+            data=data,
+            params=params,
+        )
+
         response: Dict[str, Any] = json_data['response']
 
         if response['status'] == 29:
@@ -236,12 +253,22 @@ class SteamWebAPI(utils.Base):
         if response['status'] != 1:
             raise NotImplementedError(f"add_authenticator is returning status {response['status']}")
 
-        return login.LoginData(auth=response, oauth={})
+        return AuthenticatorData(
+            response['shared_secret'],
+            response['identity_secret'],
+            int(response['serial_number']),
+            response['revocation_code'],
+            response['uri'],
+            response['token_gid'],
+            response['account_name'],
+            int(response['server_time']),
+            int(response['phone_number_hint']),
+        )
 
     async def add_authenticator(
             self,
             steamid: universe.SteamId,
-            oauth_token: str,
+            access_token: str,
             shared_secret: str,
             sms_code: str,
             email_type: int = 2,
@@ -249,17 +276,25 @@ class SteamWebAPI(utils.Base):
         """
         Finalize process to add a new authenticator to account
         :param steamid: User SteamID
-        :param oauth_token: User oauth token
+        :param access_token: User access token
         :param shared_secret: User shared secret
         :param sms_code: OTP received by SMS
         :param email_type: Email type
         :return: True if success
         """
-        data = await self._new_mobile_query(steamid, oauth_token)
+        data = await self._new_mobile_data(steamid)
         server_time = await self.get_server_time()
         data['authenticator_code'] = universe.generate_steam_code(server_time, shared_secret)
         data['activation_code'] = sms_code
-        json_data = await self.request_json(f'{self.api_url}/ITwoFactorService/FinalizeAddAuthenticator/v1', data=data)
+        data['validate_sms_code'] = 1
+
+        params = {'access_token': access_token}
+
+        json_data = await self.request_json(
+            f'{self.api_url}/ITwoFactorService/FinalizeAddAuthenticator/v1',
+            data=data,
+            params=params,
+        )
 
         if json_data['response']['status'] == 89:
             raise SMSCodeError("Invalid sms code")
@@ -270,7 +305,11 @@ class SteamWebAPI(utils.Base):
             data['email_type'] = email_type
 
             try:
-                await self.request_json(f'{self.api_url}/ITwoFactorService/SendEmail/v1', data=data)
+                await self.request_json(
+                    f'{self.api_url}/ITwoFactorService/SendEmail/v1',
+                    data=data,
+                    params=params,
+                )
             except aiohttp.ContentTypeError:
                 return False
             else:
@@ -281,26 +320,30 @@ class SteamWebAPI(utils.Base):
     async def remove_authenticator(
             self,
             steamid: universe.SteamId,
-            oauth_token: str,
+            access_token: str,
             revocation_code: str,
             scheme: int = 2,
     ) -> bool:
         """
         Remove authenticator from account
         :param steamid: User SteamID
-        :param oauth_token: User oauth token
+        :param access_token: User access token
         :param revocation_code: Steam auth revocation code
         :param scheme: Steam scheme
         :return: True if success
         """
-        data = await self._new_mobile_query(steamid, oauth_token)
+        data = await self._new_mobile_data(steamid)
         data['revocation_code'] = revocation_code
+        data['revocation_reason'] = 1
         data['steamguard_scheme'] = scheme
 
-        try:
-            json_data = await self.request_json(f'{self.api_url}/ITwoFactorService/RemoveAuthenticator/v1', data=data)
-        except aiohttp.ClientResponseError:
-            return False
+        params = {'access_token': access_token}
+
+        json_data = await self.request_json(
+            f'{self.api_url}/ITwoFactorService/RemoveAuthenticator/v1',
+            data=data,
+            params=params,
+        )
 
         if json_data['response']['revocation_attempts_remaining'] == 0:
             raise RevocationError('No more attempts')
