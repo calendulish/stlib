@@ -26,6 +26,7 @@ import pytest
 import pytest_asyncio
 
 from stlib import login, webapi, universe, community
+from . import wait_mail_code
 
 config_file = Path(__file__).parent.resolve() / 'conftest.ini'
 parser = configparser.RawConfigParser()
@@ -38,9 +39,6 @@ if os.getenv("GITHUB_ACTIONS"):
     parser.set('Test', 'shared_secret', os.getenv("shared_secret"))
     parser.set('Test', 'identity_secret', os.getenv("identity_secret"))
     parser.set('Test', 'api_key', os.getenv("api_key"))
-    parser.set('Test', 'token', "0")
-    parser.set('Test', 'token_secure', "0")
-    parser.set('Test', 'oauth_token', "0")
 
     with open(config_file, 'w', encoding="utf8") as config_file_object:
         parser.write(config_file_object)
@@ -72,16 +70,26 @@ def steamid() -> universe.SteamId:
 
 
 @pytest.fixture(scope='session')
-def oauth_token() -> str:
-    oauth_token_ = parser.get('Test', 'oauth_token')
-    return oauth_token_
+def access_token() -> str:
+    access_token_ = parser.get('Test', 'access_token')
+    return access_token_
+
+
+@pytest.fixture(scope='session')
+def shared_secret() -> str:
+    shared_secret_ = parser.get('Test', 'shared_secret')
+    return shared_secret_
+
+
+@pytest.fixture(scope='session')
+def revocation_code() -> str:
+    revocation_code_ = parser.get('Test', 'revocation_code')
+    return revocation_code_
 
 
 # noinspection PyShadowingNames
 @pytest_asyncio.fixture(scope='session')
 async def do_login(steamid) -> None:
-    token = parser.get('Test', 'token')
-    token_secure = parser.get('Test', 'token_secure')
     shared_secret = parser.get('Test', 'shared_secret')
 
     try:
@@ -89,7 +97,7 @@ async def do_login(steamid) -> None:
     except IndexError:
         login_session = login.Login.get_session(0)
 
-    login_session.restore_login(steamid, token, token_secure)
+    # login_session.restore_login(steamid, token, token_secure)
 
     if not await login_session.is_logged_in(steamid):
         login_session.username = parser.get('Test', 'account_name')
@@ -102,7 +110,15 @@ async def do_login(steamid) -> None:
             raw = codecs.decode(key.encode(), 'base64')
             login_session.password = raw.decode()
 
-        login_data = await login_session.do_login(shared_secret, mobile_login=True)
+        try:
+            login_data = await login_session.do_login(shared_secret, mobile_login=True)
+        except login.MailCodeError:
+            login_data = await login_session.do_login(
+                shared_secret,
+                auth_code=await wait_mail_code(),
+                auth_code_type=login.AuthCodeType.email,
+                mobile_login=True,
+            )
 
         parser.set('Test', 'client_id', login_data.client_id)
         parser.set('Test', 'sessionid', login_data.sessionid)
@@ -129,7 +145,10 @@ async def community_session(do_login) -> community.Community:
 # noinspection PyShadowingNames, PyUnusedLocal
 @pytest_asyncio.fixture(scope='module')
 async def webapi_session(do_login, community_session) -> webapi.SteamWebAPI:
-    api_key = await community_session.get_api_key()
+    try:
+        api_key = await community_session.get_api_key()
+    except PermissionError:
+        api_key = ''
 
     try:
         webapi_session_ = await webapi.SteamWebAPI.new_session(0, api_key=api_key)

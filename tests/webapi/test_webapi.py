@@ -17,8 +17,8 @@
 #
 import pytest
 
-from stlib import universe, webapi, login
-from tests import debug, LIMITED_ACCOUNT
+from stlib import universe, webapi
+from tests import debug, LIMITED_ACCOUNT, requires_manual_testing, wait_sms_code
 
 if LIMITED_ACCOUNT:
     pytest.skip("requires unlimited account", allow_module_level=True)
@@ -61,7 +61,28 @@ async def test_get_owned_games(webapi_session, steamid) -> None:
     debug(str(owned_games_filtered[0]), wait_for=0)
 
 
-async def test_new_authenticator(webapi_session, steamid, oauth_token) -> None:
-    login_data = webapi_session.new_authenticator(steamid, oauth_token)
-    isinstance(login_data, login.LoginData)
-    # TODO
+@requires_manual_testing
+async def test_add_authenticator(webapi_session, steamid, access_token) -> None:
+    auth_data = await webapi_session.new_authenticator(steamid, access_token)
+    isinstance(auth_data, webapi.AuthenticatorData)
+    debug(str(auth_data))
+
+    result = await webapi_session.add_authenticator(
+        steamid,
+        access_token,
+        auth_data.shared_secret,
+        sms_code=await wait_sms_code(),
+    )
+
+    debug(str(result), wait_for=0)
+
+
+@requires_manual_testing
+async def test_remove_authenticator(webapi_session, steamid, access_token, revocation_code) -> None:
+    result = await webapi_session.remove_authenticator(
+        steamid,
+        access_token,
+        revocation_code,
+    )
+
+    debug(str(result), wait_for=0)

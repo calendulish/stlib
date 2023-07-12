@@ -16,9 +16,12 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 
+import asyncio
+import configparser
 import inspect
 import os
 import time
+from pathlib import Path
 from typing import Optional
 
 import pytest
@@ -32,6 +35,9 @@ requires_manual_testing = pytest.mark.skipif(MANUAL_TESTING == False,  # noqa
 requires_unlimited_account = pytest.mark.skipif(LIMITED_ACCOUNT == True,  # noqa
                                                 reason="This test ccan't run using a limited account")
 
+config_file = Path(__file__).parent.resolve() / 'conftest.ini'
+parser = configparser.RawConfigParser()
+
 
 def debug(msg: Optional[str] = None, wait_for: int = 5) -> None:
     if MANUAL_TESTING:
@@ -43,3 +49,33 @@ def debug(msg: Optional[str] = None, wait_for: int = 5) -> None:
             time.sleep(wait_for)
         else:
             print('\n')
+
+
+async def wait_sms_code():
+    debug("waiting sms code")
+
+    while True:
+        parser.read(config_file)
+        sms_code = parser.get('Test', 'sms_code')
+
+        if len(sms_code) == 5:
+            break
+
+        await asyncio.sleep(2)
+
+    return sms_code
+
+
+async def wait_mail_code():
+    debug("waiting mail code")
+
+    while True:
+        parser.read(config_file)
+        mail_code = parser.get('Test', 'mail_code')
+
+        if len(mail_code) == 5:
+            break
+
+        await asyncio.sleep(2)
+
+    return mail_code
