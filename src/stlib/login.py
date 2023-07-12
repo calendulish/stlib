@@ -339,19 +339,14 @@ class Login(utils.Base):
 
         return LoginData(steamid, client_id, sessionid, refresh_token, access_token, transfer_info)
 
-    async def is_logged_in(self, steamid: universe.SteamId) -> bool:
+    async def is_logged_in(self) -> bool:
         """
         Check if user is logged in
-        :param steamid: `universe.SteamId` for the current user
         :return: bool
         """
         try:
-            response = await self.request(f'{steamid.profile_url}/edit', allow_redirects=False, raise_for_status=False)
+            response = await self.request(f'https://store.steampowered.com/account', allow_redirects=False)
         except LoginError:
-            return False
-
-        if 'profile could not be found' in response.content:
-            log.error("steamid %s seems invalid", steamid.id64)
             return False
 
         return response.status == 200
