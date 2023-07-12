@@ -41,13 +41,13 @@ class TestLogin:
         pass
 
     # noinspection PyUnusedLocal
-    async def test_is_logged_in(self, do_login, steamid) -> None:
+    async def test_is_logged_in(self) -> None:
         login_session = login.Login.get_session(0)
-        is_logged_in = await login_session.is_logged_in(steamid)
+        is_logged_in = await login_session.is_logged_in()
         assert is_logged_in is True
 
         login_session = await login.Login.new_session(1)
-        is_logged_in = await login_session.is_logged_in(steamid)
+        is_logged_in = await login_session.is_logged_in()
         assert is_logged_in is False
 
     async def test_session(self) -> None:

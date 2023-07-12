@@ -17,6 +17,7 @@
 #
 
 import asyncio
+import codecs
 import configparser
 import inspect
 import os
@@ -25,6 +26,8 @@ from pathlib import Path
 from typing import Optional
 
 import pytest
+
+from stlib import login
 
 MANUAL_TESTING = int(os.environ.get('MANUAL_TESTING', 0))
 LIMITED_ACCOUNT = int(os.environ.get('LIMITED_ACCOUNT', 0))
@@ -36,7 +39,63 @@ requires_unlimited_account = pytest.mark.skipif(LIMITED_ACCOUNT == True,  # noqa
                                                 reason="This test ccan't run using a limited account")
 
 config_file = Path(__file__).parent.resolve() / 'conftest.ini'
-parser = configparser.RawConfigParser()
+config = configparser.RawConfigParser()
+
+if os.getenv("GITHUB_ACTIONS"):
+    config.add_section('Test')
+    config.set('Test', 'steamid', os.getenv("steamid"))
+    config.set('Test', 'account_name', os.getenv("account_name"))
+    config.set('Test', 'password_raw', os.getenv("password_raw"))
+    config.set('Test', 'shared_secret', os.getenv("shared_secret"))
+    config.set('Test', 'identity_secret', os.getenv("identity_secret"))
+    config.set('Test', 'api_key', os.getenv("api_key"))
+
+    with open(config_file, 'w', encoding="utf8") as config_file_object:
+        config.write(config_file_object)
+
+config.read(config_file)
+
+
+async def do_login() -> None:
+    shared_secret = config.get('Test', 'shared_secret')
+
+    try:
+        login_session = await login.Login.new_session(0)
+    except IndexError:
+        login_session = login.Login.get_session(0)
+
+    # login_session.restore_login(steamid, token, token_secure)
+
+    if not await login_session.is_logged_in():
+        login_session.username = config.get('Test', 'account_name')
+
+        try:
+            login_session.password = config.get('Test', 'password_raw')
+        except configparser.NoOptionError:
+            encrypted_pass = config.get('Test', 'password')
+            key = codecs.decode(encrypted_pass, 'rot13')
+            raw = codecs.decode(key.encode(), 'base64')
+            login_session.password = raw.decode()
+
+        try:
+            login_data = await login_session.do_login(shared_secret, mobile_login=True)
+        except login.MailCodeError:
+            login_data = await login_session.do_login(
+                shared_secret,
+                auth_code=await wait_mail_code(),
+                auth_code_type=login.AuthCodeType.email,
+                mobile_login=True,
+            )
+
+        config.set('Test', 'client_id', login_data.client_id)
+        config.set('Test', 'sessionid', login_data.sessionid)
+        config.set('Test', 'refresh_token', login_data.refresh_token)
+        config.set('Test', 'access_token', login_data.access_token)
+
+        with open(config_file, 'w', encoding="utf8") as config_file_object:
+            config.write(config_file_object)
+
+    return None
 
 
 def debug(msg: Optional[str] = None, wait_for: int = 5) -> None:
@@ -55,8 +114,8 @@ async def wait_sms_code():
     debug("waiting sms code")
 
     while True:
-        parser.read(config_file)
-        sms_code = parser.get('Test', 'sms_code')
+        config.read(config_file)
+        sms_code = config.get('Test', 'sms_code')
 
         if len(sms_code) == 5:
             break
@@ -70,8 +129,8 @@ async def wait_mail_code():
     debug("waiting mail code")
 
     while True:
-        parser.read(config_file)
-        mail_code = parser.get('Test', 'mail_code')
+        config.read(config_file)
+        mail_code = config.get('Test', 'mail_code')
 
         if len(mail_code) == 5:
             break
