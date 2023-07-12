@@ -64,16 +64,27 @@ class Item(NamedTuple):
 
 class Order(NamedTuple):
     name: str
+    """Item Name"""
     appid: int
+    """App ID"""
     hash_name: str
+    """Hash name"""
     type: str
+    """Item type"""
     price: str
+    """Item price"""
     amount: int
+    """Item amount"""
     orderid: int
+    """Order ID"""
     contextid: Optional[int]
+    """Context ID"""
     actions: List[Dict[str, str]]
+    """List of available actions"""
     icon_url: str
+    """Small icon url"""
     icon_url_large: str
+    """Large icon url"""
 
 
 class Confirmation(NamedTuple):
@@ -694,10 +705,19 @@ class Community(utils.Base):
         return json_data
 
     async def revoke_api_key(self) -> None:
+        """
+        Revoke the developer API Key associated with the current logged account
+        :return: None
+        """
         data = {'sessionid': await self.get_steam_session_id()}
         await self.request(f'{self.community_url}/dev/revokekey', data=data)
 
     async def register_api_key(self, domain: str = 'stlib') -> None:
+        """
+        Register a new developer API Key for the current logged account
+        :param domain: app name
+        :return: None
+        """
         data = {
             'domain': domain,
             'agreeToTerms': 'agreed',
@@ -708,6 +728,10 @@ class Community(utils.Base):
         await self.request(f'{self.community_url}/dev/registerkey', data=data)
 
     async def get_api_key(self) -> Tuple[str, str]:
+        """
+        Get developer API Key for the current logged account
+        :return: key, domain
+        """
         html = await self.request_html(f'{self.community_url}/dev/apikey')
         main = html.find('div', id='mainContents')
 

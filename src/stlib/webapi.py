@@ -50,14 +50,23 @@ class Game(NamedTuple):
 
 class AuthenticatorData(NamedTuple):
     shared_secret: str
+    """shared secret"""
     identity_secret: str
+    """identity secret"""
     serial_number: int
+    """serial number"""
     revocation_code: str
+    """revocation code"""
     uri: str
+    """otpauth uri e.g.: otpauth://totp/Steam:<user>?secret=<secret>&issuer=Steam"""
     token_gid: str
+    """token gid"""
     account_name: str
+    """account name associated"""
     server_time: int
+    """server time in unix format"""
     phone_number_hint: int
+    """last 4 digits of phone number linked"""
 
 
 class PhoneNotRegistered(Exception):

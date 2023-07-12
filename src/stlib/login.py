@@ -34,23 +34,35 @@ log = logging.getLogger(__name__)
 
 class TransferInfo(NamedTuple):
     url: str
+    """url associated"""
     nonce: str
+    """Nonce key"""
     auth: str
+    """Auth token"""
 
 
 class LoginData(NamedTuple):
     steamid: int
+    """Steam ID"""
     client_id: str
+    """Client ID"""
     sessionid: str
+    """Session ID"""
     refresh_token: str
+    """Refresh token"""
     access_token: str
+    """Access token"""
     transfer_info: List[TransferInfo]
+    """List of `TransferInfo` associated"""
 
 
 class AuthCodeType(Enum):
     email = 2
+    """email code"""
     device = 3
+    """device code"""
     machine = 6
+    """machine token"""
 
 
 class LoginError(ValueError):
@@ -328,6 +340,11 @@ class Login(utils.Base):
         return LoginData(steamid, client_id, sessionid, refresh_token, access_token, transfer_info)
 
     async def is_logged_in(self, steamid: universe.SteamId) -> bool:
+        """
+        Check if user is logged in
+        :param steamid: `universe.SteamId` for the current user
+        :return: bool
+        """
         try:
             response = await self.request(f'{steamid.profile_url}/edit', allow_redirects=False, raise_for_status=False)
         except LoginError:
