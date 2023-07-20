@@ -98,13 +98,13 @@ class Base:
         :param session_index: Session number
         :param raise_for_status: Raise if the response status is 400 or higher.
         :param args: extra args when creating a new http session
-        :param kwargs: extra kargs when creating a new http session
+        :param kwargs: extra kwargs when creating a new http session
         :return: Instance of module
         """
         if session_index in _session_cache['http_session']:
             raise IndexError(f"There's already a http_session session at index {session_index}")
 
-        if not 'headers' in kwargs:
+        if 'headers' not in kwargs:
             kwargs['headers'] = {'User-Agent': 'Unknown/0.0.0'}
 
         log.info("Creating a new http session at index %s for custom http session", session_index)

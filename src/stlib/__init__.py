@@ -23,7 +23,7 @@ stlib
 Async library that provides features related to Steam client and compatible stuff
 
 WARNING: stlib is not intended to be used in game development.
-There is no support to callbacks and I'll not work on that.
+There is no support for callbacks, and I'll not work on that.
 stlib is intended to develop console or GUI applications that need interaction with SteamAPI or SteamWebAPI.
 
 stlib now supports plugins!
@@ -56,7 +56,7 @@ Steam Tools NG - https://github.com/calendulish/steam-tools-ng
 
 ___________________________________________________________________________________________
 
-This is an work in progress. You can request new features.
+This is a work in progress. You can request new features.
 
 The stlib is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
 as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -66,7 +66,7 @@ without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
 See the GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License along with this program.
-If not, see http://www.gnu.org/licenses/.
+If not, see https://www.gnu.org/licenses/.
 
 Lara Maia <dev@lara.monster> 2015 ~ 2023
 
@@ -117,8 +117,8 @@ async def set_default_http_params(session_index: int, *args: Any, **kwargs: Any)
     Set default http params for stlib modules at given `session_index`
     :param session_index: Session number
     :param args: extra args when creating a new http session
-    :param kwargs: extra kargs when creating a new http session
-    :return: http session
+    :param kwargs: extra kwargs when creating a new http session
+    :return: `aiohttp.ClientSession`
     """
     http_session = await _Base.new_http_session(session_index, *args, **kwargs)
     return http_session

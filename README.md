@@ -10,7 +10,7 @@ stlib
 
 Async library that provides features related to Steam client and compatible stuff
 
-WARNING: stlib is not intended to be used in game development, there is no support to callbacks and I'll not work on that.
+WARNING: stlib is not intended to be used in game development, there is no support to callbacks, and I'll not work on that.
 stlib is intended to develop console or GUI applications that need interaction with SteamAPI or SteamWebAPI.
 
 stlib now supports plugins!
@@ -54,7 +54,7 @@ Steam Tools NG - https://github.com/calendulish/steam-tools-ng
 
 ___________________________________________________________________________________________
 
-This is an work in progress. You can request new features.
+This is a work in progress. You can request new features.
 
 The stlib is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 

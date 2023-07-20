@@ -92,7 +92,7 @@ class MailCodeError(LoginError):
 
 
 class TwoFactorCodeError(LoginError):
-    """Raised when two factor code is requested"""
+    """Raised when two-factor code is requested"""
     pass
 
 

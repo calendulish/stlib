@@ -281,7 +281,7 @@ class Community(utils.Base):
         """
         Get badges
         :param steamid: `SteamId`
-        :param show_no_drops: If true get badges with no drops too
+        :param show_no_drops: If true, get badges with no drops as well
         :return: List of `Badge`
         """
         badges = []

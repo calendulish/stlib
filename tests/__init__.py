@@ -92,8 +92,8 @@ async def do_login() -> None:
         config.set('Test', 'refresh_token', login_data.refresh_token)
         config.set('Test', 'access_token', login_data.access_token)
 
-        with open(config_file, 'w', encoding="utf8") as config_file_object:
-            config.write(config_file_object)
+        with open(config_file, 'w', encoding="utf8") as config_file_object_:
+            config.write(config_file_object_)
 
     return None
 

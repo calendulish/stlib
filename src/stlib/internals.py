@@ -107,7 +107,7 @@ class Internals(utils.Base):
         self.store_url = store_url
 
     # Despite this apparently accepts comma-separated parameters
-    # actualy isn't working without price_overview filter
+    # actually isn't working without price_overview filter
     async def get_game(self, appid: int) -> Game:
         """Get game details. See `Game`"""
         appid_string = str(appid)

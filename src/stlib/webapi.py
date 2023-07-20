@@ -17,7 +17,7 @@
 #
 
 """
-`webapi` interface is used to interact with the oficial SteamWebAPI.
+`webapi` interface is used to interact with the official SteamWebAPI.
 """
 
 import logging
