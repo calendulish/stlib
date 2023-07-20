@@ -28,19 +28,15 @@ SOURCES_PATH = Path(os.getenv("SOURCES_PATH", Path('src', 'steamworks')))
 SDK_PATH = Path(os.getenv("SDK_PATH", Path(SOURCES_PATH, 'sdk')))
 HEADERS_PATH = Path(os.getenv("HEADERS_PATH", Path(SDK_PATH, 'public')))
 
-if sys.maxsize > 2 ** 32:
-    arch = '64'
-else:
-    arch = ''
-
+arch = '64' if sys.maxsize > 2 ** 32 else ''
 if os.name == 'nt':
-    REDIST_PATH = 'win' + arch
-    API_NAME = 'steam_api' + arch
-    EXTRA_NAME = API_NAME + '.dll'
+    REDIST_PATH = f'win{arch}'
+    API_NAME = f'steam_api{arch}'
+    EXTRA_NAME = f'{API_NAME}.dll'
 elif os.name == 'posix':
-    REDIST_PATH = 'linux' + arch if arch else '32'
+    REDIST_PATH = f'linux{arch}' if arch else '32'
     API_NAME = 'steam_api'
-    EXTRA_NAME = 'lib' + API_NAME + '.so'
+    EXTRA_NAME = f'lib{API_NAME}.so'
 else:
     print('Your system is currently not supported.')
     sys.exit(1)
@@ -51,7 +47,7 @@ class OptionalBuild(build_ext):
         bin_path = SDK_PATH / 'redistributable_bin'
         output_dir = Path(self.build_lib) / 'stlib'
         output_dir.mkdir(parents=True, exist_ok=True)
-        compatible = True if platform.machine().lower() in ['x86_64', 'amd64', 'i386', 'x86'] else False
+        compatible = platform.machine().lower() in ['x86_64', 'amd64', 'i386', 'x86']
 
         if compatible and HEADERS_PATH.exists():
             shutil.copy(
@@ -63,11 +59,9 @@ class OptionalBuild(build_ext):
             self.warn("build of steam_api C extension has been disabled")
 
 
-all_sources = []
-for file in SOURCES_PATH.iterdir():
-    if file.suffix == ".cpp":
-        all_sources.append(str(file))
-
+all_sources = [
+    str(file) for file in SOURCES_PATH.iterdir() if file.suffix == ".cpp"
+]
 steamworks = Extension(
     'stlib.steamworks',
     sources=all_sources,

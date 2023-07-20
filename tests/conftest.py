@@ -44,26 +44,22 @@ def event_loop():
 
 @pytest.fixture(scope='session')
 def steamid() -> universe.SteamId:
-    steamid_ = universe.generate_steamid(config.get('Test', 'steamid'))
-    return steamid_
+    return universe.generate_steamid(config.get('Test', 'steamid'))
 
 
 @pytest.fixture(scope='session')
 def access_token() -> str:
-    access_token_ = config.get('Test', 'access_token')
-    return access_token_
+    return config.get('Test', 'access_token')
 
 
 @pytest.fixture(scope='session')
 def shared_secret() -> str:
-    shared_secret_ = config.get('Test', 'shared_secret')
-    return shared_secret_
+    return config.get('Test', 'shared_secret')
 
 
 @pytest.fixture(scope='session')
 def revocation_code() -> str:
-    revocation_code_ = config.get('Test', 'revocation_code')
-    return revocation_code_
+    return config.get('Test', 'revocation_code')
 
 
 # noinspection PyShadowingNames, PyUnusedLocal

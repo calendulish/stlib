@@ -118,13 +118,11 @@ class SteamWebAPI(utils.Base):
     ) -> Dict[str, Any]:
         current_time = int(time.time())
 
-        data = {
+        return {
             'steamid': steamid.id64,
             'authenticator_time': current_time,
             'authenticator_type': universe.TOKEN_TYPE[token_type],
         }
-
-        return data
 
     async def get_server_time(self) -> int:
         """Get server time"""
@@ -256,7 +254,7 @@ class SteamWebAPI(utils.Base):
         if response['status'] == 29:
             raise AuthenticatorExists('An Authenticator is already active for that account.')
 
-        if response['status'] == 84 or response['status'] == 2:
+        if response['status'] in [84, 2]:
             raise PhoneNotRegistered('Phone not registered on Steam Account.')
 
         if response['status'] != 1:
