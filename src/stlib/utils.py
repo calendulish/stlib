@@ -168,9 +168,8 @@ class Base:
             assert isinstance(http_session, aiohttp.ClientSession), "Wrong http session type"
             await http_session.close()
             del _session_cache['http_session'][session_index]
-        else:
-            if not no_fail:
-                raise IndexError(f"There's no session at {session_index}")
+        elif not no_fail:
+            raise IndexError(f"There's no session at {session_index}")
 
     @classmethod
     def get_session(cls, session_index: int) -> 'Base':

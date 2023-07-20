@@ -120,5 +120,4 @@ async def set_default_http_params(session_index: int, *args: Any, **kwargs: Any)
     :param kwargs: extra kwargs when creating a new http session
     :return: `aiohttp.ClientSession`
     """
-    http_session = await _Base.new_http_session(session_index, *args, **kwargs)
-    return http_session
+    return await _Base.new_http_session(session_index, *args, **kwargs)

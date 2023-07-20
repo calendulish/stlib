@@ -156,7 +156,7 @@ def generate_steam_code(server_time: int, shared_secret: Union[str, bytes]) -> s
     :param shared_secret: User shared secret
     :return: Steam OTP
     """
-    msg = int(server_time / 30).to_bytes(8, 'big')
+    msg = (server_time // 30).to_bytes(8, 'big')
     key = base64.b64decode(shared_secret)
     auth_code_raw = generate_otp_code(msg, key)
 
@@ -178,9 +178,7 @@ def generate_device_id(base: str) -> str:
     device_id = ['android:']
 
     for start, end in ([0, 8], [8, 12], [12, 16], [16, 20], [20, 32]):
-        device_id.append(digest[start:end])
-        device_id.append('-')
-
+        device_id.extend((digest[start:end], '-'))
     device_id.pop(-1)
     return ''.join(device_id)
 

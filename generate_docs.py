@@ -35,8 +35,6 @@ stlib_modules = [
 ]
 
 if __name__ == "__main__":
-    all_modules = {}
-
     render.configure(
         logo_link='https://lara.monster/stlib',
         footer_text='dev@lara.monster',
@@ -47,9 +45,10 @@ if __name__ == "__main__":
     html_path.mkdir()
 
     stlib.__all__ = stlib_modules
-    for module_name in extract.walk_specs(['stlib']):
-        all_modules[module_name] = doc.Module.from_name(module_name)
-
+    all_modules = {
+        module_name: doc.Module.from_name(module_name)
+        for module_name in extract.walk_specs(['stlib'])
+    }
     for module in all_modules.values():
         html = render.html_module(module, all_modules=all_modules)
         file = html_path / f"{module.fullname.replace('.', '/')}.html"

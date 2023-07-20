@@ -156,7 +156,7 @@ class Login(utils.Base):
 
         encrypted_password = universe.encrypt_password(steam_key, self.__password)
 
-        data = {
+        return {
             "account_name": self.username,
             "encrypted_password": encrypted_password.decode(),
             "encryption_timestamp": steam_key.timestamp,
@@ -165,8 +165,6 @@ class Login(utils.Base):
             "platform_type": "3" if mobile_login else "2",
             "website_id": "Mobile" if mobile_login else "Community",
         }
-
-        return data
 
     async def get_steam_key(self, username: str) -> universe.SteamKey:
         """
@@ -180,13 +178,12 @@ class Login(utils.Base):
             params=params,
         )
 
-        if json_data['response']:
-            public_mod = int(json_data['response']['publickey_mod'], 16)
-            public_exp = int(json_data['response']['publickey_exp'], 16)
-            timestamp = int(json_data['response']['timestamp'])
-        else:
+        if not json_data['response']:
             raise ValueError('Failed to get public key.')
 
+        public_mod = int(json_data['response']['publickey_mod'], 16)
+        public_exp = int(json_data['response']['publickey_exp'], 16)
+        timestamp = int(json_data['response']['timestamp'])
         return universe.SteamKey(rsa.PublicKey(public_mod, public_exp), timestamp)
 
     async def get_captcha(self, gid: int) -> bytes:
@@ -282,11 +279,7 @@ class Login(utils.Base):
             if not auth_data['response']:
                 raise LoginError('SteamGuard code is wrong')
         else:
-            captcha_requested = False
-
-            if len(json_data['response']['allowed_confirmations']) > 1:
-                captcha_requested = True
-
+            captcha_requested = len(json_data['response']['allowed_confirmations']) > 1
             auth_code_type = json_data['response']['allowed_confirmations'][0]['confirmation_type']
 
             if auth_code_type == 2:
@@ -345,7 +338,9 @@ class Login(utils.Base):
         :return: bool
         """
         try:
-            response = await self.request(f'https://store.steampowered.com/account', allow_redirects=False)
+            response = await self.request(
+                'https://store.steampowered.com/account', allow_redirects=False
+            )
         except LoginError:
             return False
 

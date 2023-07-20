@@ -175,7 +175,7 @@ class Community(utils.Base):
         json_data = await self.request_json(f'{self.api_url}/ISteamWebAPIUtil/GetServerInfo/v1')
         server_time = json_data['servertime']
 
-        params = {
+        return {
             'p': deviceid,
             'a': steamid.id64,
             'k': universe.generate_time_hash(server_time, tag, identity_secret),
@@ -183,8 +183,6 @@ class Community(utils.Base):
             'm': 'android',
             'tag': tag,
         }
-
-        return params
 
     async def get_steam_session_id(self) -> str:
         """Get steam session id"""
@@ -221,11 +219,11 @@ class Community(utils.Base):
         json_data = {}
 
         while True:
-            json_data.update(await self.request_json(
+            json_data |= await self.request_json(
                 f"{self.community_url}/inventory/{steamid.id64}/{appid}/{contextid}",
                 params=params,
                 auto_recovery=False,
-            ))
+            )
 
             if not json_data['success']:
                 raise AttributeError("Unable to get inventory details")
@@ -233,12 +231,11 @@ class Community(utils.Base):
             if json_data['total_inventory_count'] == 0:
                 raise InventoryEmptyError(steamid, appid, contextid, "Inventory is empty")
 
-            if 'last_assetid' in json_data:
-                params['start_assetid'] = json_data['last_assetid']
-                await asyncio.sleep(10)
-            else:
+            if 'last_assetid' not in json_data:
                 break
 
+            params['start_assetid'] = json_data['last_assetid']
+            await asyncio.sleep(10)
         items = []
         for item in json_data['descriptions']:
             if 'market_name' in item:
@@ -438,9 +435,9 @@ class Community(utils.Base):
                 else:
                     give = [json_data['type']]
 
-                quantity = listing_prices.find(text=lambda element: 'Quantity' in element.text)
-
-                if quantity:
+                if quantity := listing_prices.find(
+                    text=lambda element: 'Quantity' in element.text
+                ):
                     give[0] = f'{quantity.next.next.strip()} {give[0]}'
             elif confirmation['type'] == 5:
                 to = "Steam"
@@ -489,12 +486,11 @@ class Community(utils.Base):
 
         progress = stats.find('span', class_='progress_info_bold')
 
-        if not progress or "No" in progress.text:
-            cards = 0
-        else:
-            cards = int(progress.text.split(' ', 3)[0])
-
-        return cards
+        return (
+            0
+            if not progress or "No" in progress.text
+            else int(progress.text.split(' ', 3)[0])
+        )
 
     async def get_last_played_game(self, steamid: universe.SteamId) -> Optional[int]:
         """
@@ -521,17 +517,18 @@ class Community(utils.Base):
         json_data = {}
 
         while True:
-            json_data.update(await self.request_json(f"{self.community_url}/market/mylistings", params=params))
+            json_data |= await self.request_json(
+                f"{self.community_url}/market/mylistings", params=params
+            )
 
             if not json_data['success']:
                 raise AttributeError("Unable to get order details")
 
-            if json_data['total_count'] > 100:
-                params['start'] += 100
-                await asyncio.sleep(5)
-            else:
+            if json_data['total_count'] <= 100:
                 break
 
+            params['start'] += 100
+            await asyncio.sleep(5)
         my_sell_orders = []
 
         for order in json_data['listings']:
@@ -610,9 +607,9 @@ class Community(utils.Base):
             'norender': 1,
         }
 
-        json_data = await self.request_json(f"{self.community_url}/market/itemordershistogram", params=params)
-
-        return json_data
+        return await self.request_json(
+            f"{self.community_url}/market/itemordershistogram", params=params
+        )
 
     async def send_trade_offer(
             self,
@@ -631,26 +628,24 @@ class Community(utils.Base):
         :param them: List of them items to trade
         :return: Json data
         """
-        me_assets = []
-
-        for item in me:
-            me_assets.append({
+        me_assets = [
+            {
                 'appid': item[0],
                 'contextid': str(contextid),
                 'amount': item[2],
                 'assetid': str(item[1]),
-            })
-
-        them_assets = []
-
-        for item in them:
-            them_assets.append({
+            }
+            for item in me
+        ]
+        them_assets = [
+            {
                 'appid': item[0],
                 'contextid': str(contextid),
                 'amount': item[2],
                 'assetid': str(item[1]),
-            })
-
+            }
+            for item in them
+        ]
         offer = {
             'newversion': True,
             'version': len(me_assets) + len(them_assets) + 1,
@@ -677,8 +672,9 @@ class Community(utils.Base):
         }
 
         headers = {'referer': f'{self.community_url}/tradeoffer/new/?partner={steamid.id3}&token={token}'}
-        json_data = await self.request_json(f"{self.community_url}/tradeoffer/new/send", data=data, headers=headers)
-        return json_data
+        return await self.request_json(
+            f"{self.community_url}/tradeoffer/new/send", data=data, headers=headers
+        )
 
     async def send_confirmation(
             self,
@@ -701,8 +697,9 @@ class Community(utils.Base):
         """
         extra_params = {'cid': trade_id, 'ck': trade_key, 'op': action}
         params = await self._new_mobileconf_query(deviceid, steamid, identity_secret, 'conf')
-        json_data = await self.request_json(f'{self.mobileconf_url}/ajaxop', params={**params, **extra_params})
-        return json_data
+        return await self.request_json(
+            f'{self.mobileconf_url}/ajaxop', params={**params, **extra_params}
+        )
 
     async def revoke_api_key(self) -> None:
         """
