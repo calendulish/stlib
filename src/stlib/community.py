@@ -400,8 +400,12 @@ class Community(utils.Base):
             html = BeautifulSoup(json_data["html"], 'html.parser')
 
             if confirmation['type'] in (1, 2):
-                offer_friend = html.find('div', class_="mobileconf_offer_friend")
-                to = offer_friend.find_next('span').text.strip()
+                try:
+                    offer_friend = html.find('div', class_="mobileconf_offer_friend")
+                    to = offer_friend.find_next('span').text.strip()
+                except AttributeError:
+                    trade_partner = html.find('span', class_="trade_partner_headline_sub")
+                    to = trade_partner.get_text().strip()
 
                 item_list = html.find_all('div', class_="tradeoffer_item_list")
 
@@ -436,7 +440,7 @@ class Community(utils.Base):
                     give = [json_data['type']]
 
                 if quantity := listing_prices.find(
-                    text=lambda element: 'Quantity' in element.text
+                        text=lambda element: 'Quantity' in element.text
                 ):
                     give[0] = f'{quantity.next.next.strip()} {give[0]}'
             elif confirmation['type'] == 5:
