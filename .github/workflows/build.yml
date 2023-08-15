@@ -5,7 +5,12 @@ jobs:
   delete-old-artifacts:
     runs-on: ubuntu-latest
     steps:
-      - uses: kolpav/purge-artifacts-action@v1
+      - name: Harden Runner
+        uses: step-security/harden-runner@8ca2b8b2ece13480cda6dacd3511b49857a23c09 # v2.5.1
+        with:
+          egress-policy: audit
+
+      - uses: kolpav/purge-artifacts-action@04c636a505f26ebc82f8d070b202fb87ff572b10 # v1.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           expire-in: 0
@@ -23,8 +28,13 @@ jobs:
         - python-version: '3.9'
           python-exec: /opt/python/cp39-cp39/bin/python
     steps:
-      - uses: actions/checkout@v3
-      - uses: addnab/docker-run-action@v3
+      - name: Harden Runner
+        uses: step-security/harden-runner@8ca2b8b2ece13480cda6dacd3511b49857a23c09 # v2.5.1
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
+      - uses: addnab/docker-run-action@4f65fabd2431ebc8d299f8e5a018d79a769ae185 # v3
         with:
           image: quay.io/pypa/manylinux2014_x86_64
           options: -v ${{ github.workspace }}:/work -e TERM=$TERM
@@ -36,7 +46,7 @@ jobs:
             ln -s ${{ matrix.python-exec }} /usr/bin/python
             python -m pip install build
             /work/tools/Linux/dist_script.sh
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
         with:
           name: linux_${{ matrix.python-version }}
           path: |
@@ -57,8 +67,13 @@ jobs:
         - arch: 'aarch64'
           distro: 'archarm_latest'
     steps:
-      - uses: actions/checkout@v3
-      - uses: uraimo/run-on-arch-action@v2
+      - name: Harden Runner
+        uses: step-security/harden-runner@8ca2b8b2ece13480cda6dacd3511b49857a23c09 # v2.5.1
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
+      - uses: uraimo/run-on-arch-action@566a22b3d945876cb275a973cbf25df8aa010179 # v2
         id: build
         with:
           arch: ${{ matrix.arch }}
@@ -80,7 +95,7 @@ jobs:
             popd
             cp -rfv build/ /artifacts/
             cp -rfv dist/ /artifacts/
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
         with:
           name: rpi_${{ matrix.arch }}
           path: |
@@ -100,13 +115,18 @@ jobs:
         shell: cmd
         working-directory: .\\tools\Windows
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
+      - name: Harden Runner
+        uses: step-security/harden-runner@8ca2b8b2ece13480cda6dacd3511b49857a23c09 # v2.5.1
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
+      - uses: actions/setup-python@61a6322f88396a6271a6ee3565807d608ecaddd1 # v4.7.0
         with:
           python-version: ${{ matrix.python-version }}
       - run: python -m pip install build
       - run: dist_script_native.cmd
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
         with:
           name: windows_${{ matrix.python-version }}
           path: |
@@ -123,10 +143,15 @@ jobs:
         shell: cmd
         working-directory: .\\tools\Windows
     steps:
-      - uses: actions/checkout@v3
+      - name: Harden Runner
+        uses: step-security/harden-runner@8ca2b8b2ece13480cda6dacd3511b49857a23c09 # v2.5.1
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
       - run: update_dev_environment.cmd
       - run: dist_script.cmd
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
         with:
           name: msys
           path: |
@@ -139,9 +164,14 @@ jobs:
     needs: [linux-build, rpi-build, windows-build, msys-build]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/download-artifact@v3
-      - uses: softprops/action-gh-release@v1
+      - name: Harden Runner
+        uses: step-security/harden-runner@8ca2b8b2ece13480cda6dacd3511b49857a23c09 # v2.5.1
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
+      - uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # v3.0.2
+      - uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844 # v1
         with:
           draft: true
           files: |
@@ -159,21 +189,26 @@ jobs:
     needs: [deploy]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/download-artifact@v3
-      - uses: actions/setup-python@v4
+      - name: Harden Runner
+        uses: step-security/harden-runner@8ca2b8b2ece13480cda6dacd3511b49857a23c09 # v2.5.1
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
+      - uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # v3.0.2
+      - uses: actions/setup-python@61a6322f88396a6271a6ee3565807d608ecaddd1 # v4.7.0
         with:
           python-version: '3.11'
       - run: python -m pip install patchelf auditwheel
       - run: python ./tools/auditwheel_.py repair --plat manylinux2014_x86_64 linux_3.11/dist/stlib-*cp311*.whl
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@61a6322f88396a6271a6ee3565807d608ecaddd1 # v4.7.0
         with:
           python-version: '3.10'
       - run: python -m pip install patchelf auditwheel
       - run: python ./tools/auditwheel_.py repair --plat manylinux2014_x86_64 linux_3.10/dist/stlib-*cp310*.whl
       #- run: python ./tools/auditwheel_.py repair --plat manylinux2014_armv7l rpi_armv7/dist/stlib-*cp310*.whl
       #- run: python ./tools/auditwheel_.py repair --plat manylinux2014_aarch64 rpi_aarch64/dist/stlib-*cp310*.whl
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@61a6322f88396a6271a6ee3565807d608ecaddd1 # v4.7.0
         with:
           python-version: '3.9'
       - run: python -m pip install patchelf auditwheel
@@ -182,7 +217,7 @@ jobs:
       - run: mv windows_3.10/dist/stlib-*win_amd64.whl wheelhouse/
       - run: mv windows_3.11/dist/stlib-*win_amd64.whl wheelhouse/
       - run: mv linux_3.11/dist/stlib-*.tar.gz wheelhouse/
-      - uses: pypa/gh-action-pypi-publish@release/v1
+      - uses: pypa/gh-action-pypi-publish@b7f401de30cb6434a1e19f805ff006643653240e # release/v1
         with:
           password: ${{ secrets.PYPI_API_TOKEN }}
           packages-dir: wheelhouse/
@@ -198,7 +233,12 @@ jobs:
       rpi-badge-color: ${{ needs.rpi-build.result == 'success' && 'green' || 'red' }}
       msys-badge-color: ${{ needs.msys-build.result == 'success' && 'green' || 'red' }}
     steps:
-      - uses: RubbaBoy/BYOB@v1.3.0
+      - name: Harden Runner
+        uses: step-security/harden-runner@8ca2b8b2ece13480cda6dacd3511b49857a23c09 # v2.5.1
+        with:
+          egress-policy: audit
+
+      - uses: RubbaBoy/BYOB@24f464284c1fd32028524b59607d417a2e36fee7 # v1.3.0
         with:
           NAME: stlib-linux-build
           LABEL: 'Linux build'
@@ -207,7 +247,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.ACTIONS_TOKEN }}
           REPOSITORY: calendulish/.github
           ACTOR: calendulish
-      - uses: RubbaBoy/BYOB@v1.3.0
+      - uses: RubbaBoy/BYOB@24f464284c1fd32028524b59607d417a2e36fee7 # v1.3.0
         with:
           NAME: stlib-rpi-build
           LABEL: 'RPI build'
@@ -216,7 +256,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.ACTIONS_TOKEN }}
           REPOSITORY: calendulish/.github
           ACTOR: calendulish
-      - uses: RubbaBoy/BYOB@v1.3.0
+      - uses: RubbaBoy/BYOB@24f464284c1fd32028524b59607d417a2e36fee7 # v1.3.0
         with:
           NAME: stlib-windows-build
           LABEL: 'Windows build'
@@ -225,7 +265,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.ACTIONS_TOKEN }}
           REPOSITORY: calendulish/.github
           ACTOR: calendulish
-      - uses: RubbaBoy/BYOB@v1.3.0
+      - uses: RubbaBoy/BYOB@24f464284c1fd32028524b59607d417a2e36fee7 # v1.3.0
         with:
           NAME: stlib-msys-build
           LABEL: 'Msys build'
