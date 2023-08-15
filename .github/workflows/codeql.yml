@@ -59,7 +59,7 @@ jobs:
 
       - run: |
          python -m pip install build
-         /tools/Linux/dist_script.sh
+         ./tools/Linux/dist_script.sh
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@a09933a12a80f87b87005513f0abb1494c27a716 # v2.21.4
