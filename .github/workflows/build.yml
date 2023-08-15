@@ -63,16 +63,14 @@ jobs:
         with:
           arch: ${{ matrix.arch }}
           distro: ${{ matrix.distro }}
-          githubToken: ${{ github.token }}
           setup: mkdir -p "${PWD}/artifacts"
           dockerRunArgs: --volume "${PWD}/artifacts:/artifacts"
           env: |
             release_name: "stlib-RPI-${{ matrix.arch }}"
           shell: /bin/sh
-          install: |
+          run: |
             pacman -Syu --noconfirm
             pacman -S --noconfirm python python-build tar
-          run: |
             python -m build --sdist --wheel
             pushd build
             mv lib.linux* "${release_name}"

@@ -356,7 +356,7 @@ class Base:
                     )
                     break
             except (aiohttp.ClientConnectorError, asyncio.TimeoutError) as exception:
-                log.debug("Connection error %s", str(exception))
+                log.debug("Connector error %s", str(exception))
 
                 if auto_recovery:
                     log.debug("Trying again in 5 seconds")
