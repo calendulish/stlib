@@ -1,8 +1,12 @@
 name: Build
 on: [push, workflow_dispatch]
 
+permissions: read-all
+
 jobs:
   delete-old-artifacts:
+    permissions:
+      actions: write
     if: github.actor == 'calendulish'
     runs-on: ubuntu-latest
     steps:
@@ -163,6 +167,8 @@ jobs:
           retention-days: 90
         if: github.actor == 'calendulish'
   deploy:
+    permissions:
+      contents: write  # for softprops/action-gh-release to create GitHub release
     if: startsWith(github.ref, 'refs/tags/')
     needs: [linux-build, rpi-build, windows-build, msys-build]
     runs-on: ubuntu-latest
@@ -227,6 +233,8 @@ jobs:
           verbose: true
           print-hash: true
   generate-badges:
+    permissions:
+      contents: write
     if: ${{ always() && github.actor == 'calendulish' }}
     needs: [linux-build, rpi-build, windows-build, msys-build]
     runs-on: ubuntu-latest
