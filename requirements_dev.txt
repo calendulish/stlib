@@ -1,0 +1,8 @@
+-r requirements.txt
+auditwheel~=5.4
+patchelf~=0.17
+pdoc~=14.0
+pytest~=7.4
+pytest-asyncio~=0.21
+pytest-cov~=4.1
+build~=0.10

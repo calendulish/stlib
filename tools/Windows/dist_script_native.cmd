@@ -48,6 +48,7 @@ endlocal
 popd || exit 1
 
 :: build project
+python -m pip install build || exit 1
 python -m build --sdist --wheel || exit 1
 pushd build || exit 1
 move /y "lib.win-amd64-%PYTHON_VERSION%" "%RELEASE_NAME%" || exit 1

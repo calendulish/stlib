@@ -32,6 +32,9 @@ dependencies = [
   "rsa"
 ]
 
+[project.optional-dependencies]
+plugins = ["stlib-plugins"]
+
 [project.urls]
 homepage = "https://github.com/calendulish/stlib"
 documentation = "https://lara.monster/stlib"
