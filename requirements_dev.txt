@@ -5,4 +5,4 @@ pdoc~=14.0
 pytest~=7.4
 pytest-asyncio~=0.21
 pytest-cov~=4.1
-build~=0.10
+build~=1.0
