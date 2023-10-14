@@ -22,7 +22,7 @@ check_msys
 
 # download steamworks
 pushd src/steamworks || exit 1
-curl -o steamworks-sdk.zip -L https://github.com/calendulish/Overlays/blob/master/dev-util/steamworks-sdk/files/steamworks_sdk_155.zip?raw=true || exit 1
+curl -o steamworks-sdk.zip -L https://github.com/calendulish/Overlays/blob/master/dev-util/steamworks-sdk/files/steamworks_sdk_158.zip?raw=true || exit 1
 unzip -o steamworks-sdk.zip || exit 1
 popd || exit 1
 

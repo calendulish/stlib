@@ -22,7 +22,7 @@ check_linux
 
 # download steamworks
 pushd src/steamworks || exit 1
-aria2c -o steamworks-sdk.zip https://github.com/calendulish/Overlays/blob/master/dev-util/steamworks-sdk/files/steamworks_sdk_155.zip?raw=true || exit 1
+aria2c -o steamworks-sdk.zip https://github.com/calendulish/Overlays/blob/master/dev-util/steamworks-sdk/files/steamworks_sdk_158.zip?raw=true || exit 1
 unzip -o steamworks-sdk.zip || exit 1
 popd || exit 1
 
