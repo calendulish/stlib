@@ -27,7 +27,6 @@ unzip -o steamworks-sdk.zip || exit 1
 popd || exit 1
 
 # build project
-python -m pip install build || exit 1
 python -m build --sdist --wheel || exit 1
 pushd build || exit 1
 mv "lib.linux-x86_64-$PYTHON_VERSION" "$RELEASE_NAME" || exit 1

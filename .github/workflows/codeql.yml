@@ -58,7 +58,7 @@ jobs:
           # Prefix the list here with "+" to use these queries and those in the config file.
 
       - run: |
-         python -m pip install build
+         python -m pip install -r dev-requirements.txt
          ./tools/Linux/dist_script.sh
 
       - name: Perform CodeQL Analysis
