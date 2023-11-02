@@ -1,4 +1,4 @@
-aiohttp~=3.8
+aiohttp~=3.9b
 beautifulsoup4~=4.12
 rsa==4.9
 setuptools~=68.2
