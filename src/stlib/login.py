@@ -277,7 +277,7 @@ class Login(utils.Base):
             )
 
             if not auth_data['response']:
-                raise LoginError('SteamGuard code is wrong')
+                raise TwoFactorCodeError('SteamGuard code is wrong')
         else:
             captcha_requested = len(json_data['response']['allowed_confirmations']) > 1
             auth_code_type = json_data['response']['allowed_confirmations'][0]['confirmation_type']
