@@ -345,3 +345,16 @@ class Login(utils.Base):
             return False
 
         return response.status == 200
+
+    async def is_limited(self) -> bool:
+        """
+        Check if user account is limited
+        :return: bool
+        """
+        html = await self.request_html('https://steamcommunity.com/dev/apikey')
+        main = html.find('div', id='mainContents')
+
+        if 'Access Denied' in main.find('h2').text:
+            return True
+
+        return False
