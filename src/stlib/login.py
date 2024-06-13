@@ -19,7 +19,6 @@
 `login` interface is used to interact with undocumented steam login methods
 it supports both desktop and mobile login at steam services
 """
-
 import logging
 import random
 from enum import Enum
@@ -93,7 +92,20 @@ class MailCodeError(LoginError):
 
 class TwoFactorCodeError(LoginError):
     """Raised when two-factor code is requested"""
-    pass
+
+    def __init__(
+            self,
+            message: str,
+            steamid: int,
+            client_id: str,
+            request_id: str,
+            captcha_requested: bool = False,
+    ) -> None:
+        super().__init__(message, captcha_requested=captcha_requested)
+
+        self.steamid = steamid
+        self.client_id = client_id
+        self.request_id = request_id
 
 
 # Don't instantiate this class directly!
@@ -220,6 +232,48 @@ class Login(utils.Base):
 
         return json_data["has_phone"]
 
+    async def poll_login(self, steamid: int, client_id: str, request_id: str) -> Optional[LoginData]:
+        data = {
+            'client_id': client_id,
+            'request_id': request_id,
+        }
+
+        json_data = await self.request_json(
+            f'{self.api_url}/IAuthenticationService/PollAuthSessionStatus/v1',
+            data=data,
+        )
+
+        if 'account_name' not in json_data['response']:
+            return None
+
+        refresh_token = json_data['response']['refresh_token']
+        access_token = json_data['response']['access_token']
+        sessionid = ''.join(random.choices('0123456789abcdef', k=24))
+
+        data = {
+            "nonce": refresh_token,
+            "sessionid": sessionid,
+        }
+
+        json_data = await self.request_json(f'{self.login_url}/jwt/finalizelogin', data=data)
+        transfer_info = []
+
+        for item in json_data['transfer_info']:
+            data = {
+                'nonce': item['params']['nonce'],
+                'auth': item['params']['auth'],
+                'steamID': steamid,
+            }
+
+            response = await self.request(item['url'], data=data)
+
+            if 'steamLoginSecure' not in response.cookies:
+                raise LoginError('Error setting login cookies')
+
+            transfer_info.append(TransferInfo(item['url'], data['nonce'], data['auth']))
+
+        return LoginData(steamid, client_id, sessionid, refresh_token, access_token, transfer_info)
+
     async def do_login(
             self,
             shared_secret: str = '',
@@ -277,7 +331,7 @@ class Login(utils.Base):
             )
 
             if not auth_data['response']:
-                raise TwoFactorCodeError('SteamGuard code is wrong')
+                raise TwoFactorCodeError('SteamGuard code is wrong', steamid, client_id, request_id)
         else:
             captcha_requested = len(json_data['response']['allowed_confirmations']) > 1
             auth_code_type = json_data['response']['allowed_confirmations'][0]['confirmation_type']
@@ -286,51 +340,23 @@ class Login(utils.Base):
                 raise MailCodeError("Mail code requested", captcha_requested)
 
             if auth_code_type == 3:
-                raise TwoFactorCodeError("Authenticator code requested", captcha_requested)
+                raise TwoFactorCodeError(
+                    "Authenticator code requested",
+                    steamid,
+                    client_id,
+                    request_id,
+                    captcha_requested,
+                )
 
             if auth_code_type == 6:
                 raise CaptchaError("Captcha code requested")
 
-        data = {
-            "client_id": client_id,
-            "request_id": request_id,
-        }
+        login_data = await self.poll_login(steamid, client_id, request_id)
 
-        json_data = await self.request_json(
-            f'{self.api_url}/IAuthenticationService/PollAuthSessionStatus/v1',
-            data=data,
-        )
-
-        if 'refresh_token' not in json_data['response']:
+        if not login_data:
             raise LoginError('Tokens are not received. Try again.')
 
-        refresh_token = json_data['response']['refresh_token']
-        access_token = json_data['response']['access_token']
-        sessionid = ''.join(random.choices('0123456789abcdef', k=24))
-
-        data = {
-            "nonce": refresh_token,
-            "sessionid": sessionid,
-        }
-
-        json_data = await self.request_json(f'{self.login_url}/jwt/finalizelogin', data=data)
-        transfer_info = []
-
-        for item in json_data['transfer_info']:
-            data = {
-                'nonce': item['params']['nonce'],
-                'auth': item['params']['auth'],
-                'steamID': steamid,
-            }
-
-            response = await self.request(item['url'], data=data)
-
-            if 'steamLoginSecure' not in response.cookies:
-                raise LoginError('Error setting login cookies')
-
-            transfer_info.append(TransferInfo(item['url'], data['nonce'], data['auth']))
-
-        return LoginData(steamid, client_id, sessionid, refresh_token, access_token, transfer_info)
+        return login_data
 
     async def is_logged_in(self) -> bool:
         """
