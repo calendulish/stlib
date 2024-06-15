@@ -26,7 +26,6 @@ from pathlib import Path
 from typing import Optional
 
 import pytest
-
 from stlib import login
 
 MANUAL_TESTING = int(os.environ.get('MANUAL_TESTING', 0))
@@ -39,6 +38,7 @@ requires_unlimited_account = pytest.mark.skipif(LIMITED_ACCOUNT == True,  # noqa
                                                 reason="This test ccan't run using a limited account")
 
 config_file = Path(__file__).parent.resolve() / 'conftest.ini'
+cookies_file = Path(__file__).parent.resolve() / 'cookiejar'
 config = configparser.RawConfigParser()
 
 if os.getenv("GITHUB_ACTIONS"):
@@ -64,36 +64,44 @@ async def do_login() -> None:
     except IndexError:
         login_session = login.Login.get_session(0)
 
-    # login_session.restore_login(steamid, token, token_secure)
+    if cookies_file.is_file():
+        login_session.http_session.cookie_jar.load(cookies_file)
 
-    if not await login_session.is_logged_in():
-        login_session.username = config.get('Test', 'account_name')
+    if await login_session.is_logged_in():
+        return None
 
-        try:
-            login_session.password = config.get('Test', 'password_raw')
-        except configparser.NoOptionError:
-            encrypted_pass = config.get('Test', 'password')
-            key = codecs.decode(encrypted_pass, 'rot13')
-            raw = codecs.decode(key.encode(), 'base64')
-            login_session.password = raw.decode()
+    login_session.username = config.get('Test', 'account_name')
 
-        try:
-            login_data = await login_session.do_login(shared_secret, mobile_login=True)
-        except login.MailCodeError:
-            login_data = await login_session.do_login(
-                shared_secret,
-                auth_code=await wait_mail_code(),
-                auth_code_type=login.AuthCodeType.email,
-                mobile_login=True,
-            )
+    try:
+        login_session.password = config.get('Test', 'password_raw')
+    except configparser.NoOptionError:
+        encrypted_pass = config.get('Test', 'password')
+        key = codecs.decode(encrypted_pass, 'rot13')
+        raw = codecs.decode(key.encode(), 'base64')
+        login_session.password = raw.decode()
 
-        config.set('Test', 'client_id', login_data.client_id)
-        config.set('Test', 'sessionid', login_data.sessionid)
-        config.set('Test', 'refresh_token', login_data.refresh_token)
-        config.set('Test', 'access_token', login_data.access_token)
+    try:
+        login_data = await login_session.do_login(shared_secret, mobile_login=True)
+    except login.MailCodeError:
+        login_data = await login_session.do_login(
+            shared_secret,
+            auth_code=await wait_mail_code(),
+            auth_code_type=login.AuthCodeType.email,
+            mobile_login=True,
+        )
+    except login.TwoFactorCodeError as exception:
+        debug("waiting login request be accepted", 0)
 
-        with open(config_file, 'w', encoding="utf8") as config_file_object_:
-            config.write(config_file_object_)
+        while True:
+            login_data = await login_session.poll_login(exception.steamid, exception.client_id, exception.request_id)
+
+            if not login_data:
+                await asyncio.sleep(2)
+                continue
+
+            break
+
+    login_session.http_session.cookie_jar.save(cookies_file)
 
     return None
 

@@ -47,3 +47,9 @@ zip-safe = false
 package-dir = {"" = "src"}
 packages = ["stlib"]
 
+[tool.pytest.ini_options]
+addopts = "--capture=no"
+console_output_style = "classic"
+asyncio_mode = "auto"
+enable_assertion_pass_hook = true
+filterwarnings = ["ignore::pytest.PytestCollectionWarning"]

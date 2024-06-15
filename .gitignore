@@ -20,3 +20,4 @@ tests/conftest.ini
 src/doc/_build
 html
 wheelhouse
+cookiejar
