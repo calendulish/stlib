@@ -41,7 +41,7 @@ jobs:
           identity_secret: ${{ secrets.IDENTITY_SECRET }}
           api_key: ${{ secrets.API_KEY }}
           LIMITED_ACCOUNT: ${{ secrets.LIMITED_ACCOUNT }}
-      - uses: codecov/codecov-action@eaaf4bedf32dbdc6b720b63067d99c4d77d6047d # v3.1.4
+      - uses: codecov/codecov-action@e28ff129e5465c2c0dcc6f003fc735cb6ae0c673 # v4.5.0
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: ./coverage.xml
