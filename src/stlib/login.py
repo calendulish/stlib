@@ -230,7 +230,7 @@ class Login(utils.Base):
 
         log.debug("User has phone? %s", json_data["has_phone"])
 
-        return json_data["has_phone"]
+        return bool(json_data["has_phone"])
 
     async def poll_login(self, steamid: int, client_id: str, request_id: str) -> Optional[LoginData]:
         data = {
@@ -262,7 +262,7 @@ class Login(utils.Base):
             data = {
                 'nonce': item['params']['nonce'],
                 'auth': item['params']['auth'],
-                'steamID': steamid,
+                'steamID': str(steamid),
             }
 
             response = await self.request(item['url'], data=data)

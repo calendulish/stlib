@@ -20,15 +20,15 @@
 """
 
 import asyncio
-import atexit
 import contextlib
 import http.cookies
 import json
 import locale
 import logging
-from typing import Dict, Any, Optional, NamedTuple, Union
+from typing import Dict, Any, Optional, NamedTuple, Union, Self
 
 import aiohttp
+import atexit
 from bs4 import BeautifulSoup
 
 log = logging.getLogger(__name__)
@@ -40,7 +40,7 @@ class Response(NamedTuple):
     """Status code"""
     info: aiohttp.RequestInfo
     """Request Info"""
-    cookies: http.cookies.SimpleCookie[Any]
+    cookies: http.cookies.SimpleCookie
     """Cookies"""
     content: Union[str, bytes]
     """Content as string"""
@@ -60,11 +60,15 @@ class Base:
             "Use get_session(<index>) to support multiple sessions."
         )
 
-    def __init__(self, http_session: Optional[aiohttp.ClientSession] = None, *args, **kwargs) -> None:
+    def __init__(self, http_session: Optional[aiohttp.ClientSession] = None, *args: Any, **kwargs: Any) -> None:
         self._http_session = http_session
         atexit.register(self.__close_http_session)
 
     def __close_http_session(self) -> None:
+        if not self._http_session:
+            log.error("No http session to close")
+            return None
+
         coro = self._http_session.close()
 
         try:
@@ -80,7 +84,7 @@ class Base:
 
         return self._http_session
 
-    def update_cookies(self, cookies: http.cookies.SimpleCookie[Any]) -> None:
+    def update_cookies(self, cookies: http.cookies.SimpleCookie) -> None:
         """Update cookies for the current http session"""
         self.http_session.cookie_jar.update_cookies(cookies)
 
@@ -115,7 +119,7 @@ class Base:
         return http_session
 
     @classmethod
-    async def new_session(cls, session_index: int, *args: Any, **kwargs: Any) -> 'Base':
+    async def new_session(cls, session_index: int, *args: Any, **kwargs: Any) -> Self:
         """
         Create an instance of module at given `session_index`.
         If a previous instance exists in cache at same index, it will raise IndexError.
@@ -148,7 +152,7 @@ class Base:
         session = _session_cache[cache_name][session_index] = super().__new__(cls)
 
         log.debug("Initializing instance for %s", cache_name)
-        session.__init__(http_session=http_session, *args, **kwargs)
+        session.__init__(http_session=http_session, *args, **kwargs)  # type: ignore
 
         assert isinstance(session, Base), "Wrong session type"
         return session
@@ -390,9 +394,9 @@ def convert_steam_price(price: Union[str, int]) -> str:
     price_raw = str(price)
 
     if len(price_raw) == 1:
-        price_raw = float(f".0{price_raw}")
+        price_float = float(f".0{price_raw}")
     else:
-        price_raw = float(f"{price_raw[:-2]}.{price_raw[-2:]}")
+        price_float = float(f"{price_raw[:-2]}.{price_raw[-2:]}")
 
     locale.setlocale(locale.LC_MONETARY, "")
-    return locale.currency(price_raw)
+    return locale.currency(price_float)
