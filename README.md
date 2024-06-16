@@ -6,6 +6,7 @@ stlib
 [![Coverage](https://codecov.io/gh/calendulish/stlib/branch/master/graph/badge.svg?token=DMKFKEUUZP)](https://codecov.io/gh/calendulish/stlib)
 [![GitHub license](https://img.shields.io/badge/license-GPLv3-brightgreen.svg?style=flat)](https://www.gnu.org/licenses/gpl-3.0.html)
 [![GitHub release](https://img.shields.io/github/release/calendulish/stlib.svg?style=flat)](https://github.com/calendulish/stlib/releases)
+[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/8033/badge)](https://www.bestpractices.dev/projects/8033)
 
 Async library that provides features related to Steam client and compatible stuff
 
@@ -63,4 +64,5 @@ You should have received a copy of the GNU General Public License along with thi
 
 Lara Maia <dev@lara.monster> 2015 ~ 2024
 
+[![OpenSSF Best Practices](https://www.bestpractices.dev/assets/openssf_bestpracticesbadge-bcc69832741d2cb3979607a9d713f9e8f83987653caa7b982d75ad1362cd575b.svg)](https://www.bestpractices.dev/projects/8033)  
 [![Made with](https://img.shields.io/badge/made%20with-girl%20power-f070D0.svg?longCache=true&style=for-the-badge)](https://lara.monster)
