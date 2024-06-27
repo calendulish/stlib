@@ -108,8 +108,6 @@ class TwoFactorCodeError(LoginError):
         self.request_id = request_id
 
 
-# Don't instantiate this class directly!
-# Use get_session to support multiple sessions!
 class Login(utils.Base):
     def __init__(
             self,
@@ -122,7 +120,7 @@ class Login(utils.Base):
         """
         Main login class used to login a user on steam session
 
-        Example:
+        Simplified example:
 
             ```
             login_session = await Login.new_session(0)

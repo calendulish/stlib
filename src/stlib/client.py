@@ -131,6 +131,6 @@ class SteamAPIExecutor(ProcessPoolExecutor):
         self.shutdown()
         self._is_running = False
 
-    def shutdown(self, *args, **kwargs) -> None:
+    def shutdown(self, *args: Any, **kwargs: Any) -> None:
         self.submit(self._steam_api_handler.shutdown)
         super().shutdown(*args, **kwargs)

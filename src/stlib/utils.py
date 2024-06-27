@@ -16,7 +16,7 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 """
-`utils` is used internaly by stlib to provide other stlib interfaces.
+`utils` is used internally by stlib to provide other stlib interfaces.
 """
 
 import asyncio
@@ -51,7 +51,8 @@ class Response(NamedTuple):
 class Base:
     """
     You should not instantiate this class directly!
-    See `get_session`
+    Use `new_session`, `get_session`, `destroy_session`
+    to support multiple sessions!
     """
 
     def __new__(cls) -> None:  # type: ignore
@@ -123,6 +124,8 @@ class Base:
         The instance will be associated with a http session at same index.
         If a http session is not present in cache, it'll create a new one.
         If you need custom params for http session, use `new_http_session` before calling this method.
+        If you need to set custom params globally, use `stlib.set_default_http_params`.
+        See also `get_session` and `destroy_session`
 
         :param session_index: Session number
         :param args: extra args when creating a new instance
@@ -158,6 +161,7 @@ class Base:
     async def destroy_session(cls, session_index: int, no_fail: bool = False) -> None:
         """
         Destroy an instance of module at `session_index` and remove from cache.
+        the associated http session will also be closed and destroyed
         :param session_index: Session number
         :param no_fail: suppress errors if there is no session at given index
         """
@@ -176,7 +180,8 @@ class Base:
     def get_session(cls, session_index: int) -> 'Base':
         """
         Get an instance of module from cache at `session_index`.
-        If session isn't present in cache, it will raise IndexError
+        If session isn't present in cache, it will raise IndexError.
+        See also `new_session` and `destroy_session`
         :param session_index: session number
         :return: instance of module
         """
