@@ -62,14 +62,10 @@ class Base:
 
     def __init__(self, http_session: Optional[aiohttp.ClientSession] = None, *args: Any, **kwargs: Any) -> None:
         self._http_session = http_session
-        atexit.register(self.__close_http_session)
 
-    def __close_http_session(self) -> None:
-        if not self._http_session:
-            log.error("No http session to close")
-            return None
-
-        coro = self._http_session.close()
+    @staticmethod
+    def _close_http_session(http_session: aiohttp.ClientSession) -> None:
+        coro = http_session.close()
 
         try:
             asyncio.create_task(coro)
@@ -116,6 +112,7 @@ class Base:
         _session_cache['http_session'][session_index] = http_session
 
         assert isinstance(http_session, aiohttp.ClientSession), "Wrong session type"
+        atexit.register(cls._close_http_session, http_session)
         return http_session
 
     @classmethod
