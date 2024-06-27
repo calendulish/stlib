@@ -83,7 +83,17 @@ import aiohttp
 from .utils import Base as _Base
 
 # noinspection PyUnresolvedReferences
-__all__ = ["steamworks"]
+__all__ = [
+    "steamworks",
+    "client",
+    "community",
+    "internals",
+    "login",
+    "plugins",
+    "universe",
+    "webapi",
+    "utils",
+]
 
 
 class NoSteamWorksError(ImportError):
