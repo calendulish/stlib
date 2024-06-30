@@ -21,10 +21,10 @@
 """
 
 import logging
-import time
-from typing import Any, Dict, List, NamedTuple, Optional
+from typing import Any, Dict, List, NamedTuple
 
 import aiohttp
+import time
 
 from . import universe, utils
 
@@ -181,7 +181,7 @@ class SteamWebAPI(utils.Base):
             self,
             steamid: universe.SteamId,
             *,
-            appids_filter: Optional[List[int]] = None,
+            appids_filter: List[int] | None = None,
     ) -> List[Game]:
         """
         Get a list of owned games

@@ -34,9 +34,10 @@ import importlib.machinery
 import importlib.util
 import logging
 import os
-import sys
 from types import ModuleType, MappingProxyType
 from typing import Tuple, Dict, Optional, Callable, Any, List
+
+import sys
 
 log = logging.getLogger(__name__)
 manager: Optional['_Manager'] = None

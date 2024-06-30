@@ -22,10 +22,9 @@
 import asyncio
 import json
 import logging
-from typing import List, Tuple, Any, Dict, NamedTuple, Union, Optional
+from typing import List, Tuple, Any, Dict, NamedTuple
 
 from bs4 import BeautifulSoup
-
 from stlib import universe, login, utils
 
 log = logging.getLogger(__name__)
@@ -77,7 +76,7 @@ class Order(NamedTuple):
     """Item amount"""
     orderid: int
     """Order ID"""
-    contextid: Optional[int]
+    contextid: int | None
     """Context ID"""
     actions: List[Dict[str, str]]
     """List of available actions"""
@@ -282,7 +281,7 @@ class Community(utils.Base):
         :return: List of `Badge`
         """
         badges = []
-        params: Dict[str, Union[str, int]] = {'l': 'english'}
+        params: Dict[str, str | int] = {'l': 'english'}
         html = await self.request_html(f"{steamid.profile_url}/badges/", params=params)
         badges_raw = html.find_all('div', class_='badge_title_row')
 
@@ -496,7 +495,7 @@ class Community(utils.Base):
             else int(progress.text.split(' ', 3)[0])
         )
 
-    async def get_last_played_game(self, steamid: universe.SteamId) -> Optional[int]:
+    async def get_last_played_game(self, steamid: universe.SteamId) -> int | None:
         """
         Get last played game
         :param steamid: `SteamId`

@@ -35,7 +35,7 @@ else:
 import logging
 from concurrent.futures.process import ProcessPoolExecutor
 from types import TracebackType
-from typing import Optional, Type, Any
+from typing import Type, Any
 
 from . import NoSteamWorksError
 
@@ -73,9 +73,9 @@ class SteamGameServer:
         return self.game_server
 
     def __exit__(self,
-                 exception_type: Optional[Type[BaseException]],
-                 exception_value: Optional[BaseException],
-                 traceback: Optional[TracebackType]) -> None:
+                 exception_type: Type[BaseException] | None,
+                 exception_value: BaseException | None,
+                 traceback: TracebackType | None) -> None:
         log.debug('Closing SteamGameServer')
         self.game_server.shutdown()
 
@@ -124,9 +124,9 @@ class SteamAPIExecutor(ProcessPoolExecutor):
         return self
 
     def __exit__(self,
-                 exception_type: Optional[Type[BaseException]],
-                 exception_value: Optional[BaseException],
-                 traceback: Optional[TracebackType]) -> None:
+                 exception_type: Type[BaseException] | None,
+                 exception_value: BaseException | None,
+                 traceback: TracebackType | None) -> None:
         log.debug('Closing SteamAPI')
         self.shutdown()
         self._is_running = False
