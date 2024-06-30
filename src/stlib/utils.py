@@ -25,14 +25,14 @@ import http.cookies
 import json
 import locale
 import logging
-from typing import Dict, Any, Optional, NamedTuple, Union, Self
+from typing import Dict, Any, NamedTuple, Self
 
 import aiohttp
 import atexit
 from bs4 import BeautifulSoup
 
 log = logging.getLogger(__name__)
-_session_cache: Dict[str, Dict[int, Union['Base', aiohttp.ClientSession]]] = {'http_session': {}}
+_session_cache: Dict[str, Dict[int, 'aiohttp.ClientSession | Base']] = {'http_session': {}}
 
 
 class Response(NamedTuple):
@@ -42,7 +42,7 @@ class Response(NamedTuple):
     """Request Info"""
     cookies: http.cookies.SimpleCookie
     """Cookies"""
-    content: Union[str, bytes]
+    content: str | bytes
     """Content as string"""
     content_type: str
     """Content type"""
@@ -61,7 +61,7 @@ class Base:
             "Use get_session(<index>) to support multiple sessions."
         )
 
-    def __init__(self, http_session: Optional[aiohttp.ClientSession] = None, *args: Any, **kwargs: Any) -> None:
+    def __init__(self, http_session: aiohttp.ClientSession | None = None, *args: Any, **kwargs: Any) -> None:
         self._http_session = http_session
 
     @staticmethod
@@ -309,8 +309,8 @@ class Base:
             self,
             url: str,
             *,
-            params: Optional[Dict[str, str]] = None,
-            data: Optional[Dict[str, str]] = None,
+            params: Dict[str, str] | None = None,
+            data: Dict[str, str] | None = None,
             auto_recovery: bool = True,
             raw_data: bool = False,
             **kwargs: Any,
@@ -387,7 +387,7 @@ class Base:
         return result
 
 
-def convert_steam_price(price: Union[str, int]) -> str:
+def convert_steam_price(price: str | int) -> str:
     """
     convert raw int steam price to real monetary price
     :param price: raw steam int price

@@ -26,7 +26,7 @@ import base64
 import hashlib
 import hmac
 import logging
-from typing import Union, NamedTuple
+from typing import NamedTuple
 
 import rsa
 
@@ -110,7 +110,7 @@ def generate_otp_code(msg: bytes, key: bytes) -> int:
     return int.from_bytes(code, byteorder='big') & 0x7FFFFFFF
 
 
-def generate_otp_seed(shared_secret: Union[str, bytes]) -> str:
+def generate_otp_seed(shared_secret: str | bytes) -> str:
     """
     Generate OTP seed from user shared secret
     :param shared_secret: User shared secret
@@ -121,7 +121,7 @@ def generate_otp_seed(shared_secret: Union[str, bytes]) -> str:
 
 
 # noinspection PyUnboundLocalVariable
-def generate_steamid(steamid: Union[str, int]) -> SteamId:
+def generate_steamid(steamid: str | int) -> SteamId:
     """
     Generate `SteamId` from any steam ID string or number
     :param steamid: Any steam ID format as string or number
@@ -149,7 +149,7 @@ def generate_steamid(steamid: Union[str, int]) -> SteamId:
     return SteamId(type_, id_)
 
 
-def generate_steam_code(server_time: int, shared_secret: Union[str, bytes]) -> str:
+def generate_steam_code(server_time: int, shared_secret: str | bytes) -> str:
     """
     Generate steam code
     :param server_time: Server Time

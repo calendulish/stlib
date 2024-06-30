@@ -22,7 +22,7 @@ it supports both desktop and mobile login at steam services
 import logging
 import random
 from enum import Enum
-from typing import Any, Dict, NamedTuple, Optional, List
+from typing import Any, Dict, NamedTuple, List
 
 import rsa
 
@@ -130,8 +130,8 @@ class Login(utils.Base):
             ```
         """
         super().__init__(**kwargs)
-        self._username: Optional[str] = None
-        self.__password: Optional[str] = None
+        self._username: str | None = None
+        self.__password: str | None = None
         self.login_url = login_url
         self.steamguard_url = steamguard_url
         self.api_url = api_url
@@ -230,7 +230,7 @@ class Login(utils.Base):
 
         return bool(json_data["has_phone"])
 
-    async def poll_login(self, steamid: int, client_id: str, request_id: str) -> Optional[LoginData]:
+    async def poll_login(self, steamid: int, client_id: str, request_id: str) -> LoginData | None:
         data = {
             'client_id': client_id,
             'request_id': request_id,
