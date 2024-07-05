@@ -102,8 +102,13 @@ class NoSteamWorksError(ImportError):
 
 
 if sys.platform == 'win32' and sys.version_info > (3, 7):
+    if getattr(sys, 'frozen', False):
+        with suppress(OSError):
+            os.add_dll_directory("stlib")
+
     for site_packages in site.getsitepackages():
-        os.add_dll_directory(site_packages)
+        with suppress(OSError):
+            os.add_dll_directory(site_packages)
 
 if sys.platform == 'linux':
     with suppress(OSError):
