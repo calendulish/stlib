@@ -17,42 +17,12 @@
 
 #include <stdio.h>
 
-#ifdef _WIN32
-#include <io.h>
-#define BLACK_HOLE "nul"
-#define fileno _fileno
-#define dup _dup
-#define dup2 _dup2
-#else
-#include <unistd.h>
-#define BLACK_HOLE "/dev/null"
-#endif
-
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
 
 #include "steam/steam_api.h"
 
 #include "steamworks.h"
-
-class BlackHole {
-private:
-    int old_descriptor;
-public:
-    BlackHole(const char* hole)
-        : old_descriptor (-1)
-    {
-        fflush(stderr);
-        old_descriptor = dup(fileno(stderr));
-        freopen(hole, "wb", stderr);
-    }
-
-    ~BlackHole ()
-    {
-        fflush(stderr);
-        dup2(old_descriptor, fileno(stderr));
-    }
-};
 
 static PyMethodDef steamworks_methods[] = {
     {NULL},
@@ -103,6 +73,5 @@ PyMODINIT_FUNC PyInit_steamworks(void)
         return NULL;
     }
 
-    BlackHole black_hole(BLACK_HOLE);
     return module;
 }
