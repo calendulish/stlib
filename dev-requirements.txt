@@ -1,5 +1,5 @@
 -r requirements.txt
-auditwheel~=6.0
+auditwheel~=6.1
 patchelf~=0.17
 pdoc~=14.5
 pytest~=8.2
