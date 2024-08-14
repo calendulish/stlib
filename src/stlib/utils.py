@@ -313,6 +313,7 @@ class Base:
             data: Dict[str, str] | None = None,
             auto_recovery: bool = True,
             raw_data: bool = False,
+            http_method: str = 'GET',
             **kwargs: Any,
     ) -> Response:
         """
@@ -322,13 +323,15 @@ class Base:
         :param data: Form data
         :param auto_recovery: If defined and http request fail, it will try again
         :param raw_data: If defined it will return raw data instead text
+        :param http_method: Http method. if `data` is defined, it will use POST automatically
         :param kwargs: Extra kwargs passed directly to http request
         :return: `Request`
         """
         if not params:
             params = {}
 
-        http_method = 'POST' if data else 'GET'
+        if data:
+            http_method = 'POST'
 
         request_params: Dict[str, Any] = {
             'method': http_method,

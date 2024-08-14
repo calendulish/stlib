@@ -72,9 +72,13 @@ class Order(NamedTuple):
     """Item type"""
     price: str
     """Item price"""
+    currency: int
+    """Wallet currency"""
     amount: int
     """Item amount"""
-    orderid: int
+    assetid: int
+    """Asset ID"""
+    orderid: int | None
     """Order ID"""
     contextid: int | None
     """Context ID"""
@@ -550,9 +554,11 @@ class Community(utils.Base):
                     asset['market_hash_name'],
                     asset['type'],
                     utils.convert_steam_price(price_raw),
+                    0,
                     int(asset['amount']),
-                    int(asset['id']),
-                    int(asset['contextid']),
+                    int(asset['unowned_id']),
+                    int(order['listingid']),
+                    int(asset['unowned_contextid']),
                     asset['owner_actions'] if 'owner_actions' in asset else [],
                     asset['icon_url'],
                     asset['icon_url_large'],
@@ -571,7 +577,9 @@ class Community(utils.Base):
                     order['hash_name'],
                     description['type'],
                     utils.convert_steam_price(price_raw),
+                    int(order['wallet_currency']),
                     int(order['quantity']),
+                    None,
                     int(order['buy_orderid']),
                     None,
                     order['owner_actions'] if 'owner_actions' in order else [],
@@ -621,6 +629,169 @@ class Community(utils.Base):
         return await self.request_json(
             f"{self.community_url}/market/itemordershistogram", params=params
         )
+
+    async def get_goo_value(self, steamid: universe.SteamId, appid: int, item_type: int, border_color: int = 0) -> int:
+        """
+        Get goo value
+        :param steamid: universe.SteamId,
+        :param appid: AppID
+        :param item_type: Item type
+        :param border_color: card border color
+        :return: Goo value
+        """
+
+        params = {
+            "appid": appid,
+            "item_type": item_type,
+            "border_color": border_color,
+        }
+
+        headers = {
+            "Referer": f"{self.community_url}/profiles/{steamid.id64}/inventory",
+        }
+
+        response = await self.request_json(
+            f"{self.community_url}/auction/ajaxgetgoovalueforitemtype", headers=headers, params=params,
+        )
+
+        if 'success' not in response or response['success'] != 1:
+            raise MarketError("Unable to get goo value")
+
+        return int(response['goo_value'])
+
+    async def cancel_sell_order(self, order_id: int) -> None:
+        """
+        Remove market sell order
+        :param order_id: order id
+        :return: None
+        """
+
+        data = {
+            "sessionid": await self.get_steam_session_id(),
+        }
+
+        headers = {
+            "Referer": f"{self.community_url}/market",
+        }
+
+        await self.request(
+            f"{self.community_url}/market/removelisting/{order_id}", headers=headers, data=data,
+        )
+
+        return None
+
+    async def cancel_buy_order(self, order_id: int) -> None:
+        """
+        Remove market buy order
+        :param order_id: order id
+        :return: None
+        """
+
+        data = {
+            "sessionid": await self.get_steam_session_id(),
+            "buy_orderid": order_id,
+        }
+
+        headers = {
+            "Referer": f"{self.community_url}/market",
+            "X-Requested-With": "XMLHttpRequest",
+        }
+
+        response = await self.request_json(
+            f"{self.community_url}/market/cancelbuyorder", headers=headers, data=data,
+        )
+
+        if 'success' not in response or response['success'] != 1:
+            raise MarketError("Unable to cancel buy order")
+
+        return None
+
+    async def sell_item(
+            self,
+            steamid: universe.SteamId,
+            appid: int,
+            contextid: int,
+            assetid: int,
+            price: float,
+            amount: int = 1,
+    ) -> Dict[str, Any]:
+        """
+        Sell an item on market
+        :param steamid: `universe.SteamId`,
+        :param appid: AppID
+        :param contextid: ContextID
+        :param assetid: AssetID
+        :param price: Sell price
+        :param amount: Amount to sell
+        :return: Json data
+        """
+
+        price_int = int(price * 100)
+        steam_fee = max(int(price_int // 11.5), 1)
+        developer_fee = max(price_int // 23, 1)
+
+        data = {
+            "appid": str(appid),
+            "contextid": str(contextid),
+            "assetid": str(assetid),
+            "amount": str(amount),
+            "price": price_int - steam_fee - developer_fee,
+            "sessionid": await self.get_steam_session_id(),
+        }
+
+        headers = {
+            "Referer": f"{self.community_url}/profiles/{steamid.id64}/inventory",
+        }
+
+        response = await self.request_json(
+            f"{self.community_url}/market/sellitem", headers=headers, data=data,
+        )
+
+        if 'success' in response and not response['success']:
+            raise MarketError(response['message'])
+
+        return response
+
+    async def buy_item(
+            self,
+            appid: int,
+            hash_name: str,
+            price: float,
+            currency: int,
+            amount: int = 1,
+    ) -> Dict[str, Any]:
+        """
+        Buy item on market
+        :param appid: AppID
+        :param hash_name: Market hash name
+        :param price: Buy price
+        :param currency: Wallet currency
+        :param amount: Quantity to buy
+        :return: Json data
+        """
+        data = {
+            'currency': str(currency),
+            "appid": str(appid),
+            "market_hash_name": hash_name,
+            "price_total": f"{price * amount:.2f}".replace('.', '').lstrip('0'),
+            "quantity": str(amount),
+            "billing_state": "",
+            "save_my_address": "0",
+            "sessionid": await self.get_steam_session_id(),
+        }
+
+        headers = {
+            "Referer": f"{self.community_url}/market/listings/{appid}/{hash_name}",
+        }
+
+        response = await self.request_json(
+            f"{self.community_url}/market/createbuyorder", headers=headers, data=data,
+        )
+
+        if 'success' in response and response['success'] != 1:
+            raise MarketError(response['message'])
+
+        return response
 
     async def send_trade_offer(
             self,
