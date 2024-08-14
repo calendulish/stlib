@@ -127,6 +127,11 @@ class BadgeError(AttributeError):
     pass
 
 
+class MarketError(ValueError):
+    """Raised when can't find market orders"""
+    pass
+
+
 class InventoryEmptyError(ValueError):
     """Raised when inventory is empty"""
 
@@ -588,10 +593,13 @@ class Community(utils.Base):
         html = await self.request_html(f"{self.community_url}/market/listings/{appid}/{hash_name}")
         scripts = html.find_all("script")
 
-        item_activity_func = str(scripts[-1])
-        start = item_activity_func.index("LoadOrderSpread") + 17
-        end = item_activity_func[start:].index(" );") + start
-        item_nameid = item_activity_func[start:end]
+        try:
+            item_activity_func = str(scripts[-1])
+            start = item_activity_func.index("LoadOrderSpread") + 17
+            end = item_activity_func[start:].index(" );") + start
+            item_nameid = item_activity_func[start:end]
+        except ValueError:
+            raise MarketError("Unable to load market orders")
 
         wallet_vars = self.get_vars_from_js(scripts[-2])
 
