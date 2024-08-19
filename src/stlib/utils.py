@@ -388,20 +388,3 @@ class Base:
                 raise exception from None
 
         return result
-
-
-def convert_steam_price(price: str | int) -> str:
-    """
-    convert raw int steam price to real monetary price
-    :param price: raw steam int price
-    :return: a `str` representing a monetary price
-    """
-    price_raw = str(price)
-
-    if len(price_raw) == 1:
-        price_float = float(f".0{price_raw}")
-    else:
-        price_float = float(f"{price_raw[:-2]}.{price_raw[-2:]}")
-
-    locale.setlocale(locale.LC_MONETARY, "")
-    return locale.currency(price_float)

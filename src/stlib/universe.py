@@ -25,8 +25,10 @@ interface is to generate necessary parameters to other stlib interfaces
 import base64
 import hashlib
 import hmac
+import locale
 import logging
-from typing import NamedTuple
+from functools import total_ordering
+from typing import NamedTuple, Type, Self, Tuple
 
 import rsa
 
@@ -93,6 +95,142 @@ class SteamId(NamedTuple):
     def profile_url(self) -> str:
         """Profile url"""
         return f'https://steamcommunity.com/profiles/{self.id64}'
+
+
+@total_ordering
+class SteamPrice:
+    def __init__(self, price: float) -> None:
+        """Create a SteamPrice Object"""
+        self._price = price
+
+    def __add__(self, value: int | float) -> 'SteamPrice':
+        return SteamPrice(round(self._price + value, 2))
+
+    def __sub__(self, value: int | float) -> 'SteamPrice':
+        return SteamPrice(round(self._price - value, 2))
+
+    def __lt__(self, other: Self) -> bool:
+        return self._price < other._price
+
+    def __eq__(self, other: Self) -> bool:
+        return self._price == other._price
+
+    @staticmethod
+    def __calc_fee(price: int) -> Tuple[int, int]:
+        return max(int(price * 0.10), 1), max(int(price * 0.05), 1)
+
+    @staticmethod
+    def __calc_fee_inverse(price: int) -> Tuple[int, int]:
+        return max(int(price // 23), 1), max(int(price // 11.5), 1)
+
+    def __calc_price_offset(self, price: int) -> Tuple[int, int]:
+        fee = sum(self.__calc_fee_inverse(price))
+        fee_inverse = sum(self.__calc_fee(price - fee))
+        fixed_price = price
+
+        while (price - fee) + fee_inverse != price:
+            fixed_price -= 1
+            fee = sum(self.__calc_fee_inverse(fixed_price))
+            fee_inverse = sum(self.__calc_fee(fixed_price - fee))
+
+            if (price - fee) + fee_inverse == fixed_price:
+                break
+
+        return fixed_price, fee
+
+    @staticmethod
+    def __check_language() -> None:
+        if not locale.getlocale(locale.LC_MONETARY)[0]:
+            locale_info = locale.getlocale()
+            locale.setlocale(locale.LC_MONETARY, f"{locale_info[0]}.{locale_info[1]}")
+
+    @staticmethod
+    def get_language() -> str:
+        """Get current language used to show monetary price"""
+        lang_info = locale.getlocale(locale.LC_MONETARY)
+        return f"{lang_info[0]}.{lang_info[1]}"
+
+    @staticmethod
+    def set_language(value: str) -> None:
+        """Set the language used to show monetary price"""
+        locale.setlocale(locale.LC_MONETARY, value)
+
+    @property
+    def fees_as_integer(self) -> Tuple[int, int]:
+        """Return fees as integer"""
+        return self.__calc_fee(self.as_integer)
+
+    @property
+    def fees(self) -> Tuple[float, float]:
+        """Return fees"""
+        steam_fee, developer_fee = self.fees_as_integer
+        return round(steam_fee / 100, 2), round(developer_fee / 100, 2)
+
+    @property
+    def with_fees_subtracted(self) -> float:
+        """Return price with fees subtracted"""
+        fixed_price, fee = self.__calc_price_offset(self.as_integer)
+
+        return round((fixed_price - fee) / 100, 2)
+
+    @property
+    def with_fees_added(self) -> float:
+        """Return price with fees added"""
+        return self._price + sum(self.fees)
+
+    @property
+    def as_float(self) -> float:
+        """Return price as float type"""
+        return self._price
+
+    @property
+    def as_integer(self) -> int:
+        """Return price as integer type for compatibility with some Steam APIs"""
+        return round(self._price * 100)
+
+    @property
+    def as_integer_with_fees_added(self) -> int:
+        """Return price as integer type with fees added"""
+        return round(self.with_fees_added * 100)
+
+    @property
+    def as_integer_with_fees_subtracted(self) -> int:
+        """Return price as integer type with fees subtracted"""
+        return round(self.with_fees_subtracted * 100)
+
+    @property
+    def as_monetary_string(self) -> str:
+        """Return price as monetary string"""
+        self.__check_language()
+        return locale.currency(self._price)
+
+    @property
+    def as_monetary_string_with_fees_added(self) -> str:
+        """Return price as monetary string with fees added"""
+        self.__check_language()
+        return locale.currency(self.with_fees_added)
+
+    @property
+    def as_monetary_string_with_fees_subtracted(self) -> str:
+        """Return price as monetary string with fees removed"""
+        self.__check_language()
+        return locale.currency(self.with_fees_subtracted)
+
+    @classmethod
+    def new_from_integer(cls: Type[Self], price: int) -> Self:
+        """Create an instance using integer price returned by some Steam APIs"""
+        return cls(round(price / 100, 2))
+
+    @classmethod
+    def new_from_monetary_price(cls: Type[Self], price: str) -> Self:
+        """Create an instance using monetary price"""
+        no_comma = price.replace(',', '.')
+        price_list = no_comma.split('.')
+        big = ''.join(char for char in price_list[0] if char.isdigit())
+        minor = ''.join(char for char in price_list[1] if char.isdigit())
+        price_float = float(f'{big}.{minor}')
+
+        return cls(price_float)
 
 
 def generate_otp_code(msg: bytes, key: bytes) -> int:

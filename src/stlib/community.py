@@ -70,7 +70,7 @@ class Order(NamedTuple):
     """Hash name"""
     type: str
     """Item type"""
-    price: str
+    price: universe.SteamPrice
     """Item price"""
     currency: int
     """Wallet currency"""
@@ -88,6 +88,40 @@ class Order(NamedTuple):
     """Small icon url"""
     icon_url_large: str
     """Large icon url"""
+
+
+class PriceInfo(NamedTuple):
+    price: universe.SteamPrice
+    """Price"""
+    quantity: int
+    """Quantity"""
+
+
+class Histogram(NamedTuple):
+    sell_order_count: int
+    """Sell Order Count"""
+    sell_order_price: universe.SteamPrice
+    """Sell Order Price"""
+    sell_order_table: List[PriceInfo]
+    """Sell Order Table"""
+    buy_order_count: int
+    """Buy Order Count"""
+    buy_order_price: universe.SteamPrice
+    "Buy Order Price"
+    buy_order_table: List[PriceInfo]
+    """Buy Order Table"""
+    highest_buy_order: int
+    """Highest buy order price as integer"""
+    lowest_sell_order: int
+    """Lowest sell order price as integer"""
+    buy_order_graph: List[List[float | int | str]]
+    """Buy Order Graph"""
+    sell_order_graph: List[List[float | int | str]]
+    """Sell Order Graph"""
+    price_prefix: str
+    """Price Prefix"""
+    price_suffix: str
+    """Price Suffix"""
 
 
 class Confirmation(NamedTuple):
@@ -197,7 +231,7 @@ class Community(utils.Base):
         response = await self.request(self.community_url)
 
         if 'sessionid' in response.cookies:
-            return str(response.cookies['sessionid'].value)
+            return str(response.cookies['sessionid'].price)
 
         html = response.content
         for line in html.splitlines():
@@ -545,7 +579,7 @@ class Community(utils.Base):
 
         for order in json_data['listings']:
             asset = order['asset']
-            price_raw = int(order['price']) + int(order['fee'])
+            price = universe.SteamPrice.new_from_integer(int(order['price']))
 
             my_sell_orders.append(
                 Order(
@@ -553,7 +587,7 @@ class Community(utils.Base):
                     int(asset['appid']),
                     asset['market_hash_name'],
                     asset['type'],
-                    utils.convert_steam_price(price_raw),
+                    price,
                     0,
                     int(asset['amount']),
                     int(asset['unowned_id']),
@@ -567,8 +601,8 @@ class Community(utils.Base):
 
         my_buy_orders = []
         for order in json_data['buy_orders']:
-            price_raw = order['price']
             description = order['description']
+            price = universe.SteamPrice.new_from_integer(int(order['price']))
 
             my_buy_orders.append(
                 Order(
@@ -576,7 +610,7 @@ class Community(utils.Base):
                     int(order['appid']),
                     order['hash_name'],
                     description['type'],
-                    utils.convert_steam_price(price_raw),
+                    price,
                     int(order['wallet_currency']),
                     int(order['quantity']),
                     None,
@@ -590,7 +624,7 @@ class Community(utils.Base):
 
         return my_sell_orders, my_buy_orders
 
-    async def get_item_histogram(self, appid: int, hash_name: str) -> Dict[str, Any]:
+    async def get_item_histogram(self, appid: int, hash_name: str) -> Histogram:
         """
         get item histogram
         :param appid: appid
@@ -626,8 +660,38 @@ class Community(utils.Base):
             'norender': 1,
         }
 
-        return await self.request_json(
+        json_data = await self.request_json(
             f"{self.community_url}/market/itemordershistogram", params=params
+        )
+
+        sell_order_table = []
+        buy_order_table = []
+
+        for order in json_data['sell_order_table']:
+            sell_order_table.append(PriceInfo(
+                universe.SteamPrice.new_from_monetary_price(order['price']),
+                int(order['quantity'].replace(',', '')),
+            ))
+
+        for order in json_data['buy_order_table']:
+            buy_order_table.append(PriceInfo(
+                universe.SteamPrice.new_from_monetary_price(order['price']),
+                int(order['quantity'].replace(',', '')),
+            ))
+
+        return Histogram(
+            int(json_data['sell_order_count'].replace(',', '')),
+            universe.SteamPrice.new_from_monetary_price(json_data['sell_order_price']),
+            sell_order_table,
+            int(json_data['buy_order_count'].replace(',', '')),
+            universe.SteamPrice.new_from_monetary_price(json_data['buy_order_price']),
+            buy_order_table,
+            int(json_data['highest_buy_order']),
+            int(json_data['lowest_sell_order']),
+            json_data['buy_order_graph'],
+            json_data['sell_order_graph'],
+            json_data['price_prefix'],
+            json_data['price_suffix'],
         )
 
     async def get_goo_value(self, steamid: universe.SteamId, appid: int, item_type: int, border_color: int = 0) -> int:
@@ -712,7 +776,7 @@ class Community(utils.Base):
             appid: int,
             contextid: int,
             assetid: int,
-            price: float,
+            price: universe.SteamPrice,
             amount: int = 1,
     ) -> Dict[str, Any]:
         """
@@ -726,16 +790,12 @@ class Community(utils.Base):
         :return: Json data
         """
 
-        price_int = int(price * 100)
-        steam_fee = max(int(price_int // 11.5), 1)
-        developer_fee = max(price_int // 23, 1)
-
         data = {
             "appid": str(appid),
             "contextid": str(contextid),
             "assetid": str(assetid),
             "amount": str(amount),
-            "price": price_int - steam_fee - developer_fee,
+            "price": price.as_integer_with_fees_subtracted * amount,
             "sessionid": await self.get_steam_session_id(),
         }
 
@@ -756,7 +816,7 @@ class Community(utils.Base):
             self,
             appid: int,
             hash_name: str,
-            price: float,
+            price: universe.SteamPrice,
             currency: int,
             amount: int = 1,
     ) -> Dict[str, Any]:
@@ -773,7 +833,7 @@ class Community(utils.Base):
             'currency': str(currency),
             "appid": str(appid),
             "market_hash_name": hash_name,
-            "price_total": f"{price * amount:.2f}".replace('.', '').lstrip('0'),
+            "price_total": price.as_integer * amount,
             "quantity": str(amount),
             "billing_state": "",
             "save_my_address": "0",
