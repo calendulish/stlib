@@ -121,7 +121,7 @@ class SteamPrice:
 
     @staticmethod
     def __calc_fee_inverse(price: int) -> Tuple[int, int]:
-        return max(int(price // 23), 1), max(int(price // 11.5), 1)
+        return max(round(price / 23), 1), max(round(price / 11.5), 1)
 
     def __calc_price_offset(self, price: int) -> Tuple[int, int]:
         fee = sum(self.__calc_fee_inverse(price))
@@ -176,7 +176,7 @@ class SteamPrice:
     @property
     def with_fees_added(self) -> float:
         """Return price with fees added"""
-        return self._price + sum(self.fees)
+        return round(self._price + sum(self.fees), 2)
 
     @property
     def as_float(self) -> float:
@@ -228,7 +228,7 @@ class SteamPrice:
         price_list = no_comma.split('.')
         big = ''.join(char for char in price_list[0] if char.isdigit())
         minor = ''.join(char for char in price_list[1] if char.isdigit())
-        price_float = float(f'{big}.{minor}')
+        price_float = round(float(f'{big}.{minor}'), 2)
 
         return cls(price_float)
 
