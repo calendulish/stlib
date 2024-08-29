@@ -111,10 +111,24 @@ class SteamPrice:
         return SteamPrice(round(self._price - value, 2))
 
     def __lt__(self, other: Self) -> bool:
-        return self._price < other._price
+        if isinstance(other, int):
+            return round(self._price * 100) < other
+        elif isinstance(other, float):
+            return self._price < other
+        elif isinstance(other, SteamPrice):
+            return self._price < other._price
+        else:
+            raise NotImplementedError(f"Comparation with {type(other)} not implemented")
 
     def __eq__(self, other: Self) -> bool:
-        return self._price == other._price
+        if isinstance(other, int):
+            return round(self._price * 100) == other
+        elif isinstance(other, float):
+            return self._price == other
+        elif isinstance(other, SteamPrice):
+            return self._price == other._price
+        else:
+            raise NotImplementedError(f"Comparation with {type(other)} not implemented")
 
     @staticmethod
     def __calc_fee(price: int) -> Tuple[int, int]:
