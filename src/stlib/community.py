@@ -799,7 +799,7 @@ class Community(utils.Base):
             "contextid": str(contextid),
             "assetid": str(assetid),
             "amount": str(amount),
-            "price": price.as_integer_with_fees_subtracted * amount,
+            "price": price.as_integer(subtract_fees=True) * amount,
             "sessionid": await self.get_steam_session_id(),
         }
 
@@ -837,7 +837,7 @@ class Community(utils.Base):
             'currency': str(currency),
             "appid": str(appid),
             "market_hash_name": hash_name,
-            "price_total": price.as_integer * amount,
+            "price_total": price.as_integer() * amount,
             "quantity": str(amount),
             "billing_state": "",
             "save_my_address": "0",

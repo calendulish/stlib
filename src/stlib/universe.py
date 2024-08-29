@@ -27,7 +27,8 @@ import hashlib
 import hmac
 import locale
 import logging
-from functools import total_ordering
+import operator
+from functools import total_ordering, reduce
 from typing import NamedTuple, Type, Self, Tuple
 
 import rsa
@@ -119,24 +120,16 @@ class SteamPrice:
     def __calc_fee(price: int) -> Tuple[int, int]:
         return max(int(price * 0.10), 1), max(int(price * 0.05), 1)
 
-    @staticmethod
-    def __calc_fee_inverse(price: int) -> Tuple[int, int]:
-        return max(round(price / 23), 1), max(round(price / 11.5), 1)
-
-    def __calc_price_offset(self, price: int) -> Tuple[int, int]:
-        fee = sum(self.__calc_fee_inverse(price))
-        fee_inverse = sum(self.__calc_fee(price - fee))
+    def __calc_price_offset(self, price: int) -> Tuple[int, int, int]:
+        steam_fee, dev_fee = self.__calc_fee(price)
+        # sourcery skip: use-assigned-variable
         fixed_price = price
 
-        while (price - fee) + fee_inverse != price:
+        while fixed_price + steam_fee + dev_fee > price:
             fixed_price -= 1
-            fee = sum(self.__calc_fee_inverse(fixed_price))
-            fee_inverse = sum(self.__calc_fee(fixed_price - fee))
+            steam_fee, dev_fee = self.__calc_fee(fixed_price)
 
-            if (price - fee) + fee_inverse == fixed_price:
-                break
-
-        return fixed_price, fee
+        return fixed_price + steam_fee + dev_fee, steam_fee, dev_fee
 
     @staticmethod
     def __check_language() -> None:
@@ -155,66 +148,61 @@ class SteamPrice:
         """Set the language used to show monetary price"""
         locale.setlocale(locale.LC_MONETARY, value)
 
-    @property
-    def fees_as_integer(self) -> Tuple[int, int]:
-        """Return fees as integer"""
-        return self.__calc_fee(self.as_integer)
+    def fees(self, reverse: bool = False, as_integer: bool = False) -> Tuple[int | float, int | float, int | float]:
+        """
+        Return fees applied to price
+        :param reverse: if True subtract fees instead sum
+        :param as_integer: if True return fees as integer type for compatibility with some Steam APIs
+        :return: price offset, steam fee, dev fee
+        """
+        if reverse:
+            price, steam_fee, dev_fee = self.__calc_price_offset(round(self._price * 100))
+        else:
+            price = round(self._price * 100)
+            steam_fee, dev_fee = self.__calc_fee(price)
 
-    @property
-    def fees(self) -> Tuple[float, float]:
-        """Return fees"""
-        steam_fee, developer_fee = self.fees_as_integer
-        return round(steam_fee / 100, 2), round(developer_fee / 100, 2)
+        if as_integer:
+            return price, steam_fee, dev_fee
+        else:
+            return round(price / 100, 2), round(steam_fee / 100, 2), round(dev_fee / 100, 2)
 
-    @property
-    def with_fees_subtracted(self) -> float:
-        """Return price with fees subtracted"""
-        fixed_price, fee = self.__calc_price_offset(self.as_integer)
+    def as_integer(self, sum_fees: bool = False, subtract_fees: bool = False) -> int:
+        """
+        Return price as integer type for compatibility with some Steam APIs
+        :param sum_fees: if True return price with fees added
+        :param subtract_fees: if True return price with fees removed
+        :return: price as integer
+        """
+        price = round(self._price * 100)
 
-        return round((fixed_price - fee) / 100, 2)
+        if sum_fees and subtract_fees:
+            raise AttributeError("Can't sum fees and subtract fees at same time")
 
-    @property
-    def with_fees_added(self) -> float:
-        """Return price with fees added"""
-        return round(self._price + sum(self.fees), 2)
+        if sum_fees:
+            price = round(price + sum(self.__calc_fee(price)))
+        elif subtract_fees:
+            price = round(reduce(operator.sub, self.__calc_price_offset(price)))
 
-    @property
-    def as_float(self) -> float:
-        """Return price as float type"""
-        return self._price
+        return price
 
-    @property
-    def as_integer(self) -> int:
-        """Return price as integer type for compatibility with some Steam APIs"""
-        return round(self._price * 100)
+    def as_float(self, sum_fees: bool = False, subtract_fees: bool = False) -> float:
+        """
+        Return price as float type
+        :param sum_fees: if True return price with fees added
+        :param subtract_fees: if True return price with fees removed
+        :return: price as float
+        """
+        return round(self.as_integer(sum_fees, subtract_fees) / 100, 2)
 
-    @property
-    def as_integer_with_fees_added(self) -> int:
-        """Return price as integer type with fees added"""
-        return round(self.with_fees_added * 100)
-
-    @property
-    def as_integer_with_fees_subtracted(self) -> int:
-        """Return price as integer type with fees subtracted"""
-        return round(self.with_fees_subtracted * 100)
-
-    @property
-    def as_monetary_string(self) -> str:
-        """Return price as monetary string"""
+    def as_monetary_string(self, sum_fees: bool = False, subtract_fees: bool = False) -> str:
+        """
+        Return price as monetary string
+        :param sum_fees: if True return price with fees added
+        :param subtract_fees: if True return price with fees removed
+        :return: price as monetary string
+        """
         self.__check_language()
-        return locale.currency(self._price)
-
-    @property
-    def as_monetary_string_with_fees_added(self) -> str:
-        """Return price as monetary string with fees added"""
-        self.__check_language()
-        return locale.currency(self.with_fees_added)
-
-    @property
-    def as_monetary_string_with_fees_subtracted(self) -> str:
-        """Return price as monetary string with fees removed"""
-        self.__check_language()
-        return locale.currency(self.with_fees_subtracted)
+        return locale.currency(self.as_float(sum_fees, subtract_fees))
 
     @classmethod
     def new_from_integer(cls: Type[Self], price: int) -> Self:
