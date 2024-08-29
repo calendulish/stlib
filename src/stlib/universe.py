@@ -229,7 +229,12 @@ class SteamPrice:
         no_comma = price.replace(',', '.')
         price_list = no_comma.split('.')
         big = ''.join(char for char in price_list[0] if char.isdigit())
-        minor = ''.join(char for char in price_list[1] if char.isdigit())
+
+        if len(price_list) > 1:
+            minor = ''.join(char for char in price_list[1] if char.isdigit())
+        else:
+            minor = '0'
+
         price_float = round(float(f'{big}.{minor}'), 2)
 
         return cls(price_float)

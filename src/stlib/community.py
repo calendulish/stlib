@@ -667,7 +667,7 @@ class Community(utils.Base):
         sell_order_table = []
         buy_order_table = []
 
-        if 'sell_order_table' in json_data:
+        if 'sell_order_table' in json_data and json_data['sell_order_table']:
             sell_order_table.extend(
                 PriceInfo(
                     universe.SteamPrice.new_from_monetary_price(order['price']),
@@ -675,7 +675,12 @@ class Community(utils.Base):
                 )
                 for order in json_data['sell_order_table']
             )
-        if 'buy_order_table' in json_data:
+        else:
+            json_data['sell_order_count'] = "0"
+            json_data['sell_order_price'] = "0"
+            json_data['lowest_sell_order'] = "0"
+
+        if 'buy_order_table' in json_data and json_data['buy_order_table']:
             buy_order_table.extend(
                 PriceInfo(
                     universe.SteamPrice.new_from_monetary_price(order['price']),
@@ -683,6 +688,11 @@ class Community(utils.Base):
                 )
                 for order in json_data['buy_order_table']
             )
+        else:
+            json_data['buy_order_count'] = "0"
+            json_data['buy_order_price'] = "0"
+            json_data['highest_buy_order'] = "0"
+
         return Histogram(
             int(json_data['sell_order_count'].replace(',', '')),
             universe.SteamPrice.new_from_monetary_price(json_data['sell_order_price']),
