@@ -1,7 +1,7 @@
 -r requirements.txt
 auditwheel~=6.1
 patchelf~=0.17
-pdoc~=14.5
+pdoc~=14.6
 pytest~=8.3
 pytest-asyncio~=0.23
 pytest-cov~=5.0
