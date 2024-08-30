@@ -8,10 +8,15 @@ stlib
 [![GitHub release](https://img.shields.io/github/release/calendulish/stlib.svg?style=flat)](https://github.com/calendulish/stlib/releases)
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/8033/badge)](https://www.bestpractices.dev/projects/8033)
 
-Async library that provides features related to Steam client and compatible stuff
+Async library that provides features related to Steam client and compatible stuff.
 
-WARNING: stlib is not intended to be used in game development, there is no support to callbacks, and I'll not work on that.
-stlib is intended to develop console or GUI applications that need interaction with SteamAPI or SteamWebAPI.
+stlib isn't a library intended for game development like SteamWorksPy, instead you should use it for console, gui, and web applications that need to gather Steam data in some way, including the ones from current logged in user. In addition to the SteamWorks methods, stlib also implements access to SteamWebAPI and some internal community APIs, and works both on Linux and Windows.
+
+There's also support for plugins that interact with third-party platforms, as an example we have the SteamGifts plugin that can login into the service using the Steam account configured on the stlib and access the user data from the third-party website. You can also write your own plugin for your favorite service using the stlib helpers.
+
+For more info about plugins, see the [stlib-plugins](https://github.com/calendulish/stlib-plugins) repo. a stlib [documentation](https://lara.monster/stlib) is also available.
+
+I'm programming this library as a personal project, so the functions are added according to my needs, otherwise it would be impossible to do it alone. If you need anything else, send a pull request or open an issue.
 
 stlib now supports plugins!
 ---------------------------
@@ -19,9 +24,6 @@ See more at: [stlib-plugins](https://github.com/calendulish/stlib-plugins)
 
 Dependencies to build SteamWorks Python Extension (Optional)
 -----------------------------------------------------
-
-WARNING: SteamWorks Python Extension is incomplete, but it's easy to implement. if you need a feature that is not present,
-send a pull request or open an issue.
 
 - Python and headers >= 3.10
 - Microsoft Visual C++ compiler (MSVC) or GNU Compiler (GCC)
@@ -40,17 +42,12 @@ Dependencies to run
 API Reference & Documentation
 -----------------------------
 
-[Current Version (>=1.0)](https://lara.monster/stlib)
-
-:warning: **If you are using the legacy version** please update.
-The legacy version isn't maintained or supported and docs are
-available only to help you in the upgrade process to latest version.
-[Legacy Version (<=0.14)](https://lara.monster/stlib.legacy)
+[Current Version (>=2.0)](https://lara.monster/stlib)
 
 Made with stlib
 ---------------
 
-Steam Tools NG - https://github.com/calendulish/steam-tools-ng
+[Steam Tools NG](https://github.com/calendulish/steam-tools-ng)
 
 ___________________________________________________________________________________________
 
