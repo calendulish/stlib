@@ -258,7 +258,7 @@ class Community(utils.Base):
         :return: List of `Item`
         """
         params = {'l': 'english', 'count': count}
-        json_data = {}
+        json_data: Dict[str, Any] = {}
 
         while True:
             json_data |= await self.request_json(
@@ -560,7 +560,7 @@ class Community(utils.Base):
         :return: sell orders (`Order`) and buy orders (`Order`)
         """
         params = {"start": 0, "count": 100, "norender": 1, "l": "english"}
-        json_data = {}
+        json_data: Dict[str, Any] = {}
 
         while True:
             json_data |= await self.request_json(
@@ -640,8 +640,8 @@ class Community(utils.Base):
             start = item_activity_func.index("LoadOrderSpread") + 17
             end = item_activity_func[start:].index(" );") + start
             item_nameid = item_activity_func[start:end]
-        except ValueError:
-            raise MarketError("Unable to load market orders")
+        except ValueError as exception:
+            raise MarketError("Unable to load market orders") from exception
 
         wallet_vars = self.get_vars_from_js(scripts[-2])
 
@@ -664,8 +664,8 @@ class Community(utils.Base):
             f"{self.community_url}/market/itemordershistogram", params=params
         )
 
-        sell_order_table = []
-        buy_order_table = []
+        sell_order_table: List[PriceInfo] = []
+        buy_order_table: List[PriceInfo] = []
 
         if 'sell_order_table' in json_data and json_data['sell_order_table']:
             sell_order_table.extend(

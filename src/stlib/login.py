@@ -378,7 +378,4 @@ class Login(utils.Base):
         html = await self.request_html('https://steamcommunity.com/dev/apikey')
         main = html.find('div', id='mainContents')
 
-        if 'Access Denied' in main.find('h2').text:
-            return True
-
-        return False
+        return 'Access Denied' in main.find('h2').text

@@ -110,7 +110,7 @@ class SteamPrice:
     def __sub__(self, value: int | float) -> 'SteamPrice':
         return SteamPrice(round(self._price - value, 2))
 
-    def __lt__(self, other: Self) -> bool:
+    def __lt__(self, other: object) -> bool:
         if isinstance(other, int):
             return round(self._price * 100) < other
         elif isinstance(other, float):
@@ -120,7 +120,7 @@ class SteamPrice:
         else:
             raise NotImplementedError(f"Comparation with {type(other)} not implemented")
 
-    def __eq__(self, other: Self) -> bool:
+    def __eq__(self, other: object) -> bool:
         if isinstance(other, int):
             return round(self._price * 100) == other
         elif isinstance(other, float):

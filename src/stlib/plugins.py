@@ -91,7 +91,7 @@ class _Manager:
                 try:
                     plugin_spec.loader.exec_module(module_)  # type: ignore
                 except ImportError as exception:
-                    raise PluginLoaderError(exception)
+                    raise PluginLoaderError(exception) from exception
 
                 log.debug("Plugin %s loaded.", module_name)
                 self._plugins[module_.__name__] = module_
@@ -147,7 +147,7 @@ def get_available_plugins() -> List[str]:
     Return a list of available plugins
     :return: list of available plugins
     """
-    return list(manager.plugins.keys())
+    return list(manager.plugins.keys()) # noqa
 
 
 @_plugin_manager

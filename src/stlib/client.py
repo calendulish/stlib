@@ -41,11 +41,11 @@ from . import NoSteamWorksError
 
 try:
     from stlib import steamworks  # type: ignore
-except ImportError:
+except ImportError as exception:
     raise NoSteamWorksError(
         'stlib has been built without SteamWorks support. '
         'Client interface is unavailable'
-    )
+    ) from exception
 
 log = logging.getLogger(__name__)
 

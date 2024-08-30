@@ -20,15 +20,14 @@
 """
 
 import asyncio
+import atexit
 import contextlib
 import http.cookies
 import json
-import locale
 import logging
 from typing import Dict, Any, NamedTuple, Self
 
 import aiohttp
-import atexit
 from bs4 import BeautifulSoup
 
 log = logging.getLogger(__name__)
