@@ -231,7 +231,7 @@ class Community(utils.Base):
         response = await self.request(self.community_url)
 
         if 'sessionid' in response.cookies:
-            return str(response.cookies['sessionid'].price)
+            return str(response.cookies['sessionid'].value)
 
         html = response.content
         for line in html.splitlines():

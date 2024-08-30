@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "stlib"
-version = "2.2"
+version = "2.2.1"
 description = "Async library that provides features related to Steam client and compatible stuffs"
 readme = "README.md"
 requires-python = ">=3.10"
