@@ -76,7 +76,7 @@ class Order(NamedTuple):
     """Wallet currency"""
     amount: int
     """Item amount"""
-    assetid: int
+    assetid: int | None
     """Asset ID"""
     orderid: int | None
     """Order ID"""
