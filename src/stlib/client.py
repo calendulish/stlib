@@ -66,7 +66,7 @@ class SteamGameServer:
     def __init__(
             self,
             appid: int = 480,
-            ip: int = 0x0100007f,
+            ip: int = 0x7f000001,
             port: int = 27016,
             query_port: int = 0xffff,
             server_mode: int = 1,
