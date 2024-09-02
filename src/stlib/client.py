@@ -63,8 +63,15 @@ class SteamGameServer:
     ```
     """
 
-    def __init__(self, appid: int = 480, ip: int = 0x0100007f, port: int = 27016) -> None:
-        self.game_server = steamworks.SteamGameServer(appid, ip, port)
+    def __init__(
+            self,
+            appid: int = 480,
+            ip: int = 0x0100007f,
+            port: int = 27016,
+            query_port: int = 0xffff,
+            server_mode: int = 1,
+    ) -> None:
+        self.game_server = steamworks.SteamGameServer(appid, ip, port, query_port, server_mode)
 
     def __getattr__(self, item) -> Any:
         return getattr(self.game_server, item)
