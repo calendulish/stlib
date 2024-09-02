@@ -87,12 +87,42 @@ static int SteamGameServerObjectInit(SteamGameServerObject *self, PyObject *args
         return -1;
     }
 
-    SteamGameServer()->SetModDir("");
-    SteamGameServer()->SetProduct("stlib");
-    SteamGameServer()->SetGameDescription("stlib server");
-    SteamGameServer()->LogOnAnonymous();
-
     return 0;
+}
+
+static PyObject *server_log_on(PyObject *self, PyObject *args)
+{
+    const char *pszToken;
+    const char *modDir;
+    const char *product;
+    const char *description;
+
+    if (!PyArg_ParseTuple(args, "ssss", &pszToken, &modDir, &product, &description))
+    {
+        return NULL;
+    }
+
+    SteamGameServer()->SetModDir(modDir);
+    SteamGameServer()->SetProduct(product);
+    SteamGameServer()->SetGameDescription(description);
+    SteamGameServer()->LogOn(pszToken);
+}
+
+static PyObject *server_log_on_anonymous(PyObject *self, PyObject *args)
+{
+    const char *modDir = "";
+    const char *product = "stlib";
+    const char *description = "stlib server";
+
+    if (!PyArg_ParseTuple(args, "|sss", &modDir, &product, &description))
+    {
+        return NULL;
+    }
+
+    SteamGameServer()->SetModDir(modDir);
+    SteamGameServer()->SetProduct(product);
+    SteamGameServer()->SetGameDescription(description);
+    SteamGameServer()->LogOnAnonymous();
 }
 
 static PyObject *server_shutdown(PyObject *self, PyObject *args)
@@ -195,6 +225,29 @@ static PyObject *server_is_steam_running_on_steam_deck(PyObject *self, PyObject 
 }
 
 static PyMethodDef SteamGameServerMethods[] = {
+    {
+        "log_on",
+        server_log_on,
+        METH_VARARGS,
+        PyDoc_STR("log_on(token, mod_dir, product, description)\n--\n\n"
+                  "logon the game server using the private token.\n"
+                  ":param token: the private token\n"
+                  ":param mod_dir: path to the mod dir\n"
+                  ":param product: product name\n"
+                  ":param description: server description\n"
+                  ":return: `None`"),
+    },
+    {
+        "log_on_anonymous",
+        server_log_on_anonymous,
+        METH_VARARGS,
+        PyDoc_STR("log_on_anonymous(mod_dir, product, description)\n--\n\n"
+                  "logon the game server using an anonymous account.\n"
+                  ":param mod_dir: path to the mod dir\n"
+                  ":param product: product name\n"
+                  ":param description: server description\n"
+                  ":return: `None`"),
+    },
     {
         "shutdown",
         server_shutdown,
