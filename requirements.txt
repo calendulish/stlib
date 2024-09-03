@@ -1,5 +1,5 @@
 aiohttp~=3.10
 beautifulsoup4~=4.12
 rsa==4.9
-setuptools~=74.0
+setuptools~=74.1
 build~=1.2
