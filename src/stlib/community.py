@@ -967,10 +967,13 @@ class Community(utils.Base):
 
     async def register_api_key(self, domain: str = 'stlib') -> None:
         """
+        (DEPRECATED! Use `request_api_key` instead)
         Register a new developer API Key for the current logged account
         :param domain: app name
         :return: None
         """
+        log.warning("Using deprecated method to get api key.")
+
         data = {
             'domain': domain,
             'agreeToTerms': 'agreed',
@@ -979,6 +982,24 @@ class Community(utils.Base):
         }
 
         await self.request(f'{self.community_url}/dev/registerkey', data=data)
+
+    async def request_api_key(self, domain: str = 'stlib', request_id: int = 0) -> Tuple[int, str]:
+        """
+        Request a new developer API Key for the current logged account
+        :param domain: app name
+        :param request_id: request id
+        :return: request id, api key
+        """
+        data = {
+            'domain': domain,
+            'agreeToTerms': 'true',
+            'sessionid': await self.get_steam_session_id(),
+            'request_id': str(request_id),
+        }
+
+        json_data = await self.request_json(f'{self.community_url}/dev/requestkey', data=data)
+
+        return int(json_data['request_id'] or 0), str(json_data['api_key'] or "")
 
     async def get_api_key(self) -> Tuple[str, str]:
         """
