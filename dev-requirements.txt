@@ -4,4 +4,4 @@ patchelf~=0.17
 pdoc~=14.6
 pytest~=8.3
 pytest-asyncio~=0.24
-pytest-cov~=5.0
+pytest-cov~=6.0
